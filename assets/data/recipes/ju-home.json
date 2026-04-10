@@ -1,0 +1,10 @@
+{
+  "id": "ju-home",
+  "card_a": "ju",
+  "card_b": "home",
+  "template": "Additive",
+  "scene_id": "home",
+  "config": {
+    "spawns": ["comfort"]
+  }
+}

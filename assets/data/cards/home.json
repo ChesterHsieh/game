@@ -1,0 +1,9 @@
+{
+  "id": "home",
+  "display_name": "Home",
+  "flavor_text": "",
+  "art_path": "res://assets/cards/home.png",
+  "type": "place",
+  "scene_id": "home",
+  "tags": ["place", "seed"]
+}

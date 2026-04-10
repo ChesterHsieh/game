@@ -1,0 +1,9 @@
+{
+  "id": "comfort",
+  "display_name": "Comfort",
+  "flavor_text": "",
+  "art_path": "res://assets/cards/comfort.png",
+  "type": "feeling",
+  "scene_id": "home",
+  "tags": ["feeling", "result"]
+}

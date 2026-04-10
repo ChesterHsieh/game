@@ -1,0 +1,9 @@
+{
+  "id": "chester",
+  "display_name": "Chester",
+  "flavor_text": "",
+  "art_path": "res://assets/cards/chester.png",
+  "type": "person",
+  "scene_id": "global",
+  "tags": ["person", "seed"]
+}

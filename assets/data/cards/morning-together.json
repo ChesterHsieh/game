@@ -1,0 +1,9 @@
+{
+  "id": "morning-together",
+  "display_name": "A Morning Together",
+  "flavor_text": "",
+  "art_path": "res://assets/cards/morning-together.png",
+  "type": "moment",
+  "scene_id": "home",
+  "tags": ["moment", "result"]
+}

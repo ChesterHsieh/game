@@ -1,0 +1,9 @@
+{
+  "id": "ju",
+  "display_name": "Ju",
+  "flavor_text": "",
+  "art_path": "res://assets/cards/ju.png",
+  "type": "person",
+  "scene_id": "global",
+  "tags": ["person", "seed"]
+}

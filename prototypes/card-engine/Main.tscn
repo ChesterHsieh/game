@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3 uid="uid://d3h1e06dnnts"]
+
+[ext_resource type="Script" path="res://prototypes/card-engine/main.gd" id="1"]
+[ext_resource type="Script" path="res://prototypes/card-engine/card.gd" id="2"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = 51.0
+offset_top = 54.0
+offset_right = 1331.0
+offset_bottom = 774.0
+color = Color(0.22, 0.47, 0.22, 1)
+
+[node name="Instructions" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 900.0
+offset_bottom = 48.0
+text = "Drag cards together. Release in range = snap (50% success / 50% push-away). Tune constants in card.gd"
+
+[node name="Cards" type="Node2D" parent="."]
+position = Vector2(196, 186)
+
+[node name="Chester" type="Node2D" parent="Cards"]
+position = Vector2(524, 210)
+script = ExtResource("2")
+card_label = "Chester"
+card_color = Color(0.95, 0.88, 0.72, 1)
+
+[node name="Ju" type="Node2D" parent="Cards"]
+position = Vector2(410, 104)
+script = ExtResource("2")
+card_label = "Ju"
+card_color = Color(0.95, 0.88, 0.72, 1)
+
+[node name="Home" type="Node2D" parent="Cards"]
+position = Vector2(436, 111)
+script = ExtResource("2")
+card_label = "Home"
+card_color = Color(0.88, 0.92, 0.95, 1)

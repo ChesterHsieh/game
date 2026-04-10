@@ -1,0 +1,18 @@
+{
+  "scene_id": "home",
+  "seed_cards": [
+    { "card_id": "chester" },
+    { "card_id": "ju" },
+    { "card_id": "home" }
+  ],
+  "goal": {
+    "type": "sustain_above",
+    "bars": [
+      { "id": "chester", "initial_value": 20, "decay_rate_per_sec": 0.5 },
+      { "id": "ju",      "initial_value": 20, "decay_rate_per_sec": 0.5 }
+    ],
+    "max_value": 100,
+    "threshold": 60,
+    "duration_sec": 30
+  }
+}

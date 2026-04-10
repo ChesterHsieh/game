@@ -1,6 +1,10 @@
 # Path-Specific Rules
 
-Rules in `.claude/rules/` are automatically enforced when editing files in matching paths:
+Rules in `.claude/rules/` are automatically enforced when editing files in matching paths (Claude Code).
+
+**Cursor:** the same rules live under **`.cursor/rules/*.mdc`** with identical content and `globs` matching the path patterns below. Edit either copy in sync, or treat `.mdc` as the Cursor source of truth for path-scoped behavior.
+
+---
 
 | Rule File | Path Pattern | Enforces |
 | ---- | ---- | ---- |

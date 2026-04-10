@@ -1,0 +1,28 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="game"
+run/main_scene="res://src/scenes/game.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+CardDatabase="*res://src/core/card_database.gd"
+RecipeDatabase="*res://src/core/recipe_database.gd"
+InputSystem="*res://src/core/input_system.gd"
+CardSpawning="*res://src/gameplay/card_spawning_system.gd"
+CardEngine="*res://src/gameplay/card_engine.gd"
+ITF="*res://src/gameplay/interaction_template_framework.gd"
+StatusBarSystem="*res://src/gameplay/status_bar_system.gd"
+SceneGoal="*res://src/gameplay/scene_goal_system.gd"
+HintSystem="*res://src/gameplay/hint_system.gd"

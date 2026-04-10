@@ -1,0 +1,10 @@
+{
+  "id": "chester-home",
+  "card_a": "chester",
+  "card_b": "home",
+  "template": "Additive",
+  "scene_id": "home",
+  "config": {
+    "spawns": ["coffee"]
+  }
+}

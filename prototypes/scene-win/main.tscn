@@ -1,0 +1,70 @@
+[gd_scene load_steps=4 format=3 uid="uid://gfwh6d8dg5dd"]
+
+[ext_resource type="Script" path="res://prototypes/scene-win/main.gd" id="1"]
+[ext_resource type="Script" path="res://prototypes/scene-win/card.gd" id="2"]
+[ext_resource type="Script" path="res://prototypes/scene-win/bar_layer.gd" id="3"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -67.0
+offset_top = 93.0
+offset_right = 2803.0
+offset_bottom = 2319.0
+color = Color(0.22, 0.47, 0.22, 1)
+
+[node name="Instructions" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 900.0
+offset_bottom = 90.0
+text = "Keep both bars above the yellow line for 5s to win."
+
+[node name="Cards" type="Node2D" parent="."]
+
+[node name="Chester" type="Node2D" parent="Cards"]
+position = Vector2(293, 291)
+script = ExtResource("2")
+card_label = "Chester"
+card_color = Color(0.95, 0.88, 0.72, 1)
+
+[node name="Ju" type="Node2D" parent="Cards"]
+position = Vector2(481, 306)
+script = ExtResource("2")
+card_label = "Ju"
+card_color = Color(0.95, 0.88, 0.72, 1)
+
+[node name="Home" type="Node2D" parent="Cards"]
+position = Vector2(387, 420)
+script = ExtResource("2")
+card_label = "Home"
+card_color = Color(0.88, 0.92, 0.95, 1)
+
+[node name="Pool1" type="Node2D" parent="Cards"]
+visible = false
+script = ExtResource("2")
+card_label = ""
+
+[node name="Pool2" type="Node2D" parent="Cards"]
+visible = false
+script = ExtResource("2")
+card_label = ""
+
+[node name="Pool3" type="Node2D" parent="Cards"]
+visible = false
+script = ExtResource("2")
+card_label = ""
+
+[node name="Pool4" type="Node2D" parent="Cards"]
+visible = false
+script = ExtResource("2")
+card_label = ""
+
+[node name="Pool5" type="Node2D" parent="Cards"]
+visible = false
+script = ExtResource("2")
+card_label = ""
+
+[node name="BarLayer" type="Node2D" parent="."]
+script = ExtResource("3")

@@ -1,0 +1,10 @@
+{
+  "id": "chester-ju",
+  "card_a": "chester",
+  "card_b": "ju",
+  "template": "Merge",
+  "scene_id": "home",
+  "config": {
+    "result_card": "morning-together"
+  }
+}

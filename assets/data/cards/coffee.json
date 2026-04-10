@@ -1,0 +1,9 @@
+{
+  "id": "coffee",
+  "display_name": "Coffee",
+  "flavor_text": "",
+  "art_path": "res://assets/cards/coffee.png",
+  "type": "object",
+  "scene_id": "home",
+  "tags": ["object", "result"]
+}
