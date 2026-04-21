@@ -49,9 +49,8 @@ was just waiting.
 4. Scene Goal System monitors the active goal:
    - **`sustain_above`** (MVP): Passive — relies entirely on Status Bar System. Listens for
      `win_condition_met()`. No per-frame processing.
-   - **`find_key`** (stub, Vertical Slice): Listens to ITF's `combination_executed(recipe_id,
-     ...)`. When `recipe_id == goal.key_recipe_id`, goal is met.
-   - **`sequence`** (stub, Vertical Slice): Listens to ITF's `combination_executed`. Tracks
+   - **`find_key`** (stub, Vertical Slice): Listens to ITF's `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)`. When `recipe_id == goal.key_recipe_id`, goal is met. SGS reads only `recipe_id` but MUST declare the full 6-param handler (Godot 4.3 arity-strict).
+   - **`sequence`** (stub, Vertical Slice): Listens to ITF's `combination_executed` (same 6-param handler). Tracks
      position in `goal.steps[]`. Advances on each matching recipe in order. Goal met when all
      steps complete.
    - **`reach_value`** (stub, Vertical Slice): Configured via Status Bar System same as
@@ -102,7 +101,7 @@ was just waiting.
 |--------|-----------|-----------|
 | **Scene Manager** | Called by; listens to | Scene Manager calls `load_scene(scene_id)` and `reset()`. Scene Goal System emits `seed_cards_ready(seed_cards[])` and `scene_completed(scene_id)` — Scene Manager listens to both. |
 | **Status Bar System** | Calls; listens to | Calls `StatusBarSystem.configure(scene_bar_config)` on `load_scene()` for bar-type goals. Listens to `win_condition_met()` from Status Bar System. |
-| **Interaction Template Framework** | Listens to | Listens to `combination_executed(recipe_id, ...)` for `find_key` and `sequence` goal types (Vertical Slice). No ITF interaction for MVP `sustain_above`. |
+| **Interaction Template Framework** | Listens to | Listens to `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` for `find_key` and `sequence` goal types (Vertical Slice). SGS declares all 6 params, reads only `recipe_id`. No ITF interaction for MVP `sustain_above`. |
 | **Hint System** | Emits to | Hint System reads `goal.type` and `goal.bars` from Scene Goal System to know what to hint about. Scene Goal System exposes a read-only `get_goal_config()` method. |
 
 ## Formulas
@@ -232,8 +231,7 @@ to help Chester author scene JSON files with confident defaults.
   directly.
 - **Vertical Slice goal types**: `find_key`, `sequence`, and `reach_value` are stubbed here.
   Full specification deferred to Vertical Slice milestone. Each will require Scene Goal System
-  to listen to ITF's `combination_executed` signal — confirm this interface with ITF GDD
-  when designing those goal types.
+  to listen to ITF's `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` signal — handler must declare all 6 params (Godot 4.3 arity-strict).
 - **scene_completed payload**: Scene Manager and Scene Transition UI may need additional
   data beyond `scene_id` (e.g., a "reward card" to spawn on completion). Resolve when Scene
   Manager is designed.

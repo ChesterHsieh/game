@@ -12,8 +12,8 @@ moving — and responds by fading in a silent visual cue around each bar. It doe
 interrupt, instruct, or explain. It simply lets a shape appear: a counterclockwise arc
 that traces around the bar, visible only after the player has been still long enough to
 need it. The Hint System is the game's only concession to guidance, and it makes that
-concession without words. It listens to `bar_values_changed` from the Status Bar System
-to detect when bars have gone quiet, reads the current goal config from Scene Goal System
+concession without words. It listens to `combination_executed` from ITF
+to detect when Ju has stopped producing new combinations, reads the current goal config from Scene Goal System
 to confirm a hint is relevant, and emits a signal to Status Bar UI when the arc should
 begin fading in.
 
@@ -38,8 +38,7 @@ arrives so late she's already frustrated, or so early it robs her of the discove
    `Dormant`.
 2. On scene load (`seed_cards_ready` received from Scene Goal System): reset stagnation
    timer to 0, set hint level to 0, enter `Watching` state.
-3. **Stagnation timer**: counts seconds since the last `combination_executed` signal
-   from ITF. Resets to 0 each time a combination fires.
+3. **Stagnation timer**: counts seconds since the last `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` signal from ITF. Resets to 0 each time a combination fires. Hint System's handler declares all 6 params (Godot 4.3 arity-strict) and ignores the payload — only the fact of emission matters.
 4. Hint levels:
    - **Level 1** (faint): stagnation timer reaches `stagnation_sec`. Emit
      `hint_level_changed(1)`. Status Bar UI fades arc in to low opacity.
@@ -68,7 +67,7 @@ arrives so late she's already frustrated, or so early it robs her of the discove
 | System | Direction | Interface |
 |--------|-----------|-----------|
 | **Scene Goal System** | Listens to; reads | Listens to `seed_cards_ready` to activate on scene load. Listens to `scene_completed` to reset. Calls `get_goal_config()` to check if goal type uses bars. |
-| **Interaction Template Framework** | Listens to | `combination_executed(recipe_id, ...)` — resets stagnation timer and clears active hint. *(New dependency — see Dependencies section.)* |
+| **Interaction Template Framework** | Listens to | `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` — resets stagnation timer and clears active hint. 6-param handler required. |
 | **Status Bar System** | Listens to | `win_condition_met()` — enters Dormant, clears arc immediately. |
 | **Status Bar UI** | Emits to | `hint_level_changed(level: int)` — 0 = hidden, 1 = faint arc, 2 = full arc. UI owns the fade animation. |
 
@@ -124,7 +123,7 @@ the clock and fades the arc.
 |--------|-------------|----------|
 | **Scene Goal System** | `seed_cards_ready` signal (activate); `scene_completed` signal (reset); `get_goal_config()` method (check bar goal type) | Hard — cannot activate or know what to hint without this |
 | **Status Bar System** | `win_condition_met()` signal — enter Dormant immediately on scene win | Soft — scene would still reset via `scene_completed`, but arc would linger during win animation |
-| **Interaction Template Framework** | `combination_executed(recipe_id, ...)` — reset stagnation timer on every combo | Hard — without this, stagnation cannot be detected ⚠️ *New dependency not in systems index — index update required* |
+| **Interaction Template Framework** | `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` — reset stagnation timer on every combo. 6-param handler required. | Hard — without this, stagnation cannot be detected |
 
 ### Downstream (systems that depend on this)
 
@@ -145,10 +144,8 @@ systems index currently lists only Scene Goal System and Status Bar System. This
 not create a circular dependency — ITF is already upstream of both Status Bar System
 and Scene Goal System.
 
-**Cross-reference**: Status Bar System GDD lists Hint System as a downstream consumer
-of `bar_values_changed` — this is now superseded. Hint System uses
-`combination_executed` from ITF instead. The Status Bar System GDD's downstream table
-should note this change when reviewed.
+**Cross-reference**: ~~Status Bar System GDD lists Hint System as a downstream consumer
+of `bar_values_changed` — this is now superseded.~~ **RESOLVED 2026-04-21**: Status Bar System downstream + dependency rows have been updated to reflect that Hint System uses `combination_executed` from ITF.
 
 ## Tuning Knobs
 
@@ -160,10 +157,14 @@ should note this change when reviewed.
 no separate knob — the two-level system is always proportional. If
 `stagnation_sec = 300`, Level 2 is always at 600s.
 
-**Note**: `stagnation_sec` is a single system-level constant, not per-scene. All
-scenes share the same hint timing. If a specific scene needs different timing,
-`stagnation_sec` could be moved to scene JSON in a future iteration — not required
-for MVP.
+**Per-scene override (added 2026-04-21 in response to `/review-all-gdds` W-D3):**
+`stagnation_sec` is a per-scene authored value read from `assets/data/scenes/[scene_id].json` key `"hint_stagnation_sec"`. If the scene file omits the key, Hint System falls back to the system-level default of 300s. This allows late-chapter scenes (with larger card trees and longer genuine exploration time) to authorize a longer window (e.g. 450s for scene 5, 600s for scene 7) without editing the MVP default. Early playtest sessions will tune these per-scene values from observation rather than guessing upfront.
+
+| Knob (per-scene) | Default fallback | Safe Range | Source |
+|---|---|---|---|
+| `hint_stagnation_sec` | `300.0` (if key absent) | 60–900s | `assets/data/scenes/[scene_id].json` |
+
+**Rationale**: Per `/review-all-gdds` W-D3, flat global hint timing was flagged as a risk — the "discovery friction increases" design intent cannot be matched with a constant. Promoting to per-scene config now is trivial; post-authoring it would require edits across every scene file.
 
 ## Acceptance Criteria
 
@@ -193,6 +194,5 @@ for MVP.
 - **Status Bar UI arc design**: Hint System emits `hint_level_changed(level)` but does
   not specify arc opacity values. Status Bar UI GDD must define: what opacity is
   "faint" (Level 1) vs "full" (Level 2), and how long the fade-in tween takes.
-- **Status Bar System GDD correction**: Status Bar System GDD lists Hint System as a
-  consumer of `bar_values_changed`. This is superseded — Hint System uses ITF's
-  `combination_executed` instead. Update Status Bar System GDD during review pass.
+- ~~**Status Bar System GDD correction**: Status Bar System GDD lists Hint System as a
+  consumer of `bar_values_changed`.~~ **RESOLVED 2026-04-21** — Status Bar System downstream table updated.

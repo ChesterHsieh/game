@@ -2,7 +2,7 @@
 
 > **Status**: Draft
 > **Created**: 2026-03-23
-> **Last Updated**: 2026-03-23
+> **Last Updated**: 2026-04-21 (all 20 systems designed; `/review-all-gdds` cleanup pass applied — 6 blockers resolved via new ADR-004 + ADR-003 expansion + cascaded GDD edits. All 13 previously-flagged GDDs returned to `Designed`. See `design/gdd/gdd-cross-review-2026-04-21.md` for the original findings and resolved status.)
 > **Source Concept**: design/gdd/game-concept.md
 
 ---
@@ -28,7 +28,7 @@ Engine first — if the magnetic snap doesn't feel right, nothing else matters.
 | 1 | Card Database | Core | MVP | Designed | design/gdd/card-database.md | — |
 | 2 | Recipe Database | Core | MVP | Designed | design/gdd/recipe-database.md | Card Database |
 | 3 | Input System | Core | MVP | Designed | design/gdd/input-system.md | — |
-| 4 | Audio Manager | Core | Vertical Slice | Not Started | — | — |
+| 4 | Audio Manager | Core | Vertical Slice | Designed | design/gdd/audio-manager.md | — |
 | 5 | Card Engine | Gameplay | MVP | Designed | design/gdd/card-engine.md | Input System, Card Database |
 | 6 | Table Layout System | Gameplay | MVP | Designed | design/gdd/table-layout-system.md | Card Database |
 | 7 | Card Spawning System | Gameplay | MVP | Designed | design/gdd/card-spawning-system.md | Card Database, Table Layout System |
@@ -38,13 +38,13 @@ Engine first — if the magnetic snap doesn't feel right, nothing else matters.
 | 11 | Hint System | Gameplay | MVP | Designed | design/gdd/hint-system.md | Scene Goal System, Status Bar System, Interaction Template Framework |
 | 12 | Card Visual | UI | MVP | Designed | design/gdd/card-visual.md | Card Database, Card Engine |
 | 13 | Status Bar UI | UI | MVP | Designed | design/gdd/status-bar-ui.md | Status Bar System, Hint System |
-| 14 | Scene Manager | Core | Vertical Slice | Not Started | — | Card Spawning System, Table Layout System, Scene Goal System |
-| 15 | Mystery Unlock Tree | Gameplay | Vertical Slice | Not Started | — | Interaction Template Framework, Scene Manager |
-| 16 | Scene Transition UI | UI | Vertical Slice | Not Started | — | Scene Goal System, Scene Manager |
-| 17 | Main Menu | UI | Vertical Slice | Not Started | — | Scene Manager |
-| 18 | Final Epilogue Screen | UI | Alpha | Not Started | — | Mystery Unlock Tree |
-| 19 | Save/Progress System | Persistence | Alpha | Not Started | — | Mystery Unlock Tree, Scene Manager |
-| 20 | Settings | Meta | Full Vision | Not Started | — | Audio Manager |
+| 14 | Scene Manager | Core | Vertical Slice | Designed | design/gdd/scene-manager.md | Card Spawning System, Table Layout System, Scene Goal System |
+| 15 | Mystery Unlock Tree | Gameplay | Vertical Slice | Designed | design/gdd/mystery-unlock-tree.md | Interaction Template Framework, Scene Manager |
+| 16 | Scene Transition UI | UI | Vertical Slice | Designed | design/gdd/scene-transition-ui.md | Scene Goal System, Scene Manager |
+| 17 | Main Menu | UI | Vertical Slice | Designed | design/gdd/main-menu.md | Scene Manager |
+| 18 | Final Epilogue Screen | UI | Alpha | Designed | design/gdd/final-epilogue-screen.md | Mystery Unlock Tree |
+| 19 | Save/Progress System | Persistence | Alpha | Designed | design/gdd/save-progress-system.md | Mystery Unlock Tree, Scene Manager |
+| 20 | Settings | Meta | Full Vision | Designed | design/gdd/settings.md | Audio Manager, Save/Progress System |
 
 ---
 
@@ -163,11 +163,14 @@ None found.
 | Metric | Count |
 |--------|-------|
 | Total systems identified | 20 |
-| Design docs started | 12 |
-| Design docs reviewed | 0 |
-| Design docs approved | 0 |
+| Design docs started | 20 |
+| Design docs reviewed | 3 |
+| Design docs approved | 2 |
 | MVP systems designed | 12 / 12 |
-| Vertical Slice systems designed | 0 / 4 |
+| Vertical Slice systems designed | 4 / 4 |
+| Alpha systems designed | 2 / 2 |
+| Full Vision systems designed | 1 / 1 |
+| **All systems designed** | **20 / 20** ✓ |
 
 ---
 

@@ -40,7 +40,7 @@ disappears and the relationship takes its place.
 3. Bar effects are authored in `assets/data/bar-effects.json` — a flat map of
    `recipe_id → { bar_id: delta, ... }`. If a recipe has no entry, the combination
    has no bar effect.
-4. On `combination_executed(recipe_id, ...)` from ITF: look up `recipe_id` in
+4. On `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` from ITF: look up `recipe_id` in
    bar-effects data; apply each delta to the named bar; clamp all values to
    `[0, max_value]`; emit `bar_values_changed(values_dict)`
 5. Decay: if a bar's `decay_rate_per_sec > 0`, it ticks down by that amount each
@@ -111,10 +111,10 @@ specific recipe). These will be specified in Scene Goal System.
 
 | System | Direction | Interface |
 |--------|-----------|-----------|
-| **Interaction Template Framework** | Listens | `combination_executed(recipe_id, ...)` — looks up bar effects and applies deltas |
+| **Interaction Template Framework** | Listens | `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` — SBS reads only `recipe_id`, ignores other params but MUST declare the full 6-param signature (Godot 4.3 arity-strict) |
 | **Scene Goal System** | Configured by | `configure(scene_bar_config)` on scene load; listens to `win_condition_met()` |
 | **Status Bar UI** | Emits to | `bar_values_changed(values_dict)` — UI reads current values and animates bars |
-| **Hint System** | Emits to | Same `bar_values_changed` — Hint System watches how long values have been stagnant |
+| **Hint System** | No direct signal from SBS | Hint System no longer consumes `bar_values_changed` — it resets its stagnation timer on ITF's `combination_executed`. SBS does send `win_condition_met` which Hint System listens to for Dormant entry. (Superseded dependency updated 2026-04-21 per Hint System r1.) |
 
 ## Formulas
 
@@ -183,7 +183,7 @@ while passive decay pulls them down at half a point per second.
 
 | System | What We Need | Hardness |
 |--------|-------------|----------|
-| **Interaction Template Framework** | `combination_executed(recipe_id, template, instance_id_a, instance_id_b)` signal | Hard — no bar updates without this |
+| **Interaction Template Framework** | `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` signal — handler declares all 6 params | Hard — no bar updates without this |
 
 ### Downstream (systems that depend on this)
 
@@ -191,7 +191,7 @@ while passive decay pulls them down at half a point per second.
 |--------|---------------|
 | **Scene Goal System** | Calls `configure(scene_bar_config)` on scene load; listens to `win_condition_met()` |
 | **Status Bar UI** | `bar_values_changed(values_dict)` to render bar fill levels |
-| **Hint System** | `bar_values_changed` to detect stagnation (bars not moving for N seconds) |
+| **Hint System** | `win_condition_met()` only — Hint System uses ITF's `combination_executed` for stagnation detection, not SBS's `bar_values_changed`. |
 
 ### External Data
 
@@ -239,5 +239,5 @@ and `assets/data/bar-effects.json`:
 ## Open Questions
 
 - **Scene Goal System bar config format**: When Scene Goal System is designed, confirm the exact schema for `scene_bar_config` — specifically whether bar IDs are free strings or constrained to a set.
-- **Hint System stagnation threshold**: Hint System will watch `bar_values_changed` to detect when bars aren't moving. The stagnation duration (e.g., "bars haven't moved in 2 minutes") will be authored in Hint System. No change needed here.
+- ~~**Hint System stagnation threshold**: Hint System will watch `bar_values_changed` to detect when bars aren't moving.~~ **RESOLVED 2026-04-21**: Hint System instead resets stagnation timer on ITF's `combination_executed`. SBS provides `win_condition_met()` only. No change needed here.
 - **Multiple win condition types**: `sustain_above` is MVP. Other types (`reach_value`, `sequence`, `find_key`) will be specified when Scene Goal System is designed and may require additional Status Bar System state or a different signal.
