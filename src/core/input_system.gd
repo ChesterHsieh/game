@@ -11,7 +11,7 @@
 ## The autoload is accessed globally via the name assigned in project.godot.
 ##
 ## Story 001: FSM skeleton + coordinate conversion.
-## Story 002: hit-test + drag_started emission (pending).
+## Story 002: hit-test + drag_started emission.
 ## Story 003: drag_moved + drag_released (pending).
 ## Story 004: proximity detection (pending).
 ## Story 005: cancel_drag() (pending).
@@ -142,13 +142,22 @@ func _screen_to_world(screen_pos: Vector2) -> Vector2:
 
 
 ## Handle a left-mouse-button press at [param screen_pos].
-## Full implementation (hit-test + drag_started emit) added in Story 002.
+## Performs a hit-test at the cursor world position. If a registered card is
+## found, transitions IDLE → DRAGGING and emits EventBus.drag_started.
+## Guard: if already DRAGGING, the press is silently ignored (no re-entry).
+##
+## [param screen_pos] Viewport-space position from the InputEvent.
 func _handle_left_press(screen_pos: Vector2) -> void:
 	if _state != State.IDLE:
 		return
 	var world_pos: Vector2 = _screen_to_world(screen_pos)
-	# Story 002 will call _hit_test(world_pos) here and transition to DRAGGING.
+	var card_id: String = _hit_test(world_pos)
+	if card_id.is_empty():
+		return
+	_state = State.DRAGGING
+	_dragged_card_id = card_id
 	_last_world_pos = world_pos
+	EventBus.drag_started.emit(card_id, world_pos)
 
 
 ## Handle a left-mouse-button release at [param screen_pos].

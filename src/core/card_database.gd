@@ -19,6 +19,7 @@ const MANIFEST_PATH := "res://assets/data/cards.tres"
 var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global"])
 
 var _entries: Array[CardEntry] = []
+var _index: Dictionary = {}   # StringName → CardEntry
 
 
 func _ready() -> void:
@@ -36,6 +37,7 @@ func _load_manifest(path: String) -> void:
 		"CardDatabase: %s is missing or not a CardManifest" % path)
 	_entries = manifest.entries
 	_validate_entries()
+	_build_index()
 
 
 ## Validates all loaded entries for semantic correctness.
@@ -60,3 +62,35 @@ func _validate_entries() -> void:
 		if not KNOWN_SCENE_IDS.has(String(e.scene_id)):
 			push_warning("CardDatabase: orphaned scene_id '%s' on card %s"
 				% [e.scene_id, e.id])
+
+
+## Builds the id→entry index from _entries. Called once at the end of
+## _load_manifest(), after _validate_entries() has asserted uniqueness.
+## Separated so tests that call _load_manifest() get the index for free.
+func _build_index() -> void:
+	_index.clear()
+	for e: CardEntry in _entries:
+		_index[e.id] = e
+
+
+## Returns the [CardEntry] for [param id], or null if no card with that id
+## exists. Logs an error via push_error naming the missing id.
+## Callers must treat the returned entry as read-only.
+##
+## Usage example:
+##   var entry: CardEntry = CardDatabase.get_card(&"rainy-afternoon")
+func get_card(id: StringName) -> CardEntry:
+	var entry: CardEntry = _index.get(id, null)
+	if entry == null:
+		push_error("CardDatabase: no card with id '%s'" % id)
+	return entry
+
+
+## Returns the full populated entries array in stable (declaration) order.
+## Callers must not mutate the returned array or its elements.
+##
+## Usage example:
+##   for entry: CardEntry in CardDatabase.get_all():
+##       print(entry.display_name)
+func get_all() -> Array[CardEntry]:
+	return _entries

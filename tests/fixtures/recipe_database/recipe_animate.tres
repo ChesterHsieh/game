@@ -1,6 +1,10 @@
-[gd_resource type="RecipeManifest" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=4 format=3]
 
-[sub_resource type="RecipeEntry" id="RecipeEntry_animate_001"]
+[ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="RecipeEntry_animate_001"]
+script = ExtResource("2_entry")
 id = &"test_animate_001"
 card_a = &"card_wind"
 card_b = &"card_leaf"
@@ -9,4 +13,5 @@ scene_id = &"global"
 config = {"motion": &"float", "speed": 1.5, "target": &"card_sky", "duration_sec": 2.0}
 
 [resource]
+script = ExtResource("1_manifest")
 entries = [SubResource("RecipeEntry_animate_001")]

@@ -22,17 +22,17 @@ func test_card_entry_has_required_properties() -> void:
 
 func test_card_entry_id_is_string_name_type() -> void:
 	var entry := CardEntry.new()
-	assert_that(entry.id).is_instanceof(StringName)
+	assert_int(typeof(entry.id)).is_equal(TYPE_STRING_NAME)
 
 
 func test_card_entry_display_name_is_string_type() -> void:
 	var entry := CardEntry.new()
-	assert_that(entry.display_name).is_instanceof(String)
+	assert_int(typeof(entry.display_name)).is_equal(TYPE_STRING)
 
 
 func test_card_entry_tags_is_packed_string_array_type() -> void:
 	var entry := CardEntry.new()
-	assert_that(entry.tags).is_instanceof(PackedStringArray)
+	assert_int(typeof(entry.tags)).is_equal(TYPE_PACKED_STRING_ARRAY)
 
 
 # ── AC-2: CardType enum has exactly 7 values in declaration order ─────────────

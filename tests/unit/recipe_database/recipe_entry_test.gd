@@ -21,32 +21,32 @@ func test_recipe_entry_has_required_properties() -> void:
 
 func test_recipe_entry_id_is_string_name_type() -> void:
 	var entry := RecipeEntry.new()
-	assert_that(entry.id).is_instanceof(StringName)
+	assert_int(typeof(entry.id)).is_equal(TYPE_STRING_NAME)
 
 
 func test_recipe_entry_card_a_is_string_name_type() -> void:
 	var entry := RecipeEntry.new()
-	assert_that(entry.card_a).is_instanceof(StringName)
+	assert_int(typeof(entry.card_a)).is_equal(TYPE_STRING_NAME)
 
 
 func test_recipe_entry_card_b_is_string_name_type() -> void:
 	var entry := RecipeEntry.new()
-	assert_that(entry.card_b).is_instanceof(StringName)
+	assert_int(typeof(entry.card_b)).is_equal(TYPE_STRING_NAME)
 
 
 func test_recipe_entry_template_is_string_name_type() -> void:
 	var entry := RecipeEntry.new()
-	assert_that(entry.template).is_instanceof(StringName)
+	assert_int(typeof(entry.template)).is_equal(TYPE_STRING_NAME)
 
 
 func test_recipe_entry_scene_id_is_string_name_type() -> void:
 	var entry := RecipeEntry.new()
-	assert_that(entry.scene_id).is_instanceof(StringName)
+	assert_int(typeof(entry.scene_id)).is_equal(TYPE_STRING_NAME)
 
 
 func test_recipe_entry_config_is_dictionary_type() -> void:
 	var entry := RecipeEntry.new()
-	assert_that(entry.config).is_instanceof(Dictionary)
+	assert_int(typeof(entry.config)).is_equal(TYPE_DICTIONARY)
 
 
 # ── AC-2: RecipeEntry.new() returns correct defaults ─────────────────────────
