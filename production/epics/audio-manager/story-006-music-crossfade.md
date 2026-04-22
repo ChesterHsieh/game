@@ -1,7 +1,7 @@
 # Story 006: Music players + crossfade state machine
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

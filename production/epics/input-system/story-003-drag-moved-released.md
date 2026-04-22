@@ -1,7 +1,7 @@
 # Story 003: drag_moved + drag_released + single-drag enforcement
 
 > **Epic**: input-system
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

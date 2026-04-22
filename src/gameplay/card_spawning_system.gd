@@ -86,6 +86,20 @@ func get_all_instance_ids() -> Array[String]:
 	return ids
 
 
+## Removes all live cards from the table. Idempotent — safe to call on an
+## empty table (no-op). Iterates a snapshot of IDs so removal does not
+## invalidate the iteration.
+##
+## Used by SceneManager during scene transitions (ADR-004).
+##
+## Usage example:
+##   CardSpawning.clear_all_cards()
+func clear_all_cards() -> void:
+	var ids := get_all_instance_ids()
+	for id: String in ids:
+		remove_card(id)
+
+
 ## Returns world positions of all live cards (for overlap avoidance).
 func get_all_card_positions() -> Array[Vector2]:
 	var positions: Array[Vector2] = []

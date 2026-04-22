@@ -1,4 +1,4 @@
-[gd_resource type="AudioBusLayout" format=3 uid="uid://b3audiobusmaster"]
+[gd_resource type="AudioBusLayout" format=3]
 
 [resource]
 bus/0/name = &"Master"

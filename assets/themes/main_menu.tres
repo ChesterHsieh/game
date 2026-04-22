@@ -1,0 +1,5 @@
+[gd_resource type="Theme" format=3]
+
+[resource]
+VBoxContainer/constants/separation = 48
+TextureButton/styles/focus = null

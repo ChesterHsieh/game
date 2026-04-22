@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
 
-[sub_resource type="Resource" id="RecipeEntry_chester-rainy-afternoon"]
+[sub_resource type="Resource" id="RecipeEntry_chester_rainy_afternoon"]
 script = ExtResource("2_entry")
 id = &"chester-rainy-afternoon"
 card_a = &"chester"
@@ -12,7 +12,7 @@ template = &"merge"
 scene_id = &"scene-01"
 config = {"result_card": &"that-photo"}
 
-[sub_resource type="Resource" id="RecipeEntry_ju-our-cafe"]
+[sub_resource type="Resource" id="RecipeEntry_ju_our_cafe"]
 script = ExtResource("2_entry")
 id = &"ju-our-cafe"
 card_a = &"ju"
@@ -21,7 +21,7 @@ template = &"merge"
 scene_id = &"scene-01"
 config = {"result_card": &"first-call"}
 
-[sub_resource type="Resource" id="RecipeEntry_that-argument-safe"]
+[sub_resource type="Resource" id="RecipeEntry_that_argument_safe"]
 script = ExtResource("2_entry")
 id = &"that-argument-safe"
 card_a = &"that-argument"
@@ -30,7 +30,7 @@ template = &"merge"
 scene_id = &"scene-01"
 config = {"result_card": &"seed-together"}
 
-[sub_resource type="Resource" id="RecipeEntry_that-park-nervous"]
+[sub_resource type="Resource" id="RecipeEntry_that_park_nervous"]
 script = ExtResource("2_entry")
 id = &"that-park-nervous"
 card_a = &"that-park"
@@ -39,7 +39,7 @@ template = &"additive"
 scene_id = &"scene-01"
 config = {"spawns": [&"safe"]}
 
-[sub_resource type="Resource" id="RecipeEntry_handmade-gift-ju"]
+[sub_resource type="Resource" id="RecipeEntry_handmade_gift_ju"]
 script = ExtResource("2_entry")
 id = &"handmade-gift-ju"
 card_a = &"handmade-gift"
@@ -48,7 +48,7 @@ template = &"additive"
 scene_id = &"scene-01"
 config = {"spawns": [&"our-song"]}
 
-[sub_resource type="Resource" id="RecipeEntry_joke-placeholder-1-joke-placeholder-2"]
+[sub_resource type="Resource" id="RecipeEntry_joke_placeholder_1_joke_placeholder_2"]
 script = ExtResource("2_entry")
 id = &"joke-placeholder-1-joke-placeholder-2"
 card_a = &"joke-placeholder-1"
@@ -57,7 +57,7 @@ template = &"additive"
 scene_id = &"scene-01"
 config = {"spawns": [&"3am-energy"]}
 
-[sub_resource type="Resource" id="RecipeEntry_our-song-rainy-afternoon"]
+[sub_resource type="Resource" id="RecipeEntry_our_song_rainy_afternoon"]
 script = ExtResource("2_entry")
 id = &"our-song-rainy-afternoon"
 card_a = &"our-song"
@@ -66,7 +66,7 @@ template = &"animate"
 scene_id = &"scene-01"
 config = {"motion": &"drift", "speed": 1.0, "target": &"both", "duration_sec": 3.0}
 
-[sub_resource type="Resource" id="RecipeEntry_seed-memory-that-photo"]
+[sub_resource type="Resource" id="RecipeEntry_seed_memory_that_photo"]
 script = ExtResource("2_entry")
 id = &"seed-memory-that-photo"
 card_a = &"seed-memory"
@@ -75,7 +75,7 @@ template = &"animate"
 scene_id = &"scene-01"
 config = {"motion": &"orbit", "speed": 0.5, "target": &"both", "duration_sec": 5.0}
 
-[sub_resource type="Resource" id="RecipeEntry_home-chester"]
+[sub_resource type="Resource" id="RecipeEntry_home_chester"]
 script = ExtResource("2_entry")
 id = &"home-chester"
 card_a = &"home"
@@ -84,7 +84,7 @@ template = &"generator"
 scene_id = &"scene-01"
 config = {"generates": &"handmade-gift", "interval_sec": 5.0, "max_count": 3, "generator_card": &"chester"}
 
-[sub_resource type="Resource" id="RecipeEntry_our-cafe-that-park"]
+[sub_resource type="Resource" id="RecipeEntry_our_cafe_that_park"]
 script = ExtResource("2_entry")
 id = &"our-cafe-that-park"
 card_a = &"our-cafe"
@@ -93,7 +93,7 @@ template = &"generator"
 scene_id = &"scene-01"
 config = {"generates": &"safe", "interval_sec": 8.0, "max_count": 5, "generator_card": &"our-cafe"}
 
-[sub_resource type="Resource" id="RecipeEntry_seed-start-chester"]
+[sub_resource type="Resource" id="RecipeEntry_seed_start_chester"]
 script = ExtResource("2_entry")
 id = &"seed-start-chester"
 card_a = &"seed-start"
@@ -102,7 +102,7 @@ template = &"additive"
 scene_id = &"global"
 config = {"spawns": [&"seed-together"]}
 
-[sub_resource type="Resource" id="RecipeEntry_seed-start-seed-together"]
+[sub_resource type="Resource" id="RecipeEntry_seed_start_seed_together"]
 script = ExtResource("2_entry")
 id = &"seed-start-seed-together"
 card_a = &"seed-start"
@@ -113,4 +113,4 @@ config = {"result_card": &"seed-memory"}
 
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("RecipeEntry_chester-rainy-afternoon"), SubResource("RecipeEntry_ju-our-cafe"), SubResource("RecipeEntry_that-argument-safe"), SubResource("RecipeEntry_that-park-nervous"), SubResource("RecipeEntry_handmade-gift-ju"), SubResource("RecipeEntry_joke-placeholder-1-joke-placeholder-2"), SubResource("RecipeEntry_our-song-rainy-afternoon"), SubResource("RecipeEntry_seed-memory-that-photo"), SubResource("RecipeEntry_home-chester"), SubResource("RecipeEntry_our-cafe-that-park"), SubResource("RecipeEntry_seed-start-chester"), SubResource("RecipeEntry_seed-start-seed-together")]
+entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together")]

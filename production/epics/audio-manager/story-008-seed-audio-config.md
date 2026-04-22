@@ -1,7 +1,7 @@
 # Story 008: Seed audio_config.tres + default_bus_layout.tres
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Config/Data
 > **Manifest Version**: 2026-04-21

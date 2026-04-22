@@ -1,7 +1,7 @@
 # Story 007: Seed recipes.tres manifest — MVP scene-01 recipe set
 
 > **Epic**: recipe-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Config/Data
 > **Manifest Version**: 2026-04-21

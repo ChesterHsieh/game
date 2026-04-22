@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="MutConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/mut_config.gd" id="1_mutconfig"]
+
+[resource]
+script = ExtResource("1_mutconfig")
+milestone_pct = [0.15, 0.5, 0.8]
+partial_threshold = 0.8

@@ -52,11 +52,11 @@ var _combination_in_flight: bool = false
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	InputSystem.drag_started.connect(_on_drag_started)
-	InputSystem.drag_moved.connect(_on_drag_moved)
-	InputSystem.drag_released.connect(_on_drag_released)
-	InputSystem.proximity_entered.connect(_on_proximity_entered)
-	InputSystem.proximity_exited.connect(_on_proximity_exited)
+	EventBus.drag_started.connect(_on_drag_started)
+	EventBus.drag_moved.connect(_on_drag_moved)
+	EventBus.drag_released.connect(_on_drag_released)
+	EventBus.proximity_entered.connect(_on_proximity_entered)
+	EventBus.proximity_exited.connect(_on_proximity_exited)
 
 
 # ── Per-Frame Update ──────────────────────────────────────────────────────────

@@ -15,6 +15,10 @@ run/main_scene="res://src/scenes/game.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
 
+[audio]
+
+buses/default_bus_layout="res://assets/data/default_bus_layout.tres"
+
 [autoload]
 
 EventBus="*res://src/core/event_bus.gd"
@@ -28,10 +32,8 @@ ITF="*res://src/gameplay/interaction_template_framework.gd"
 StatusBarSystem="*res://src/gameplay/status_bar_system.gd"
 SceneGoal="*res://src/gameplay/scene_goal_system.gd"
 HintSystem="*res://src/gameplay/hint_system.gd"
-
-[audio]
-
-buses/default_bus_layout="res://assets/data/default_bus_layout.tres"
+SceneManager="*res://src/core/scene_manager.gd"
+MysteryUnlockTree="*res://src/core/mystery_unlock_tree.gd"
 
 [editor_plugins]
 

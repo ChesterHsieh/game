@@ -3,7 +3,7 @@
 > **Layer**: Foundation
 > **GDD**: `design/gdd/card-database.md`
 > **Architecture Module**: `CardDatabase` (autoload singleton)
-> **Status**: Ready
+> **Status**: Complete
 > **Stories**: 7 stories created 2026-04-21 — see table below
 
 ## Overview
@@ -57,13 +57,13 @@ This epic is complete when:
 
 | # | Story | Type | Status | ADR | TRs |
 |---|-------|------|--------|-----|-----|
-| 001 | [EventBus autoload — 30-signal contract](story-001-event-bus-autoload.md) | Integration | Ready | ADR-003 | (infra) |
-| 002 | [CardEntry + CardManifest Resource classes](story-002-card-entry-manifest-resources.md) | Logic | Ready | ADR-005 | TR-004, TR-009 |
-| 003 | [CardDatabase autoload — manifest load + typed cast](story-003-card-database-autoload-load.md) | Integration | Ready | ADR-005 | TR-001, TR-009, TR-010 |
-| 004 | [Load-time validation — uniqueness, display_name, orphan scene](story-004-load-time-validation.md) | Logic | Ready | ADR-005 | TR-003, TR-005, TR-008 |
-| 005 | [Public lookup API — get_card(id) + get_all()](story-005-lookup-api.md) | Logic | Ready | ADR-005 | TR-002, TR-006 |
-| 006 | [Missing-art detection + placeholder warning](story-006-missing-art-detection.md) | Logic | Ready | ADR-005 | TR-007 |
-| 007 | [Seed cards.tres manifest — MVP scene-01 card set](story-007-seed-cards-tres-manifest.md) | Config/Data | Ready | ADR-005 | TR-011 |
+| 001 | [EventBus autoload — 30-signal contract](story-001-event-bus-autoload.md) | Integration | Complete | ADR-003 | (infra) |
+| 002 | [CardEntry + CardManifest Resource classes](story-002-card-entry-manifest-resources.md) | Logic | Complete | ADR-005 | TR-004, TR-009 |
+| 003 | [CardDatabase autoload — manifest load + typed cast](story-003-card-database-autoload-load.md) | Integration | Complete | ADR-005 | TR-001, TR-009, TR-010 |
+| 004 | [Load-time validation — uniqueness, display_name, orphan scene](story-004-load-time-validation.md) | Logic | Complete | ADR-005 | TR-003, TR-005, TR-008 |
+| 005 | [Public lookup API — get_card(id) + get_all()](story-005-lookup-api.md) | Logic | Complete | ADR-005 | TR-002, TR-006 |
+| 006 | [Missing-art detection + placeholder warning](story-006-missing-art-detection.md) | Logic | Complete | ADR-005 | TR-007 |
+| 007 | [Seed cards.tres manifest — MVP scene-01 card set](story-007-seed-cards-tres-manifest.md) | Config/Data | Complete | ADR-005 | TR-011 |
 
 **Coverage**: 11 / 11 TRs mapped to stories (TR-004 mapped to Story 002; TR-009 spans Stories 002+003).
 

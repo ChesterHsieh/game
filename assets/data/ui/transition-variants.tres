@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TransitionVariants" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/transition_variants.gd" id="1_tv"]
+
+[resource]
+script = ExtResource("1_tv")
+variants = {
+"default": {"fold_duration_scale": 1.0, "paper_tint": Color(0.98, 0.95, 0.88, 1.0)},
+"home": {"fold_duration_scale": 1.0, "paper_tint": Color(0.98, 0.95, 0.88, 1.0)},
+"park": {"fold_duration_scale": 0.9, "paper_tint": Color(0.95, 0.98, 0.9, 1.0)}
+}

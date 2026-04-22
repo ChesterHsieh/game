@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="EpilogueRequirements" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/epilogue_requirements.gd" id="1_epiloguereq"]
+
+[resource]
+script = ExtResource("1_epiloguereq")
+recipe_ids = ["chester-rainy-afternoon", "ju-our-cafe", "that-argument-safe", "handmade-gift-ju"]

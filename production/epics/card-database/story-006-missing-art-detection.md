@@ -1,7 +1,7 @@
 # Story 006: Missing-art detection + placeholder warning
 
 > **Epic**: card-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

@@ -1,7 +1,7 @@
 # Story 004: Per-event cooldowns
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

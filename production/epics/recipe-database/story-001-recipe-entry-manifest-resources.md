@@ -1,7 +1,7 @@
 # Story 001: RecipeEntry + RecipeManifest Resource classes
 
 > **Epic**: recipe-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

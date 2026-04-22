@@ -1,7 +1,7 @@
 # Story 007: Public API — set_bus_volume + fade_out_all
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

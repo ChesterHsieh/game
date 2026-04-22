@@ -1,7 +1,7 @@
 # Story 005: cancel_drag() + signal-only discipline
 
 > **Epic**: input-system
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

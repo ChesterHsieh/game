@@ -3,7 +3,7 @@
 > **Layer**: Foundation
 > **GDD**: `design/gdd/audio-manager.md`
 > **Architecture Module**: `AudioManager` (autoload singleton)
-> **Status**: Ready
+> **Status**: Complete
 > **Stories**: 8 stories created 2026-04-21 — see table below
 
 ## Overview
@@ -73,14 +73,14 @@ This epic is complete when:
 
 | # | Story | Type | Status | ADR | TRs |
 |---|-------|------|--------|-----|-----|
-| 001 | [AudioManager autoload + bus layout + config load + silent fallback](story-001-autoload-bus-layout-config.md) | Integration | Ready | ADR-004, ADR-005 | TR-001, TR-004, TR-014, TR-015 |
-| 002 | [SFX pool — allocation, fire-and-forget, pool-full + win priority](story-002-sfx-pool.md) | Integration | Ready | ADR-001 | TR-002, TR-006, TR-007 |
-| 003 | [Pitch + volume randomization formulas](story-003-pitch-volume-randomization.md) | Logic | Ready | ADR-001 | TR-008, TR-009 |
-| 004 | [Per-event cooldowns](story-004-per-event-cooldowns.md) | Logic | Ready | ADR-001 | TR-010 |
-| 005 | [EventBus signal wiring + SFX dispatch + missing-event fallback](story-005-eventbus-signal-wiring.md) | Integration | Ready | ADR-003, ADR-004 | TR-005, TR-019, TR-020 |
-| 006 | [Music players + crossfade state machine](story-006-music-crossfade.md) | Logic | Ready | ADR-001 | TR-003, TR-011, TR-012, TR-013 |
-| 007 | [Public API — set_bus_volume + fade_out_all](story-007-public-api-bus-volume-fadeout.md) | Logic | Ready | ADR-001, ADR-003 | TR-016, TR-017, TR-018, TR-019 |
-| 008 | [Seed audio_config.tres + default_bus_layout.tres](story-008-seed-audio-config.md) | Config/Data | Ready | ADR-005 | (data) |
+| 001 | [AudioManager autoload + bus layout + config load + silent fallback](story-001-autoload-bus-layout-config.md) | Integration | Complete | ADR-004, ADR-005 | TR-001, TR-004, TR-014, TR-015 |
+| 002 | [SFX pool — allocation, fire-and-forget, pool-full + win priority](story-002-sfx-pool.md) | Integration | Complete | ADR-001 | TR-002, TR-006, TR-007 |
+| 003 | [Pitch + volume randomization formulas](story-003-pitch-volume-randomization.md) | Logic | Complete | ADR-001 | TR-008, TR-009 |
+| 004 | [Per-event cooldowns](story-004-per-event-cooldowns.md) | Logic | Complete | ADR-001 | TR-010 |
+| 005 | [EventBus signal wiring + SFX dispatch + missing-event fallback](story-005-eventbus-signal-wiring.md) | Integration | Complete | ADR-003, ADR-004 | TR-005, TR-019, TR-020 |
+| 006 | [Music players + crossfade state machine](story-006-music-crossfade.md) | Logic | Complete | ADR-001 | TR-003, TR-011, TR-012, TR-013 |
+| 007 | [Public API — set_bus_volume + fade_out_all](story-007-public-api-bus-volume-fadeout.md) | Logic | Complete | ADR-001, ADR-003 | TR-016, TR-017, TR-018, TR-019 |
+| 008 | [Seed audio_config.tres + default_bus_layout.tres](story-008-seed-audio-config.md) | Config/Data | Complete | ADR-005 | (data) |
 
 **Coverage**: 20 / 20 TRs mapped to stories (TR-019 spans Stories 005 + 007).
 

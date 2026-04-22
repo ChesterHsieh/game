@@ -1,7 +1,7 @@
 # Story 003: Cross-validation against CardDatabase — card_a / card_b / result IDs
 
 > **Epic**: recipe-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Manifest Version**: 2026-04-21

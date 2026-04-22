@@ -1,7 +1,7 @@
 # Story 006: Public lookup API — symmetric pair + scene precedence
 
 > **Epic**: recipe-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

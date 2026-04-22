@@ -1,7 +1,7 @@
 # Story 004: Load-time validation — uniqueness, display_name, orphan scene
 
 > **Epic**: card-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

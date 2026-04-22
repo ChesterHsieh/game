@@ -1,7 +1,7 @@
 # Story 004: Duplicate-rule detection — same pair in same scene
 
 > **Epic**: recipe-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

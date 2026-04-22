@@ -1,7 +1,7 @@
 # Story 004: Proximity detection — proximity_entered / proximity_exited
 
 > **Epic**: input-system
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

@@ -3,7 +3,7 @@
 > **Layer**: Foundation
 > **GDD**: `design/gdd/recipe-database.md`
 > **Architecture Module**: `RecipeDatabase` (autoload singleton)
-> **Status**: Ready
+> **Status**: Complete
 > **Stories**: 7 stories created 2026-04-21 — see table below
 
 ## Overview
@@ -62,13 +62,13 @@ This epic is complete when:
 
 | # | Story | Type | Status | ADR | TRs |
 |---|-------|------|--------|-----|-----|
-| 001 | [RecipeEntry + RecipeManifest Resource classes](story-001-recipe-entry-manifest-resources.md) | Logic | Ready | ADR-005 | TR-003, TR-010 |
-| 002 | [RecipeDatabase autoload — manifest load + typed cast](story-002-recipe-database-autoload-load.md) | Integration | Ready | ADR-005 | TR-001, TR-010, TR-011 |
-| 003 | [Cross-validation against CardDatabase — card_a / card_b / result IDs](story-003-cross-validation-card-ids.md) | Integration | Ready | ADR-005 | TR-004 |
-| 004 | [Duplicate-rule detection — same pair in same scene](story-004-duplicate-rule-detection.md) | Logic | Ready | ADR-005 | TR-005 |
-| 005 | [Generator interval_sec clamp (≥ 0.5 s)](story-005-generator-interval-clamp.md) | Logic | Ready | ADR-005 | TR-007 |
-| 006 | [Public lookup API — symmetric pair + scene precedence](story-006-lookup-api.md) | Logic | Ready | ADR-005 | TR-002, TR-006, TR-008, TR-009 |
-| 007 | [Seed recipes.tres manifest — MVP scene-01 recipe set](story-007-seed-recipes-tres-manifest.md) | Config/Data | Ready | ADR-005 | TR-012 |
+| 001 | [RecipeEntry + RecipeManifest Resource classes](story-001-recipe-entry-manifest-resources.md) | Logic | Complete | ADR-005 | TR-003, TR-010 |
+| 002 | [RecipeDatabase autoload — manifest load + typed cast](story-002-recipe-database-autoload-load.md) | Integration | Complete | ADR-005 | TR-001, TR-010, TR-011 |
+| 003 | [Cross-validation against CardDatabase — card_a / card_b / result IDs](story-003-cross-validation-card-ids.md) | Integration | Complete | ADR-005 | TR-004 |
+| 004 | [Duplicate-rule detection — same pair in same scene](story-004-duplicate-rule-detection.md) | Logic | Complete | ADR-005 | TR-005 |
+| 005 | [Generator interval_sec clamp (≥ 0.5 s)](story-005-generator-interval-clamp.md) | Logic | Complete | ADR-005 | TR-007 |
+| 006 | [Public lookup API — symmetric pair + scene precedence](story-006-lookup-api.md) | Logic | Complete | ADR-005 | TR-002, TR-006, TR-008, TR-009 |
+| 007 | [Seed recipes.tres manifest — MVP scene-01 recipe set](story-007-seed-recipes-tres-manifest.md) | Config/Data | Complete | ADR-005 | TR-012 |
 
 **Coverage**: 12 / 12 TRs mapped to stories (TR-003 + TR-010 span Stories 001+002; TR-010 + TR-011 in Story 002).
 

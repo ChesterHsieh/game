@@ -1,7 +1,7 @@
 # Story 001: AudioManager autoload + bus layout + config load + silent fallback
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Manifest Version**: 2026-04-21

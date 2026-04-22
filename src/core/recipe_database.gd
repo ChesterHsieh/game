@@ -210,3 +210,42 @@ func lookup(card_a: StringName, card_b: StringName, scene_id: StringName) -> Rec
 ##       print(entry.id)
 func get_all() -> Array[RecipeEntry]:
 	return _entries
+
+
+## Returns true if a recipe with [param recipe_id] exists in the loaded
+## manifest. Case-sensitive. Returns false for empty or unknown ids.
+## Used by MysteryUnlockTree to validate incoming recipe_ids before recording.
+## This method is read-only and has no side effects.
+##
+## Usage example:
+##   if RecipeDatabase.has_recipe("home-rain-walk"):
+##       print("known recipe")
+func has_recipe(recipe_id: String) -> bool:
+	for r: RecipeEntry in _entries:
+		if String(r.id) == recipe_id:
+			return true
+	return false
+
+
+## Returns the total number of recipes in the loaded manifest.
+## Used by MysteryUnlockTree to resolve milestone percentage thresholds.
+## Returns 0 if no entries are loaded (manifest absent or empty).
+##
+## Usage example:
+##   var total: int = RecipeDatabase.get_recipe_count()
+func get_recipe_count() -> int:
+	return _entries.size()
+
+
+## Returns an Array[String] of all recipe ids in stable (declaration) order.
+## Used by MysteryUnlockTree's force_unlock_all bypass to bulk-fill all recipes.
+## Callers must not mutate the returned array.
+##
+## Usage example:
+##   for rid in RecipeDatabase.get_all_recipe_ids():
+##       print(rid)
+func get_all_recipe_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for r: RecipeEntry in _entries:
+		ids.append(String(r.id))
+	return ids

@@ -1,7 +1,7 @@
 # Story 005: Generator interval_sec clamp (≥ 0.5 s)
 
 > **Epic**: recipe-database
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

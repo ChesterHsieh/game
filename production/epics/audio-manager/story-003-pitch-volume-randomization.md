@@ -1,7 +1,7 @@
 # Story 003: Pitch + volume randomization formulas
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Manifest Version**: 2026-04-21

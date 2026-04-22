@@ -24,7 +24,7 @@ type = 0
 scene_id = &"scene-01"
 tags = PackedStringArray("person")
 
-[sub_resource type="Resource" id="CardEntry_shared-friend"]
+[sub_resource type="Resource" id="CardEntry_shared_friend"]
 script = ExtResource("2_entry")
 id = &"shared-friend"
 display_name = "That friend we share"
@@ -34,7 +34,7 @@ type = 0
 scene_id = &"scene-01"
 tags = PackedStringArray("person")
 
-[sub_resource type="Resource" id="CardEntry_our-cafe"]
+[sub_resource type="Resource" id="CardEntry_our_cafe"]
 script = ExtResource("2_entry")
 id = &"our-cafe"
 display_name = "Our Café"
@@ -54,7 +54,7 @@ type = 1
 scene_id = &"scene-01"
 tags = PackedStringArray("place")
 
-[sub_resource type="Resource" id="CardEntry_that-park"]
+[sub_resource type="Resource" id="CardEntry_that_park"]
 script = ExtResource("2_entry")
 id = &"that-park"
 display_name = "That park"
@@ -84,7 +84,7 @@ type = 2
 scene_id = &"scene-01"
 tags = PackedStringArray("feeling")
 
-[sub_resource type="Resource" id="CardEntry_3am-energy"]
+[sub_resource type="Resource" id="CardEntry_3am_energy"]
 script = ExtResource("2_entry")
 id = &"3am-energy"
 display_name = "3am energy"
@@ -94,7 +94,7 @@ type = 2
 scene_id = &"scene-01"
 tags = PackedStringArray("feeling")
 
-[sub_resource type="Resource" id="CardEntry_handmade-gift"]
+[sub_resource type="Resource" id="CardEntry_handmade_gift"]
 script = ExtResource("2_entry")
 id = &"handmade-gift"
 display_name = "The handmade gift"
@@ -104,7 +104,7 @@ type = 3
 scene_id = &"scene-01"
 tags = PackedStringArray("object")
 
-[sub_resource type="Resource" id="CardEntry_our-song"]
+[sub_resource type="Resource" id="CardEntry_our_song"]
 script = ExtResource("2_entry")
 id = &"our-song"
 display_name = "Our song"
@@ -114,7 +114,7 @@ type = 3
 scene_id = &"scene-01"
 tags = PackedStringArray("object")
 
-[sub_resource type="Resource" id="CardEntry_that-photo"]
+[sub_resource type="Resource" id="CardEntry_that_photo"]
 script = ExtResource("2_entry")
 id = &"that-photo"
 display_name = "That photo"
@@ -124,7 +124,7 @@ type = 3
 scene_id = &"scene-01"
 tags = PackedStringArray("object")
 
-[sub_resource type="Resource" id="CardEntry_rainy-afternoon"]
+[sub_resource type="Resource" id="CardEntry_rainy_afternoon"]
 script = ExtResource("2_entry")
 id = &"rainy-afternoon"
 display_name = "Rainy afternoon"
@@ -134,7 +134,7 @@ type = 4
 scene_id = &"scene-01"
 tags = PackedStringArray("moment")
 
-[sub_resource type="Resource" id="CardEntry_first-call"]
+[sub_resource type="Resource" id="CardEntry_first_call"]
 script = ExtResource("2_entry")
 id = &"first-call"
 display_name = "The first call"
@@ -144,7 +144,7 @@ type = 4
 scene_id = &"scene-01"
 tags = PackedStringArray("moment")
 
-[sub_resource type="Resource" id="CardEntry_that-argument"]
+[sub_resource type="Resource" id="CardEntry_that_argument"]
 script = ExtResource("2_entry")
 id = &"that-argument"
 display_name = "That argument we fixed"
@@ -154,7 +154,7 @@ type = 4
 scene_id = &"scene-01"
 tags = PackedStringArray("moment")
 
-[sub_resource type="Resource" id="CardEntry_joke-placeholder-1"]
+[sub_resource type="Resource" id="CardEntry_joke_placeholder_1"]
 script = ExtResource("2_entry")
 id = &"joke-placeholder-1"
 display_name = "Joke placeholder 1"
@@ -164,7 +164,7 @@ type = 5
 scene_id = &"scene-01"
 tags = PackedStringArray("inside_joke")
 
-[sub_resource type="Resource" id="CardEntry_joke-placeholder-2"]
+[sub_resource type="Resource" id="CardEntry_joke_placeholder_2"]
 script = ExtResource("2_entry")
 id = &"joke-placeholder-2"
 display_name = "Joke placeholder 2"
@@ -174,7 +174,7 @@ type = 5
 scene_id = &"scene-01"
 tags = PackedStringArray("inside_joke")
 
-[sub_resource type="Resource" id="CardEntry_seed-start"]
+[sub_resource type="Resource" id="CardEntry_seed_start"]
 script = ExtResource("2_entry")
 id = &"seed-start"
 display_name = "Beginning"
@@ -184,7 +184,7 @@ type = 6
 scene_id = &"global"
 tags = PackedStringArray("seed")
 
-[sub_resource type="Resource" id="CardEntry_seed-together"]
+[sub_resource type="Resource" id="CardEntry_seed_together"]
 script = ExtResource("2_entry")
 id = &"seed-together"
 display_name = "Together"
@@ -194,7 +194,7 @@ type = 6
 scene_id = &"global"
 tags = PackedStringArray("seed")
 
-[sub_resource type="Resource" id="CardEntry_seed-memory"]
+[sub_resource type="Resource" id="CardEntry_seed_memory"]
 script = ExtResource("2_entry")
 id = &"seed-memory"
 display_name = "Memory"
@@ -206,4 +206,4 @@ tags = PackedStringArray("seed")
 
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared-friend"), SubResource("CardEntry_our-cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that-park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am-energy"), SubResource("CardEntry_handmade-gift"), SubResource("CardEntry_our-song"), SubResource("CardEntry_that-photo"), SubResource("CardEntry_rainy-afternoon"), SubResource("CardEntry_first-call"), SubResource("CardEntry_that-argument"), SubResource("CardEntry_joke-placeholder-1"), SubResource("CardEntry_joke-placeholder-2"), SubResource("CardEntry_seed-start"), SubResource("CardEntry_seed-together"), SubResource("CardEntry_seed-memory")]
+entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory")]

@@ -3,7 +3,7 @@
 > **Layer**: Foundation
 > **GDD**: `design/gdd/input-system.md`
 > **Architecture Module**: `InputSystem` (autoload singleton)
-> **Status**: Ready
+> **Status**: Complete
 > **Stories**: 5 stories created 2026-04-21 — see table below
 
 ## Overview
@@ -64,11 +64,11 @@ This epic is complete when:
 
 | # | Story | Type | Status | ADR | TRs |
 |---|-------|------|--------|-----|-----|
-| 001 | [InputSystem autoload + 2-state FSM skeleton](story-001-input-system-autoload-fsm.md) | Integration | Ready | ADR-003, ADR-004 | TR-001, TR-007, TR-014 |
-| 002 | [Hit-test + drag_started + z-order resolution](story-002-hit-test-drag-started.md) | Logic | Ready | ADR-003 | TR-002, TR-003, TR-009 |
-| 003 | [drag_moved + drag_released + single-drag enforcement](story-003-drag-moved-released.md) | Logic | Ready | ADR-003 | TR-004, TR-005, TR-008 |
-| 004 | [Proximity detection — proximity_entered / proximity_exited](story-004-proximity-detection.md) | Logic | Ready | ADR-003 | TR-006, TR-010, TR-013 |
-| 005 | [cancel_drag() + signal-only discipline](story-005-cancel-drag-signal-discipline.md) | Logic | Ready | ADR-003 | TR-011, TR-012 |
+| 001 | [InputSystem autoload + 2-state FSM skeleton](story-001-input-system-autoload-fsm.md) | Integration | Complete | ADR-003, ADR-004 | TR-001, TR-007, TR-014 |
+| 002 | [Hit-test + drag_started + z-order resolution](story-002-hit-test-drag-started.md) | Logic | Complete | ADR-003 | TR-002, TR-003, TR-009 |
+| 003 | [drag_moved + drag_released + single-drag enforcement](story-003-drag-moved-released.md) | Logic | Complete | ADR-003 | TR-004, TR-005, TR-008 |
+| 004 | [Proximity detection — proximity_entered / proximity_exited](story-004-proximity-detection.md) | Logic | Complete | ADR-003 | TR-006, TR-010, TR-013 |
+| 005 | [cancel_drag() + signal-only discipline](story-005-cancel-drag-signal-discipline.md) | Logic | Complete | ADR-003 | TR-011, TR-012 |
 
 **Coverage**: 14 / 14 TRs mapped to stories.
 

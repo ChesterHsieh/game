@@ -1,7 +1,7 @@
 # Story 002: SFX pool — allocation, fire-and-forget, pool-full + win priority
 
 > **Epic**: audio-manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Manifest Version**: 2026-04-21
