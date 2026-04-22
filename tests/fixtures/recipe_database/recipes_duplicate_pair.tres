@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="RecipeEntry_dup_a"]
+script = ExtResource("2_entry")
+id = &"dup-rule-1"
+card_a = &"card-alpha"
+card_b = &"card-beta"
+template = &"animate"
+scene_id = &"global"
+config = {"motion": &"drift", "speed": 1.0, "target": &"both", "duration_sec": 2.0}
+
+[sub_resource type="Resource" id="RecipeEntry_dup_b"]
+script = ExtResource("2_entry")
+id = &"dup-rule-2"
+card_a = &"card-beta"
+card_b = &"card-alpha"
+template = &"animate"
+scene_id = &"global"
+config = {"motion": &"drift", "speed": 1.0, "target": &"both", "duration_sec": 2.0}
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("RecipeEntry_dup_a"), SubResource("RecipeEntry_dup_b")]

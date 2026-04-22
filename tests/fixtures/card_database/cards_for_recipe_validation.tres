@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="CardManifest" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="CardEntry_alpha"]
+script = ExtResource("2_entry")
+id = &"card-alpha"
+display_name = "Card Alpha"
+flavor_text = ""
+type = 0
+scene_id = &"global"
+tags = PackedStringArray()
+
+[sub_resource type="Resource" id="CardEntry_beta"]
+script = ExtResource("2_entry")
+id = &"card-beta"
+display_name = "Card Beta"
+flavor_text = ""
+type = 0
+scene_id = &"global"
+tags = PackedStringArray()
+
+[sub_resource type="Resource" id="CardEntry_gamma"]
+script = ExtResource("2_entry")
+id = &"card-gamma"
+display_name = "Card Gamma"
+flavor_text = ""
+type = 0
+scene_id = &"global"
+tags = PackedStringArray()
+
+[sub_resource type="Resource" id="CardEntry_result"]
+script = ExtResource("2_entry")
+id = &"card-result"
+display_name = "Card Result"
+flavor_text = ""
+type = 0
+scene_id = &"global"
+tags = PackedStringArray()
+
+[sub_resource type="Resource" id="CardEntry_spawn_a"]
+script = ExtResource("2_entry")
+id = &"card-spawn-a"
+display_name = "Card Spawn A"
+flavor_text = ""
+type = 0
+scene_id = &"global"
+tags = PackedStringArray()
+
+[sub_resource type="Resource" id="CardEntry_generates"]
+script = ExtResource("2_entry")
+id = &"card-generates"
+display_name = "Card Generates"
+flavor_text = ""
+type = 0
+scene_id = &"global"
+tags = PackedStringArray()
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("CardEntry_alpha"), SubResource("CardEntry_beta"), SubResource("CardEntry_gamma"), SubResource("CardEntry_result"), SubResource("CardEntry_spawn_a"), SubResource("CardEntry_generates")]

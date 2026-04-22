@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="RecipeEntry_valid_additive"]
+script = ExtResource("2_entry")
+id = &"valid-additive-001"
+card_a = &"card-alpha"
+card_b = &"card-beta"
+template = &"additive"
+scene_id = &"global"
+config = {"spawns": [&"card-spawn-a"]}
+
+[sub_resource type="Resource" id="RecipeEntry_valid_merge"]
+script = ExtResource("2_entry")
+id = &"valid-merge-001"
+card_a = &"card-alpha"
+card_b = &"card-gamma"
+template = &"merge"
+scene_id = &"global"
+config = {"result_card": &"card-result"}
+
+[sub_resource type="Resource" id="RecipeEntry_valid_animate"]
+script = ExtResource("2_entry")
+id = &"valid-animate-001"
+card_a = &"card-beta"
+card_b = &"card-gamma"
+template = &"animate"
+scene_id = &"global"
+config = {"motion": &"drift", "speed": 1.0, "target": &"both", "duration_sec": 2.0}
+
+[sub_resource type="Resource" id="RecipeEntry_valid_generator"]
+script = ExtResource("2_entry")
+id = &"valid-generator-001"
+card_a = &"card-alpha"
+card_b = &"card-result"
+template = &"generator"
+scene_id = &"global"
+config = {"generates": &"card-generates", "interval_sec": 1.0, "max_count": 5, "generator_card": &"card-alpha"}
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("RecipeEntry_valid_additive"), SubResource("RecipeEntry_valid_merge"), SubResource("RecipeEntry_valid_animate"), SubResource("RecipeEntry_valid_generator")]

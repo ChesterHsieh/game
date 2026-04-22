@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="RecipeEntry_global_001"]
+script = ExtResource("2_entry")
+id = &"prec-global"
+card_a = &"card_alpha"
+card_b = &"card_beta"
+template = &"additive"
+scene_id = &"global"
+config = {"spawns": [&"card_global_result"]}
+
+[sub_resource type="Resource" id="RecipeEntry_scene_001"]
+script = ExtResource("2_entry")
+id = &"prec-scene01"
+card_a = &"card_alpha"
+card_b = &"card_beta"
+template = &"merge"
+scene_id = &"scene-01"
+config = {"result_card": &"card_scene_result"}
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("RecipeEntry_global_001"), SubResource("RecipeEntry_scene_001")]

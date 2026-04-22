@@ -42,6 +42,19 @@ var _sfx_pool: Array[AudioStreamPlayer] = []
 ## Reset to false by _on_sfx_finished() when the player's finished signal fires.
 var _sfx_pool_state: Array[bool] = []
 
+## Per-event last-play timestamp (msec from Time.get_ticks_msec()).
+## Initialised on first play — absence means the event has never played
+## (treated as last=0, which always passes the cooldown check).
+var _last_play_time: Dictionary = {}
+
+## True once win_condition_met has been dispatched this scene.
+## Reset to false by _on_scene_completed(). Controls the once-per-scene gate.
+var _win_played_this_scene: bool = false
+
+## Injectable clock function. Returns int milliseconds. Defaults to
+## Time.get_ticks_msec. Override in tests for deterministic timing.
+var _clock_fn: Callable = func() -> int: return Time.get_ticks_msec()
+
 
 func _ready() -> void:
 	process_mode = PROCESS_MODE_ALWAYS
@@ -59,7 +72,7 @@ func _ready() -> void:
 	# transitions run even without audio. Streams are not assigned here —
 	# Story 003 assigns them at play time.
 	_init_sfx_pool()
-	# Story 005 adds EventBus connections here
+	_connect_signals()
 	# Story 006 adds music player init here
 
 
@@ -211,3 +224,133 @@ static func _randomize_volume(base_db: float, variance: float) -> float:
 ## Bound at pool construction time — one closure per slot index.
 func _on_sfx_finished(index: int) -> void:
 	_sfx_pool_state[index] = false
+
+
+# ── Story 004: Per-event cooldowns ───────────────────────────────────────────
+
+## Returns true when event_name is ready to play.
+## For "win_condition_met": uses the once-per-scene boolean, ignoring cooldown_ms.
+## For all other events: checks elapsed time since last play against cooldown_ms.
+## First play (event absent from _last_play_time) is always allowed (last = 0).
+##
+## Example:
+##   if _is_cooldown_ready("card_snap", 200):
+##       _record_play("card_snap")
+func _is_cooldown_ready(event_name: String, cooldown_ms: int) -> bool:
+	if event_name == "win_condition_met":
+		return not _win_played_this_scene
+	var now: int = _clock_fn.call()
+	var last: int = _last_play_time.get(event_name, 0)
+	return (now - last) >= cooldown_ms
+
+
+## Records a play for event_name, updating the timestamp and win flag.
+## Must be called immediately after a successful cooldown check, before
+## _play_on_node(), so the next request sees an accurate last-play time.
+##
+## Example:
+##   _record_play("card_snap")
+func _record_play(event_name: String) -> void:
+	_last_play_time[event_name] = _clock_fn.call()
+	if event_name == "win_condition_met":
+		_win_played_this_scene = true
+
+
+## Retrieves the event config Dictionary for event_name from _config.sfx_events.
+## Returns an empty Dictionary when no config is loaded (silent mode) or the
+## event name has no entry. The empty-dict return is the signal to log + drop.
+##
+## Example:
+##   var cfg: Dictionary = _get_event_config("card_snap")
+##   if cfg.is_empty(): push_warning(...)
+func _get_event_config(event_name: String) -> Dictionary:
+	if _config == null:
+		return {}
+	return _config.sfx_events.get(event_name, {}) as Dictionary
+
+
+## Full SFX dispatch pipeline: config lookup → cooldown check → pool claim →
+## record play → (guard silent mode) → randomization + play.
+## Cooldowns and pool claims run even in silent mode (TR-019).
+## Logs a warning and drops silently when event_name has no config entry (TR-020).
+##
+## Example:
+##   _dispatch_sfx("card_drag_start")
+func _dispatch_sfx(event_name: String) -> void:
+	var event_config: Dictionary = _get_event_config(event_name)
+	if event_config.is_empty():
+		push_warning("AudioManager: no config for event '%s' — dropped" % event_name)
+		return
+	var cooldown_ms: int = event_config.get("cooldown_ms", 0) as int
+	if not _is_cooldown_ready(event_name, cooldown_ms):
+		return
+	var is_win: bool = event_name == "win_condition_met"
+	var node_idx: int = _claim_sfx_node(is_win)
+	if node_idx < 0:
+		return
+	_record_play(event_name)
+	if _silent_mode:
+		return  # cooldown recorded, pool claimed, but no stream loaded
+	_play_on_node(node_idx, event_config)
+
+
+# ── Story 005: EventBus signal wiring ────────────────────────────────────────
+
+## Connects all gameplay EventBus signals that AudioManager must respond to.
+## Called once from _ready(), after _init_sfx_pool(). One-way flow only:
+## AudioManager never emits back to EventBus or calls methods on gameplay systems.
+##
+## Example:
+##   # Called automatically from _ready() — do not call manually.
+func _connect_signals() -> void:
+	EventBus.drag_started.connect(_on_drag_started)
+	EventBus.drag_released.connect(_on_drag_released)
+	EventBus.proximity_entered.connect(_on_proximity_entered)
+	EventBus.combination_executed.connect(_on_combination_executed)
+	EventBus.card_spawned.connect(_on_card_spawned)
+	EventBus.win_condition_met.connect(_on_win_condition_met)
+	EventBus.scene_completed.connect(_on_scene_completed)
+	EventBus.scene_started.connect(_on_scene_started)
+
+
+# ── Signal callbacks ──────────────────────────────────────────────────────────
+
+func _on_drag_started(_card_id: String, _world_pos: Vector2) -> void:
+	_dispatch_sfx("card_drag_start")
+
+
+func _on_drag_released(_card_id: String, _world_pos: Vector2) -> void:
+	_dispatch_sfx("card_drag_release")
+
+
+func _on_proximity_entered(_dragged_id: String, _target_id: String) -> void:
+	_dispatch_sfx("card_proximity_enter")
+
+
+func _on_combination_executed(
+	_recipe_id: String,
+	_template: String,
+	_instance_id_a: String,
+	_instance_id_b: String,
+	_card_id_a: String,
+	_card_id_b: String
+) -> void:
+	_dispatch_sfx("combination_executed")
+
+
+func _on_card_spawned(_instance_id: String, _card_id: String, _position: Vector2) -> void:
+	_dispatch_sfx("card_spawned")
+
+
+func _on_win_condition_met() -> void:
+	_dispatch_sfx("win_condition_met")
+
+
+## Resets the win once-per-scene gate and delegates to Story 006 for music.
+func _on_scene_completed(_scene_id: String) -> void:
+	_win_played_this_scene = false
+
+
+## Scene lifecycle — Story 006 adds music track lookup here.
+func _on_scene_started(_scene_id: String) -> void:
+	pass

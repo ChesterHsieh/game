@@ -13,16 +13,17 @@
 ## Story 001: FSM skeleton + coordinate conversion.
 ## Story 002: hit-test + drag_started emission.
 ## Story 003: drag_moved + drag_released.
-## Story 004: proximity detection (pending).
-## Story 005: cancel_drag() (pending).
+## Story 004: proximity detection.
+## Story 005: cancel_drag() + signal-only discipline.
 extends Node
 
 
-# ── Constants ──────────────────────────────────────────────────────────────────
+# ── Export variables ──────────────────────────────────────────────────────────
 
-## Distance (world pixels) at which proximity_entered fires.
-## Validated at 80 px in the card-engine prototype. Tune via this constant.
-const SNAP_RADIUS: float = 80.0
+## Distance (world pixels) at which proximity_entered / proximity_exited fire.
+## Default 80 px. Safe tuning range: 40–160 (advisory — not clamped at runtime).
+## GDD TR-input-system-013.
+@export var snap_radius: float = 80.0
 
 
 # ── Enums ──────────────────────────────────────────────────────────────────────
@@ -47,14 +48,22 @@ var _last_world_pos: Vector2 = Vector2.ZERO
 ## Registered cards: card_id -> { node: Node2D, half_size: Vector2 }
 var _cards: Dictionary = {}
 
-## Cards currently within SNAP_RADIUS of the dragged card.
-var _proximity_active: Array[String] = []
+## Cards currently within snap_radius of the dragged card (card_id → true).
+## Dictionary used for O(1) membership checks on enter/exit transitions.
+var _proximity_active: Dictionary = {}
 
 
 # ── Built-in virtual methods ──────────────────────────────────────────────────
 
 func _ready() -> void:
 	process_mode = PROCESS_MODE_ALWAYS
+
+
+## Per-frame hook. Runs proximity check only while DRAGGING.
+func _process(_delta: float) -> void:
+	if _state != State.DRAGGING:
+		return
+	_check_proximity(_last_world_pos)
 
 
 ## Entry point for raw mouse input.
@@ -110,14 +119,21 @@ func unregister_card(card_id: String) -> void:
 
 
 ## Cancel any active drag, emitting drag_released at the last known position.
+## Safe to call at any time — no-op when already Idle.
 ## Called by external systems (scene transitions, pause) to interrupt cleanly.
+##
+## Order of emissions (matches GDD Edge Case "Drag cancelled by game event"):
+##   1. proximity_exited for every active proximity target
+##   2. drag_released at _last_world_pos
 ##
 ## Example:
 ##   InputSystem.cancel_drag()
 func cancel_drag() -> void:
-	if _state == State.DRAGGING:
-		EventBus.drag_released.emit(_dragged_card_id, _last_world_pos)
-		_end_drag()
+	if _state != State.DRAGGING:
+		return
+	_flush_proximity_exits()
+	EventBus.drag_released.emit(_dragged_card_id, _last_world_pos)
+	_end_drag()
 
 
 # ── Private methods ───────────────────────────────────────────────────────────
@@ -155,12 +171,13 @@ func _handle_left_press(screen_pos: Vector2) -> void:
 
 
 ## Handle a left-mouse-button release at [param screen_pos].
-## Emits drag_released on EventBus and transitions to Idle.
-## Guard: no-op when not in DRAGGING state.
+## Emits proximity_exited for all active proximity targets, then drag_released,
+## then transitions to Idle. Guard: no-op when not in DRAGGING state.
 func _handle_left_release(screen_pos: Vector2) -> void:
 	if _state != State.DRAGGING:
 		return
 	var world_pos: Vector2 = _screen_to_world(screen_pos)
+	_flush_proximity_exits()
 	EventBus.drag_released.emit(_dragged_card_id, world_pos)
 	_end_drag()
 
@@ -202,10 +219,13 @@ func _hit_test(world_pos: Vector2) -> String:
 
 
 ## Check all registered cards for proximity to [param dragged_world_pos].
-## Emits proximity_entered / proximity_exited as cards enter or leave SNAP_RADIUS.
-## Guard: never fires when dragged_id == target_id.
+## Emits proximity_entered / proximity_exited as cards cross the snap_radius
+## boundary. Guard: never fires when dragged_id == target_id (TR-input-system-010).
+##
+## Uses <= comparison so a card exactly on the boundary counts as inside
+## (consistent with hit-test AABB which uses <=).
 func _check_proximity(dragged_world_pos: Vector2) -> void:
-	var now_in: Array[String] = []
+	var now_in: Dictionary = {}
 
 	for card_id: String in _cards:
 		if card_id == _dragged_card_id:
@@ -213,21 +233,34 @@ func _check_proximity(dragged_world_pos: Vector2) -> void:
 		var node: Node2D = _cards[card_id]["node"]
 		if not node.is_inside_tree() or not node.visible:
 			continue
-		if dragged_world_pos.distance_to(node.global_position) < SNAP_RADIUS:
-			now_in.append(card_id)
+		if dragged_world_pos.distance_to(node.global_position) <= snap_radius:
+			now_in[card_id] = true
 
+	# Emit entered for newly in-range cards.
 	for card_id: String in now_in:
-		if card_id not in _proximity_active:
+		if not _proximity_active.has(card_id):
 			EventBus.proximity_entered.emit(_dragged_card_id, card_id)
 
+	# Emit exited for cards that left range.
 	for card_id: String in _proximity_active:
-		if card_id not in now_in:
+		if not now_in.has(card_id):
 			EventBus.proximity_exited.emit(_dragged_card_id, card_id)
 
 	_proximity_active = now_in
 
 
+## Emit proximity_exited for every card currently in _proximity_active, then
+## clear the dictionary. Called before drag_released on any drag-end path
+## (normal release and cancel_drag).
+func _flush_proximity_exits() -> void:
+	for target_id: String in _proximity_active:
+		EventBus.proximity_exited.emit(_dragged_card_id, target_id)
+	_proximity_active.clear()
+
+
 ## Transition out of DRAGGING state and reset drag tracking variables.
+## Callers are responsible for calling _flush_proximity_exits() first if
+## proximity signals are required (cancel_drag and _handle_left_release do this).
 func _end_drag() -> void:
 	_state = State.IDLE
 	_dragged_card_id = ""
