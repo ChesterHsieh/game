@@ -9,7 +9,7 @@
 
 Settings is a Meta-layer UI system that exposes the three things a player of Moments might actually need to adjust: Master volume, Music volume, SFX volume, and a guarded "Reset Progress" action. It is the smallest possible options menu — no graphics tab, no keybinding remap, no language selector at Full Vision scope. Settings is reachable two ways: a small gear icon in the top-right of the gameplay HUD, and a matching gear on the Main Menu. Activating the gear opens a small modal panel that dims the scene behind it but does not navigate away — card input is suppressed while the panel is open, and dismissing returns the player to exactly where they were.
 
-Mechanically, Settings owns three responsibilities: (1) render the panel UI, (2) route slider changes to `AudioManager.set_bus_volume()`, (3) persist player preferences to `user://moments_settings.json` — an entirely separate file from the save progress JSON. This separation matters: a player who taps "Reset Progress" expects their discoveries to wipe, not their volume preferences.
+Mechanically, Settings owns three responsibilities: (1) render the panel UI, (2) route slider changes to `AudioManager.set_bus_volume()`, (3) persist player preferences to `user://settings.tres` — an entirely separate file from the save progress `.tres`. This separation matters: a player who taps "Reset Progress" expects their discoveries to wipe, not their volume preferences.
 
 ## Player Fantasy
 
@@ -58,7 +58,7 @@ On every slider `value_changed` emission, Settings immediately calls `AudioManag
 
 **4. Slider Persistence.** On every slider change:
 1. Update the in-memory preferences Dictionary.
-2. Schedule a debounced write to `user://moments_settings.json` — 500 ms after the last change. This avoids one disk write per millisecond of drag.
+2. Schedule a debounced write to `user://settings.tres` — 500 ms after the last change. This avoids one disk write per millisecond of drag.
 3. On panel Close (Rule 6), flush the debounce timer and write immediately if pending.
 
 **5. Open / Close Lifecycle.**
@@ -76,33 +76,33 @@ On every slider `value_changed` emission, Settings immediately calls `AudioManag
    d. If currently on Main Menu: panel simply closes. Next Start press behaves identically to (c)'s post-switch state.
 4. If the countdown elapses without a second press: button reverts to "Reset Progress" at default styling. No data changed.
 
-**7. Settings File Envelope (schema v1).**
+**7. Settings File — `SettingsState` Resource (schema v1, per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md)).**
 
-```json
-{
-  "schema_version": 1,
-  "saved_at_unix": 1744000000,
-  "volumes": {
-    "Master": 1.0,
-    "Music":  1.0,
-    "SFX":    1.0
-  }
-}
+```gdscript
+# res://src/data/settings_state.gd
+class_name SettingsState extends Resource
+
+@export var schema_version: int = 1
+@export var saved_at_unix: int
+@export_range(0.0, 1.0) var volume_master: float = 1.0
+@export_range(0.0, 1.0) var volume_music: float = 1.0
+@export_range(0.0, 1.0) var volume_sfx: float = 1.0
 ```
 
 Fields:
-- `schema_version` (int): migration key. v1 at Full Vision release.
+- `schema_version` (int): migration key. v1 at Full Vision release. Mismatch → treat as corrupt (same policy as `SaveState` in ADR-005 §5).
 - `saved_at_unix` (int): diagnostic only.
-- `volumes.Master`, `volumes.Music`, `volumes.SFX` (float): slider values in `[0.0, 1.0]`. Keys match Godot bus names exactly (PascalCase). These are the slider positions, NOT dB — the dB conversion happens at runtime via Rule 3's formula.
+- `volume_master`, `volume_music`, `volume_sfx` (float): slider values in `[0.0, 1.0]`. These are the slider positions, NOT dB — the dB conversion happens at runtime via Rule 3's formula.
 
-The file lives at `user://moments_settings.json`. It is intentionally separate from `user://moments_save.json` so that "Reset Progress" never destroys volume preferences.
+The file lives at `user://settings.tres`. It is intentionally separate from `user://save.tres` so that "Reset Progress" never destroys volume preferences. **No JSON.** `FileAccess` + `JSON.parse_string` for settings data is a forbidden pattern per ADR-005 §9.
 
-**8. Atomic Write.** Same pattern as Save/Progress (see `save-progress-system.md` Rule 7): write to `user://moments_settings.json.tmp`, then `DirAccess.rename_absolute()` to the real path. Failure does not block gameplay — the next slider change will retry.
+**8. Atomic Write.** Same pattern as Save/Progress (see `save-progress-system.md` and ADR-005 §5): `ResourceSaver.save(state, "user://settings.tres.tmp")`, then `DirAccess.rename_absolute(globalize_path(tmp), globalize_path(real))`. After rename, delete any stale `settings.tres.remap` sidecar (ADR-005 BLOCKING-2 fix). Failure does not block gameplay — the next slider change will retry.
 
 **9. Load on Startup.** Settings is loaded by an autoload singleton `SettingsManager` (distinct from the panel scene). Autoload order is canonical per `docs/architecture/ADR-004-runtime-scene-composition.md` §1: SettingsManager is position 6 of 12 (after AudioManager, before SaveSystem and SceneManager). Previous versions of this GDD specified a different ordering; ADR-004 supersedes.
-- `SettingsManager._ready()` synchronously loads `user://moments_settings.json`.
+- `SettingsManager._ready()` synchronously loads `user://settings.tres` via `ResourceLoader.load("user://settings.tres") as SettingsState` (ADR-005 typed-cast pattern). A bare null-check is insufficient — the `as SettingsState` cast catches schema drift.
 - If present and valid: apply each volume immediately via `AudioManager.set_bus_volume()` so the first sound Ju hears is at her preferred level.
-- If missing or corrupt: apply defaults (all sliders at 1.0 → 0 dB). Rename corrupt files to `moments_settings.json.corrupt.<iso8601>` (same convention as Save/Progress).
+- If missing: apply defaults (all sliders at 1.0 → 0 dB).
+- If corrupt (cast returns null or `schema_version != 1`): rename to `settings.tres.corrupt-<epoch>` (same convention as Save/Progress per ADR-005 §5), apply defaults, log error.
 
 The SettingsManager autoload owns: the in-memory preferences Dictionary, the debounced save timer, and the `apply_volumes()` / `get_volume(bus)` / `set_volume(bus, s)` API. The panel scene is a thin UI layer that reads and writes through this autoload.
 
@@ -224,11 +224,11 @@ schedule_write(current_time + DEBOUNCE_DELAY_MS)
 
 ### Settings File Edge Cases
 
-- **If `moments_settings.json` is missing on first launch**: Apply defaults (all sliders at 1.0). Do not pre-create an empty file; the first slider change will write the file.
+- **If `user://settings.tres` is missing on first launch**: Apply defaults (all sliders at 1.0). Do not pre-create an empty file; the first slider change will write the file.
 
-- **If `moments_settings.json` is malformed JSON**: Same recovery as Save/Progress (Rule 9 + Save/Progress Rule 8). Rename to `.corrupt.<iso8601>`, log error, fall back to defaults. Ju does not see an error dialog.
+- **If `user://settings.tres` is malformed or wrong type**: `ResourceLoader.load() as SettingsState` returns null. Same recovery as Save/Progress (ADR-005 §5 corrupt pattern). Rename to `settings.tres.corrupt-<epoch>`, log error, fall back to defaults. Ju does not see an error dialog.
 
-- **If `moments_settings.json` has a future `schema_version`**: Treat as corrupt. Fall back to defaults. Forward compatibility is not provided.
+- **If `settings.tres` has a future `schema_version`**: Treat as corrupt (`schema_version != 1`). Fall back to defaults. Forward compatibility is not provided.
 
 - **If a slider value in the settings file is outside `[0, 1]`** (manual edit or schema drift): Clamp on load. Log a warning. The next slider-driven save will normalize the value.
 
@@ -246,7 +246,7 @@ schedule_write(current_time + DEBOUNCE_DELAY_MS)
 |--------|-------------|----------|
 | **Audio Manager** | `AudioManager.set_bus_volume(bus_name: String, volume_db: float) -> void`. Already specified in Audio Manager GDD. The three bus names (`"Master"`, `"Music"`, `"SFX"`) must be consistent. | Hard — Settings is useless without audio bus control |
 | **Save/Progress System** | `SaveSystem.clear_save() -> void`. Specified in Save/Progress GDD Core Rule 10. | Hard — Reset Progress has no implementation without it |
-| **Godot `FileAccess` / `DirAccess` / `JSON`** | Synchronous file I/O, atomic rename, JSON encode/decode. All stable in Godot 4.3. | Hard — engine primitives |
+| **Godot `ResourceLoader` / `ResourceSaver` / `DirAccess`** | Typed Resource load/save, atomic rename via `DirAccess.rename_absolute()`. All stable in Godot 4.3 per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md). | Hard — engine primitives |
 | **Main Menu** | Hosts a `SettingsTrigger` child (gear button in top-right corner container). Main Menu GDD's Rule 2 currently specifies "exactly two visible widgets" — Main Menu will need a minor revision to allow the gear as a third widget, OR the gear is rendered outside the CenterContainer and excluded from Rule 2's count. | Hard — access point |
 | **`gameplay.tscn`** | Hosts the same `SettingsTrigger` child. Owned by Main Menu OQ-1's ADR. | Hard — access point |
 
@@ -260,9 +260,9 @@ schedule_write(current_time + DEBOUNCE_DELAY_MS)
 
 | Asset | Path | Description |
 |-------|------|-------------|
-| **Settings file** | `user://moments_settings.json` | Canonical settings file. Created on first slider change. |
-| **Atomic write staging** | `user://moments_settings.json.tmp` | Temporary file during write. Renamed to real path on success. |
-| **Corruption backups** | `user://moments_settings.json.corrupt.<iso8601>` | Written on parse failure. Never read automatically. |
+| **Settings file** | `user://settings.tres` | Canonical settings file (`SettingsState` Resource). Created on first slider change. Per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md). |
+| **Atomic write staging** | `user://settings.tres.tmp` | Temporary file during write. Renamed to real path on success. |
+| **Corruption backups** | `user://settings.tres.corrupt-<epoch>` | Quarantined on load failure. Never read automatically. |
 | **Settings panel scene** | `res://src/ui/settings/settings_panel.tscn` | The modal panel UI. |
 | **Gear icon asset** | `res://assets/ui/ui_icon_gear_hand.png` | Hand-drawn gear icon (single-author, same pipeline as Main Menu per Pillar 4). |
 | **Panel background asset** | `res://assets/ui/ui_panel_card_paper.png` | Card-shape panel background — matches Main Menu's paper-wash palette. |
@@ -291,7 +291,7 @@ schedule_write(current_time + DEBOUNCE_DELAY_MS)
 | `RESET_CONFIRM_WINDOW_SEC` | const float | `3.0` | 2.0–5.0 | Too brief — Ju can't reliably second-press | Too long — feels like the button "hung" |
 | `DEBOUNCE_DELAY_MS` | const int | `500` | 200–1000 | Near-realtime disk writes (wasteful) | Perceptible gap before preference persists |
 | `CURRENT_SETTINGS_SCHEMA_VERSION` | const int | `1` | 1–N | N/A | Never decrement |
-| `SETTINGS_FILE_NAME` | const String | `"moments_settings.json"` | — | Changing breaks existing preferences | — |
+| `SETTINGS_FILE_PATH` | const String | `"user://settings.tres"` | — | Changing breaks existing preferences | — |
 | `DIM_OVERLAY_OPACITY` | float (Theme) | `0.45` | 0.3–0.6 | Hard to see panel separation from scene | Too dark — obscures the scene behind |
 | Slider steps | const float | `0.01` (100 positions) | 0.01–0.05 | Zeno's drag — slider feels jittery | Coarse steps — can't dial in precisely |
 | Default volume per bus | float | `1.0` (all) | 0.0–1.0 | Quiet first launch | N/A (cap at 1.0 = 0 dB) |
@@ -402,13 +402,13 @@ SettingsTrigger (MarginContainer, anchors = top-right, margin = 16 px)
 GIVEN `project.godot`, WHEN inspected, THEN `SettingsManager` is registered as an autoload AND its `_ready()` runs after `AudioManager` AND before `SaveSystem`.
 
 **AC-SET-02 [Logic] — Defaults applied when no settings file exists.**
-GIVEN `user://moments_settings.json` does not exist, WHEN `SettingsManager._ready()` completes, THEN `get_volume("Master") == 1.0` AND `get_volume("Music") == 1.0` AND `get_volume("SFX") == 1.0` AND `AudioManager.set_bus_volume()` was called three times (once per bus) with dB = 0.
+GIVEN `user://settings.tres` does not exist, WHEN `SettingsManager._ready()` completes, THEN `get_volume("Master") == 1.0` AND `get_volume("Music") == 1.0` AND `get_volume("SFX") == 1.0` AND `AudioManager.set_bus_volume()` was called three times (once per bus) with dB = 0.
 
 **AC-SET-03 [Logic] — Valid settings file loads and applies.**
 GIVEN a valid settings file with `volumes = {Master: 0.5, Music: 0.1, SFX: 1.0}`, WHEN `SettingsManager._ready()` completes, THEN `AudioManager` has received: `set_bus_volume("Master", -6.02)`, `set_bus_volume("Music", -20.0)`, `set_bus_volume("SFX", 0.0)` (within ±0.1 dB tolerance).
 
 **AC-SET-04 [Logic] — Malformed settings file recovered.**
-GIVEN `user://moments_settings.json` contains `"not json"`, WHEN load runs, THEN the file is renamed to `moments_settings.json.corrupt.<iso8601>` AND defaults are applied AND an error is logged.
+GIVEN `user://settings.tres` is malformed (truncated or wrong `class_name`), WHEN `ResourceLoader.load() as SettingsState` returns null, THEN the file is renamed to `settings.tres.corrupt-<epoch>` AND defaults are applied AND an error is logged.
 
 **AC-SET-05 [Logic] — Future schema version rejected.**
 GIVEN the file has `schema_version: 99`, WHEN load runs, THEN it is treated as corrupt (renamed, defaults applied, error logged).
@@ -459,7 +459,7 @@ GIVEN the first press happened at t=0, WHEN 3.0 seconds pass without a second pr
 GIVEN the player is in gameplay scene "park" AND presses Reset Progress twice, WHEN the commit resolves, THEN the active scene changes to `res://src/ui/main_menu/main_menu.tscn` AND the panel is freed.
 
 **AC-SET-19 [Logic] — Commit from Main Menu stays on Main Menu.**
-GIVEN the player is on Main Menu AND presses Reset Progress twice, WHEN the commit resolves, THEN no scene change occurs AND the panel is freed AND `user://moments_save.json` no longer exists.
+GIVEN the player is on Main Menu AND presses Reset Progress twice, WHEN the commit resolves, THEN no scene change occurs AND the panel is freed AND `user://save.tres` no longer exists.
 
 **AC-SET-20 [Logic] — Close during countdown cancels reset.**
 GIVEN the button shows "Confirm Reset (2)", WHEN the Close button is pressed, THEN the panel closes AND `SaveSystem.clear_save()` is NOT called AND on next panel open, the Reset Progress button shows default text (state reset on panel re-instantiation).
@@ -470,7 +470,7 @@ GIVEN the button shows "Confirm Reset (2)", WHEN the Close button is pressed, TH
 GIVEN Master=0.6, Music=0.3, SFX=0.9 are set AND written, WHEN the game is restarted, THEN `SettingsManager.get_volume()` returns the same three values within ±0.01 AND `AudioManager` was called with the matching dB values at startup.
 
 **AC-SET-22 [Integration] — Reset Progress does NOT wipe settings.**
-GIVEN the settings file holds Master=0.3, WHEN Reset Progress is committed, THEN `user://moments_settings.json` is unchanged AND `user://moments_save.json` is deleted.
+GIVEN the settings file holds Master=0.3, WHEN Reset Progress is committed, THEN `user://settings.tres` is unchanged AND `user://save.tres` is deleted.
 
 **AC-SET-23 [Logic] — Quit with pending debounce flushes on close.**
 GIVEN a slider change occurred 100 ms ago (within the 500 ms debounce window), WHEN the application receives `NOTIFICATION_WM_CLOSE_REQUEST`, THEN `flush_pending_save()` is called AND the disk file reflects the most recent change.

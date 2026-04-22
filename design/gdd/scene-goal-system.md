@@ -33,13 +33,17 @@ was just waiting.
 
 ### Core Rules
 
-1. Scene Goal System reads per-scene configuration from `assets/data/scenes/[scene_id].json`.
-   The JSON contains: `scene_id`, `seed_cards[]`, and a `goal` block whose structure depends
-   on goal type.
+1. Scene Goal System reads per-scene configuration from `assets/data/scenes/[scene_id].tres`
+   via `ResourceLoader.load`. The file deserializes into a `SceneData` Resource whose schema
+   is locked by [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md)
+   and declared in `res://src/data/scene_data.gd`. It contains `id: StringName`,
+   `seed_cards: PackedStringArray`, typed `goal: GoalSpec` sub-Resource, `bar_config: BarConfig`
+   sub-Resource, `carry_forward: Array[CarryForwardSpec]`, and `hint_stagnation_sec: float`.
 2. Scene Goal System exposes one method: `load_scene(scene_id)`. This is called by Scene
    Manager when a scene begins.
 3. On `load_scene(scene_id)`:
-   - Parse scene JSON for `scene_id`
+   - `ResourceLoader.load("res://assets/data/scenes/%s.tres" % scene_id) as SceneData`
+     — reject with an error log if the cast returns null (file missing, wrong type)
    - If goal type uses bars (`sustain_above`, `reach_value`): call
      `StatusBarSystem.configure(scene_bar_config)` — constructed from the `goal` block
    - If goal type does NOT use bars (`find_key`, `sequence`): do not call
@@ -126,7 +130,7 @@ scene_bar_config = {
 
 | Field | Type | Authored in | Consumed by |
 |-------|------|-------------|-------------|
-| `bars[].id` | string | scene JSON | Status Bar System, bar-effects.json |
+| `bars[].id` | string | scene `.tres` (via `SceneData.bar_config`) | Status Bar System, `bar-effects.tres` |
 | `bars[].initial_value` | float | scene JSON | Status Bar System |
 | `bars[].decay_rate_per_sec` | float | scene JSON | Status Bar System |
 | `max_value` | float | scene JSON | Status Bar System |
@@ -142,7 +146,7 @@ scene_bar_config = {
 | **`load_scene()` called while `Active`** | Scene Manager calls `load_scene()` without first calling `reset()` (bug) | Call `reset()` internally first — clear old goal state and Status Bar config. Then load new scene normally. Log a warning. |
 | **`win_condition_met()` fires while `Complete`** | Status Bar System emits a duplicate signal (should not happen per its GDD, but defensive) | Ignore. Scene is already `Complete`. Do not emit `scene_completed` twice. |
 | **Goal type unrecognised** | Scene JSON contains `"type": "unknown_type"` | Log an error. Do not enter `Active` state. Stay `Idle`. |
-| **Bar ID mismatch** | Scene JSON defines `bar_id: "chester"` but `bar-effects.json` uses a different name | This is a content authoring error, not a code error. Scene Goal System passes the config as-is. Status Bar System will log a warning on the unknown bar_id (per its GDD edge case). No crash. |
+| **Bar ID mismatch** | `SceneData.bar_config` defines `bar_id: "chester"` but `bar-effects.tres` uses a different name | This is a content authoring error, not a code error. Scene Goal System passes the config as-is. Status Bar System will log a warning on the unknown bar_id (per its GDD edge case). No crash. |
 | **seed_cards list is empty** | Scene JSON has `"seed_cards": []` | Emit `seed_cards_ready([])` — valid, though unusual. Scene Manager spawns nothing. Scene is playable (player starts with empty table). Log a warning to catch accidental omission. |
 | **sequence goal: out-of-order step fired** | Player fires `recipe-b` before `recipe-a` in a sequence goal | Do not advance. Sequence position stays at 0. Only the next expected recipe_id advances the counter. Prior steps are not re-required. |
 
@@ -167,7 +171,7 @@ scene_bar_config = {
 
 | Asset | Path | Description |
 |-------|------|-------------|
-| **Scene data files** | `assets/data/scenes/[scene_id].json` | Chester's authored per-scene config: seed cards, goal type, bar config |
+| **Scene data files** | `assets/data/scenes/[scene_id].tres` | Chester's authored per-scene config: seed cards, goal type, bar config |
 
 ### Signals Emitted
 
@@ -183,7 +187,7 @@ deferred to Scene Manager design.
 ## Tuning Knobs
 
 Scene Goal System has no system-level knobs — all tunable values are authored per-scene
-in `assets/data/scenes/[scene_id].json`. The knobs below are owned by the scene data
+in `assets/data/scenes/[scene_id].tres`. The knobs below are owned by the scene data
 files, not the code:
 
 | Knob | Authored in | Home scene default | Safe Range | Too Low | Too High |
@@ -200,7 +204,7 @@ to help Chester author scene JSON files with confident defaults.
 
 ## Acceptance Criteria
 
-- [ ] `load_scene("home")` reads `assets/data/scenes/home.json` without error
+- [ ] `load_scene("home")` reads `assets/data/scenes/home.tres` without error
 - [ ] On `load_scene()` with a `sustain_above` goal: `StatusBarSystem.configure()` is called
       with the correct `scene_bar_config` before any bar values appear on screen
 - [ ] On `load_scene()` with a `find_key` or `sequence` goal: `StatusBarSystem.configure()`

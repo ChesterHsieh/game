@@ -37,7 +37,7 @@ disappears and the relationship takes its place.
      and decay behavior
    - `max_value`: upper bound for all bars in this scene (e.g., 100)
    - `win_condition`: `{type, threshold, duration_sec}` — what "winning" means
-3. Bar effects are authored in `assets/data/bar-effects.json` — a flat map of
+3. Bar effects are authored in `assets/data/bar-effects.tres` — a flat map of
    `recipe_id → { bar_id: delta, ... }`. If a recipe has no entry, the combination
    has no bar effect.
 4. On `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` from ITF: look up `recipe_id` in
@@ -63,10 +63,17 @@ disappears and the relationship takes its place.
 
 ### Bar Effects from Combinations
 
-Bar effects are authored in `assets/data/bar-effects.json`:
+Bar effects are authored in `assets/data/bar-effects.tres` (a `BarEffects` Resource per ADR-005):
 
-```json
-{
+```gdscript
+class_name BarEffects extends Resource
+@export var effects: Dictionary = {}
+# effects = { "recipe_id": { "bar_id": delta, ... }, ... }
+```
+
+Example content (authored in the Godot inspector or `.tres` file):
+```
+effects = {
   "chester-morning-light": { "chester": 15, "ju": 5 },
   "chester-rainy-afternoon": { "chester": -10, "ju": 20 },
   "ju-home": { "chester": 8, "ju": 8 }
@@ -127,7 +134,7 @@ new_value = clamp(current_value + delta, 0, max_value)
 | Variable | Type | Range | Source | Description |
 |----------|------|-------|--------|-------------|
 | `current_value` | float | [0, max_value] | Status Bar System internal | Current bar value before combination |
-| `delta` | float | -max_value to +max_value | `assets/data/bar-effects.json` | Authored effect for this recipe on this bar |
+| `delta` | float | -max_value to +max_value | `assets/data/bar-effects.tres` | Authored effect for this recipe on this bar |
 | `max_value` | float | 1–200 | scene_bar_config | Upper bound for all bars in this scene |
 
 ### Bar Decay Per Frame
@@ -168,12 +175,12 @@ while passive decay pulls them down at half a point per second.
 | Case | Trigger | Expected Behavior |
 |------|---------|------------------|
 | **Scene has no bars** | Scene Goal System uses a non-bar goal type; `configure()` never called | Stays `Dormant`. `combination_executed` signals silently ignored. No error. |
-| **Recipe has no bar effect** | `combination_executed` fires for a recipe not in `bar-effects.json` | No delta applied. No log — this is the normal case for purely narrative combinations. |
+| **Recipe has no bar effect** | `combination_executed` fires for a recipe not in `bar-effects.tres` | No delta applied. No log — this is the normal case for purely narrative combinations. |
 | **Delta pushes bar above max** | `+50` applied to a bar at 80 with max 100 | Clamp to 100. No overflow. |
 | **Delta pushes bar below 0** | `-30` applied to a bar at 10 | Clamp to 0. Bars cannot go negative. |
 | **Sustained_time resets just before win** | Bars drop below threshold at `sustained_time = 29.9s` (out of 30s) | `sustained_time` resets to 0. Player must sustain again from scratch. No grace period. |
 | **Win condition met mid-animation** | Bars hit threshold during a Merge animation before its `combination_executed` fires | Win detection runs every frame — if a previous combination already pushed bars to threshold, the frame loop catches it. No timing dependency on animations. |
-| **bar-effects.json references unknown bar_id** | A recipe targets `"happiness"` but scene only defines `"chester"` and `"ju"` | Skip the effect for the unknown bar_id. Apply effects for valid IDs. Log a warning. |
+| **bar-effects.tres references unknown bar_id** | A recipe targets `"happiness"` but scene only defines `"chester"` and `"ju"` | Skip the effect for the unknown bar_id. Apply effects for valid IDs. Log a warning. |
 | **configure() called while Active** | Scene loads a second time without a transition (bug case) | Overwrite existing config, reset all bar values to `initial_value`, reset `sustained_time = 0`. Log a warning. |
 | **All bars at 0, decay still running** | Decay ticks on bars already at 0 | Clamp to 0. No negative values. No log needed. |
 
@@ -197,7 +204,7 @@ while passive decay pulls them down at half a point per second.
 
 | Asset | Path | Description |
 |-------|------|-------------|
-| **Bar effects data** | `assets/data/bar-effects.json` | Chester's authored map of `recipe_id → {bar_id: delta}` |
+| **Bar effects data** | `assets/data/bar-effects.tres` | Chester's authored map of `recipe_id → {bar_id: delta}` |
 
 ### Signals Emitted
 
@@ -209,7 +216,7 @@ while passive decay pulls them down at half a point per second.
 ## Tuning Knobs
 
 No system-level knobs — all tuning is authored per scene in `scene_bar_config`
-and `assets/data/bar-effects.json`:
+and `assets/data/bar-effects.tres`:
 
 | Knob | Authored in | Default (Home scene) | Safe Range | Too Low | Too High |
 |------|------------|---------------------|------------|---------|----------|
@@ -217,7 +224,7 @@ and `assets/data/bar-effects.json`:
 | `threshold` (win) | scene_bar_config | 60 | 30–90 | Win triggers too easily | Impossible to sustain; frustrating |
 | `duration_sec` (win) | scene_bar_config | 30s | 5–120s | Win feels like lucky accident | Feels endless; no sense of progress |
 | `decay_rate_per_sec` | scene_bar_config per bar | 0.5 | 0–5 | No pressure (0 = off) | Bars drain faster than combinations can fill |
-| Bar deltas | `bar-effects.json` per recipe | varies | -30 to +30 | Combinations feel meaningless | Bars swing wildly; hard to balance |
+| Bar deltas | `bar-effects.tres` per recipe | varies | -30 to +30 | Combinations feel meaningless | Bars swing wildly; hard to balance |
 
 ## Acceptance Criteria
 
@@ -234,7 +241,7 @@ and `assets/data/bar-effects.json`:
 - [ ] After `win_condition_met()`: decay stops; bar values freeze; no further updates
 - [ ] Scene transition resets all bar values and enters `Dormant` state
 - [ ] A bar effect targeting an unknown `bar_id` logs a warning and skips that bar only
-- [ ] Bar effects data can be edited in `bar-effects.json` without code changes
+- [ ] Bar effects data can be edited in `bar-effects.tres` without code changes
 
 ## Open Questions
 

@@ -9,9 +9,9 @@
 
 Save / Progress System is the Persistence-layer autoload singleton that preserves what Ju has seen across sessions. It serializes two pieces of state on every scene completion: the next scene index owned by Scene Manager, and the full discovery dictionary owned by Mystery Unlock Tree. When the game launches, Save / Progress loads the file from disk (if present) and injects the restored state into Scene Manager and Mystery Unlock Tree *before* Main Menu's Start button emits `game_start_requested`, so the first chapter that appears is the one Ju left on — not scene 0.
 
-The system is intentionally narrow. It owns file I/O, schema versioning, corruption recovery, and load-sequence orchestration. It does **not** own any gameplay state itself — every field written to disk belongs to another system and is fetched through a query method (`MUT.get_save_state()`, `SceneManager.get_resume_index()`). This keeps the serialization contract flat: one `Dictionary` in, one JSON file out, one Dictionary back.
+The system is intentionally narrow. It owns file I/O, schema versioning, corruption recovery, and load-sequence orchestration. It does **not** own any gameplay state itself — every field written to disk belongs to another system and is fetched through a query method (`MUT.get_save_state()`, `SceneManager.get_resume_index()`). Per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md), the save is a typed Godot `SaveState` Resource serialised via `ResourceSaver` — one `SaveState` in, one `.tres` file out, one `SaveState` back.
 
-The save format is a single JSON file at `user://moments_save.json`. Single slot, human-readable, Chester-debuggable. Corruption is handled by renaming the bad file to `moments_save.json.corrupt.<timestamp>` and starting fresh — Ju never sees a technical error screen.
+The save format is a single Godot `.tres` Resource file at `user://save.tres`. Single slot, plaintext (Godot Resource syntax), Chester-debuggable. Corruption is handled by renaming the bad file to `save.tres.corrupt.<timestamp>` and starting fresh — Ju never sees a technical error screen.
 
 ## Player Fantasy
 
@@ -27,7 +27,7 @@ If the save file is damaged (disk hiccup, OS quirk, laptop crash mid-write), the
 
 **1. SaveSystem is an autoload singleton** registered as `SaveSystem` in project autoloads. Autoload order is specified canonically in `docs/architecture/ADR-004-runtime-scene-composition.md` §1; SaveSystem is position 12 of 12 (last), so it can call into every other autoload during `apply_loaded_state()`.
 
-**2. Single canonical save file.** Path: `user://moments_save.json`. One file per install. No slot selection. JSON format, UTF-8 encoded, pretty-printed (indent=2) for Chester-side debuggability.
+**2. Single canonical save file.** Path: `user://save.tres`. One file per install. No slot selection. Godot `.tres` Resource format (typed `SaveState` Resource — schema declared in `res://src/data/save_state.gd`), per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md) §5.
 
 **3. Save trigger is `scene_completed` + `final_memory_ready`.** SaveSystem subscribes to two signals:
 - `EventBus.scene_completed(scene_id)` — fires on every chapter completion. Writes one save per chapter.
@@ -59,41 +59,53 @@ This ordering resolves Scene Manager OQ-1: `gameplay.tscn`'s root script (`gamep
 
 Source systems own their serialization format. SaveSystem wraps them in an envelope.
 
-**6. Save envelope schema (version 1).**
+**6. Save state schema (version 1).** The save envelope is a typed `SaveState` Resource declared in `res://src/data/save_state.gd`:
 
-```json
-{
-  "schema_version": 1,
-  "saved_at_unix": 1744000000,
-  "moments_build": "0.1.0",
-  "scene": {
-    "resume_index": 2
-  },
-  "mystery_unlock_tree": { /* opaque to SaveSystem — whatever MUT.get_save_state() returns */ }
-}
+```gdscript
+class_name SaveState extends Resource
+@export var schema_version: int = 1
+@export var saved_at_unix: int
+@export var moments_build: String
+@export var resume_index: int
+@export var mystery_unlock_tree: Dictionary   # opaque pass-through from MUT.get_save_state()
 ```
 
-`schema_version` is the migration key. `saved_at_unix` and `moments_build` are diagnostic only — never gate behavior on them. `scene.resume_index` is the integer SM resumes from. `mystery_unlock_tree` is passed through unread.
+`schema_version` is the hard break key — see Rule 9. `saved_at_unix` and `moments_build` are diagnostic only — never gate behavior on them. `resume_index` is the integer SM resumes from. `mystery_unlock_tree` is passed through unread (documented `Dictionary` exception per ADR-005 §8).
 
-**7. Atomic writes.** Every save follows tmp-then-rename to prevent corruption from mid-write crashes:
-1. Serialize the Dictionary to a JSON string.
-2. Open `user://moments_save.json.tmp` for write, write all bytes, close.
-3. `DirAccess.rename_absolute()` from `.tmp` to `moments_save.json`. Rename is atomic on all target filesystems (APFS/NTFS/ext4).
-4. On any step failing, log the error, leave the previous good file untouched, and emit `EventBus.save_failed(reason)` for debug logging. Do NOT block gameplay — the next scene completion will retry.
+**7. Atomic writes.** Every save follows tmp-then-rename via `ResourceSaver` + `DirAccess.rename_absolute` per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md) §5:
 
-**8. Corruption recovery.** On load, if JSON parsing fails OR `schema_version` is missing OR the envelope fails validation (required keys missing):
-1. Rename the bad file to `user://moments_save.json.corrupt.<iso8601-timestamp>` (e.g., `moments_save.json.corrupt.2026-04-21T14-32-01`). Colons are replaced with dashes for cross-platform filename safety.
-2. Log a loud error with the reason (parse error, missing key, etc.).
-3. Return `LoadResult.CORRUPT_RECOVERED` — caller (Main Menu) treats this identically to `NO_SAVE_FOUND` (start fresh from index 0).
-4. The backup is never read automatically — it exists only for Chester-side post-mortem.
+1. Construct a fresh `SaveState` Resource, populate fields from authoritative sources (`SceneManager.get_resume_index()`, `MysteryUnlockTree.get_save_state()`).
+2. `ResourceSaver.save(state, "user://save.tres.tmp")` — on non-OK return, emit `save_failed` and abort; leave the previous good file untouched.
+3. `DirAccess.rename_absolute(ProjectSettings.globalize_path("user://save.tres.tmp"), ProjectSettings.globalize_path("user://save.tres"))`. The `globalize_path` conversion is mandatory — `rename_absolute` takes OS-native paths, not `user://` URIs. Rename is atomic on all target filesystems (APFS/NTFS/ext4).
+4. **`.remap` cleanup** (ADR-005 BLOCKING-2 fix): if `FileAccess.file_exists("user://save.tres.remap")`, `DirAccess.remove_absolute(ProjectSettings.globalize_path("user://save.tres.remap"))`. A stale `.remap` from a prior save would redirect `ResourceLoader.load` to the OLD file — silent data loss.
+5. On any step failing, log the error, leave the previous good file untouched, and emit `EventBus.save_failed(reason)` for debug logging. Do NOT block gameplay — the next scene completion will retry.
 
-**9. Schema migration.** If `schema_version < CURRENT_SCHEMA_VERSION` (currently 1), SaveSystem runs a migration chain: `_migrate_v1_to_v2(data)`, `_migrate_v2_to_v3(data)`, etc. Each migration is an internal function that takes a Dictionary and returns a Dictionary. If `schema_version > CURRENT_SCHEMA_VERSION` (save from a newer build), treat as corrupt (rule 8). At v1 there are no migrations — the chain is empty. The structure exists so Alpha+Full Vision expansions (e.g., Settings persistence) can be added without breaking existing saves.
+**8. Corruption recovery.** On load, the detection pattern is two-layer per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md) §5 BLOCKING-1:
+
+```gdscript
+var raw: Resource = ResourceLoader.load("user://save.tres")
+var state: SaveState = raw as SaveState      # MANDATORY cast
+if state == null or state.schema_version != 1:
+    _quarantine_corrupt_save()
+    return LoadResult.CORRUPT_RECOVERED
+```
+
+The bare `raw == null` check is insufficient — a `.tres` file with valid Resource structure but mismatching `class_name` (schema drift across builds) loads as a generic `Resource` with default fields; the `as SaveState` cast catches that and returns null. `_quarantine_corrupt_save`:
+
+1. Renames the bad file to `user://save.tres.corrupt.<iso8601-timestamp>` (e.g., `save.tres.corrupt.2026-04-21T14-32-01`). Colons are replaced with dashes for cross-platform filename safety. Uses `globalize_path` for both source and destination.
+2. Also removes `user://save.tres.remap` if present, so the next save starts clean.
+3. Logs a loud error with the reason (null load, wrong type, schema mismatch).
+4. Returns `LoadResult.CORRUPT_RECOVERED` — caller (`gameplay_root.gd`) treats this identically to `NO_SAVE_FOUND` (start fresh from index 0).
+
+The backup is never read automatically — it exists only for Chester-side post-mortem.
+
+**9. Schema hard break (no migration).** Per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md) §5, `schema_version != 1` is treated as corrupt — Ju starts fresh. No migration chain exists at v1. If a future schema change is needed, that starts as a new ADR specifying migration rules; today's policy is explicitly "mismatch → reset." For an N=1 gift this is acceptable; Alpha+Full Vision expansions that need backward compatibility become their own ADR.
 
 **10. New-game reset.** `SaveSystem.clear_save()`:
 1. Calls `SceneManager.reset_to_waiting()` FIRST (clears cards, resets SM state machine, re-arms `CONNECT_ONE_SHOT`). This step brings SM back to a state where `set_resume_index()` is legal.
 2. Calls `SceneManager.set_resume_index(0)`.
 3. Calls `MysteryUnlockTree.load_save_state({})` — MUT accepts empty dict as clean-wipe equivalent (clears discoveries and the `_epilogue_conditions_emitted` flag).
-4. Deletes `user://moments_save.json` from disk (if present).
+4. Deletes `user://save.tres` from disk (if present) via `DirAccess.remove_absolute(globalize_path(...))`. Also removes `user://save.tres.remap` if present — otherwise a stale `.remap` survives the reset and corrupts the next save cycle.
 5. Emits `EventBus.save_written()` for observability (the save file is now authoritatively empty/absent).
 
 Exposed to the player via Settings' Reset Progress button (see `design/gdd/settings.md` Rule 6). The call ordering in this rule is intentional: `reset_to_waiting()` before `set_resume_index()` ensures the `set_resume_index` assertion (`_state == WAITING`) does not fire.
@@ -107,7 +119,7 @@ Exposed to the player via Settings' Reset Progress button (see `design/gdd/setti
 | State | Entry Condition | Exit Condition | Behavior |
 |---|---|---|---|
 | `Idle` | `_ready()` completes | `load_from_disk()` called | No file I/O happening; ready to load or save |
-| `Loading` | `load_from_disk()` called | Load completes (any LoadResult) | Reading + parsing JSON; blocks on synchronous I/O |
+| `Loading` | `load_from_disk()` called | Load completes (any LoadResult) | Calling `ResourceLoader.load` and casting via `as SaveState`; blocks on synchronous I/O |
 | `LoadedReady` | Valid save parsed, `apply_loaded_state()` pending | `apply_loaded_state()` called | Holds parsed dict in temporary buffer; waiting for Main Menu to request application |
 | `Active` | `apply_loaded_state()` completes OR no save existed | Never — runtime steady state | Listening for `scene_completed`; save on each emission |
 | `Saving` | `scene_completed` received while `Active` | Write finishes (success or fail) | Writing tmp + rename; `Active` re-entered after |
@@ -132,31 +144,28 @@ Exposed to the player via Settings' Reset Progress button (see `design/gdd/setti
 | **Main Menu** | No direct coupling | Main Menu does not call SaveSystem. The scene switch to `gameplay.tscn` is Main Menu's sole responsibility; orchestration happens in the target scene's root script. |
 | **EventBus** (ADR-003) | SaveSystem listens + emits | Listens to `scene_completed(scene_id: String)` and `final_memory_ready()` in Active state only. Emits `save_written()` and `save_failed(reason: String)` for debug/telemetry. Listener ordering vs SceneManager is locked by autoload order per ADR-004 §5 — SM's `scene_completed` handler runs before SaveSystem's. |
 | **Final Epilogue Screen** (indirect) | SaveSystem writes during the last `scene_completed` before Epilogue | Epilogue consumes MUT state directly; SaveSystem ensures MUT state is persisted on the last chapter completion before Epilogue triggers. |
-| **Filesystem** (Godot `FileAccess` / `DirAccess`) | SaveSystem → OS | Writes `user://moments_save.json` + `.tmp`; renames corrupt files with timestamp suffix. All paths resolve through Godot's `user://` protocol for cross-platform safety. |
+| **Filesystem** (Godot `FileAccess` / `DirAccess`) | SaveSystem → OS | Writes `user://save.tres` + `.tmp`; renames corrupt files with timestamp suffix. All paths resolve through Godot's `user://` protocol for cross-platform safety. |
 
 ## Formulas
 
-Save / Progress System performs no gameplay calculations. It serializes and deserializes — every number it handles is owned by another GDD. The "formulas" here are the serialization contract: how a runtime Dictionary becomes JSON bytes, and how JSON bytes become a runtime Dictionary.
+Save / Progress System performs no gameplay calculations. It serializes and deserializes — every number it handles is owned by another GDD. The "formulas" here are the serialization contract: how a runtime `SaveState` Resource is written to `.tres` by `ResourceSaver` and restored via `ResourceLoader.load` + `as SaveState` cast per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md).
 
 ### Save Envelope (v1)
 
-The envelope is a strict Dictionary schema:
+The envelope is a typed `SaveState` Resource (class declared in `res://src/data/save_state.gd`, schema pinned in Rule 6):
 
-```
-save_dict = {
-    "schema_version":       int,          # always 1 at MVP
-    "saved_at_unix":        int,          # Time.get_unix_time_from_system() at write
-    "moments_build":        String,       # ProjectSettings.get_setting("application/config/version")
-    "scene": {
-        "resume_index":     int           # SceneManager.get_resume_index()
-    },
-    "mystery_unlock_tree":  Dictionary    # MUT.get_save_state() — opaque pass-through
-}
+```gdscript
+class_name SaveState extends Resource
+@export var schema_version: int = 1
+@export var saved_at_unix: int
+@export var moments_build: String
+@export var resume_index: int
+@export var mystery_unlock_tree: Dictionary   # opaque pass-through (ADR-005 §8)
 ```
 
 | Variable | Symbol | Type | Range | Description |
 |----------|--------|------|-------|-------------|
-| `schema_version` | v | int | [1, CURRENT_SCHEMA_VERSION] | Migration key. At MVP, always 1. |
+| `schema_version` | v | int | exactly `1` at MVP (Rule 9: hard break) | Schema pin. Any other value → CORRUPT_RECOVERED. |
 | `saved_at_unix` | t | int | [0, 2^31] | Unix epoch seconds at save time. Diagnostic only. |
 | `moments_build` | b | String | semver string | Build tag at save time. Diagnostic only. |
 | `resume_index` | r | int | [0, manifest.size()] | Next scene to play. `manifest.size()` means the epilogue has been reached. |
@@ -164,64 +173,38 @@ save_dict = {
 
 **Output Range:** `resume_index` is exactly `SceneManager._current_index` after post-completion increment — so on save after the last scene completes, it equals `manifest.size()` and on next launch, SM enters Epilogue state immediately. This is the correct behavior: a player who finished the game re-launches into the Final Epilogue Screen, not scene 0.
 
-**Example** (manifest = `["home", "park", "cafe"]`, Ju just completed "park"):
-```json
-{
-  "schema_version": 1,
-  "saved_at_unix": 1744218000,
-  "moments_build": "0.1.0",
-  "scene": { "resume_index": 2 },
-  "mystery_unlock_tree": { "discoveries": { /* ... */ }, "epilogue_conditions_emitted": false }
-}
+### Validation and Migration Policy
+
+**Validation on load** is a type cast, not a predicate walk:
+
+```gdscript
+var raw: Resource = ResourceLoader.load("user://save.tres")
+var state: SaveState = raw as SaveState
+if state == null or state.schema_version != 1:
+    return LoadResult.CORRUPT_RECOVERED
 ```
 
-On next launch, SM resumes at index 2 (`"cafe"`). MUT restores its internal dictionaries via `load_save_state(...)`.
+The `as SaveState` cast guarantees every declared field exists with its declared type — mismatches become `null` at cast time, not per-field probes. This replaces the Dictionary-validation predicate used in earlier drafts.
 
-### JSON Serialization Rules
-
-The `encode` function is Godot's built-in `JSON.stringify(dict, "  ")` (indent 2). Decoding uses `JSON.parse_string(text)` which returns `Variant` (Dictionary on success, `null` on parse failure).
-
-**Validation predicate** — `is_valid_envelope(parsed: Variant) -> bool`:
-```
-valid = parsed is Dictionary
-     AND parsed.has("schema_version") AND parsed.schema_version is int
-     AND parsed.has("scene") AND parsed.scene is Dictionary
-     AND parsed.scene.has("resume_index") AND parsed.scene.resume_index is int
-     AND parsed.has("mystery_unlock_tree") AND parsed.mystery_unlock_tree is Dictionary
-```
-
-Any failure → treat as corrupt (Rule 8).
-
-### Migration Chain
-
-```
-migrate(data: Dictionary) -> Dictionary:
-    v = data.schema_version
-    while v < CURRENT_SCHEMA_VERSION:
-        data = _migrate_step(v, data)   # dispatches by v
-        v += 1
-    return data
-```
-
-At MVP, `CURRENT_SCHEMA_VERSION = 1` and the loop runs zero times. The structure is defined now so Alpha/Full Vision additions (Settings persistence, per-scene checkpointing, analytics opt-in) can bump the version without breaking existing saves.
+**Migration is explicitly out of scope at v1** per Rule 9. `schema_version != 1` is corruption, not a migration target. If future builds require schema change, that is introduced as a new ADR specifying a versioned `SaveState` class hierarchy — not a runtime migration chain inside this system.
 
 ## Edge Cases
 
 ### File Absence & First Launch
 
-- **If `user://moments_save.json` does not exist** (first launch): `load_from_disk()` returns `LoadResult.NO_SAVE_FOUND`. SaveSystem enters `Active` without touching SM or MUT (they keep defaults — SM at index 0, MUT with empty discoveries). Main Menu treats NO_SAVE_FOUND identically to CORRUPT_RECOVERED — press Start, begin scene 0.
+- **If `user://save.tres` does not exist** (first launch): `load_from_disk()` returns `LoadResult.NO_SAVE_FOUND`. SaveSystem enters `Active` without touching SM or MUT (they keep defaults — SM at index 0, MUT with empty discoveries). Main Menu treats NO_SAVE_FOUND identically to CORRUPT_RECOVERED — press Start, begin scene 0.
 
 - **If the `user://` directory itself is missing** (fresh OS install, sandboxed environment): Godot auto-creates `user://` on first `FileAccess.open()` for write. SaveSystem relies on this — no explicit `DirAccess.make_dir()` call needed.
 
 ### Corruption & Parse Errors
 
-- **If `JSON.parse_string()` returns `null`** (malformed JSON — truncated file, binary garbage, BOM): Rename to `moments_save.json.corrupt.<iso8601>`, log error with the raw text length and first 200 bytes, return `LoadResult.CORRUPT_RECOVERED`. Downstream systems stay at defaults.
+- **If `ResourceLoader.load()` returns `null`** (truncated file, binary garbage, unreadable): Rename to `save.tres.corrupt.<iso8601>`, log error with the file size, return `LoadResult.CORRUPT_RECOVERED`. Downstream systems stay at defaults.
 
-- **If the parsed value is not a Dictionary** (JSON array or scalar at root): Same as above — rename + log + CORRUPT_RECOVERED.
+- **If the loaded Resource fails the `as SaveState` cast** (class_name mismatch after schema drift — e.g., save was written by a build with a differently-shaped `SaveState` class): The cast returns `null`. Same corruption path — rename + log + CORRUPT_RECOVERED. This is the BLOCKING-1 case from ADR-005 §5 and is the reason a bare null-check on the loaded Resource is insufficient.
 
-- **If `schema_version` key is missing or non-int**: Same corruption path. Do not try to guess the version.
+- **If `schema_version != 1`** (older or newer save): Same corruption path per Rule 9. No migration is attempted at v1.
 
-- **If required keys `scene.resume_index` or `mystery_unlock_tree` are missing**: Same corruption path. Partial recovery is explicitly rejected — it risks restoring into an inconsistent cross-system state.
+- **If a declared field is missing at the Resource level** (should not happen because Godot populates `@export` fields with defaults on cast, but worth stating): The cast still succeeds with default values; SaveSystem then passes potentially-empty `mystery_unlock_tree` to MUT, which MUT validates internally and may reset itself. Partial recovery is bounded by each downstream system's own validation — SaveSystem does not attempt cross-system reconciliation.
 
 - **If `mystery_unlock_tree` passes SaveSystem validation but `MUT.load_save_state(data)` internally rejects it** (MUT's own schema mismatch): MUT is authoritative for its own format. MUT logs its own error and resets its state. SaveSystem does not second-guess the call. The scene index is still applied — Ju may see Chapter 3 with zero prior discoveries, but the game is playable.
 
@@ -229,19 +212,19 @@ At MVP, `CURRENT_SCHEMA_VERSION = 1` and the loop runs zero times. The structure
 
 - **If the tmp file cannot be opened for write** (disk full, permissions): Log error, emit `EventBus.save_failed("open_tmp_failed: " + error_code)`, stay in `Active`. Previous good save file is untouched. Next `scene_completed` will retry.
 
-- **If `store_string()` partially writes then fails**: The tmp file is in a bad state, but the real save file is untouched because the rename hasn't happened. On next save attempt, SaveSystem overwrites the tmp. No special cleanup needed.
+- **If `ResourceSaver.save()` returns a non-OK error code**: The tmp file may be in a partial or empty state, but the real save file is untouched because the rename hasn't happened. On next save attempt, SaveSystem overwrites the tmp. No special cleanup needed.
 
 - **If `DirAccess.rename_absolute(tmp, real)` fails**: Both files may exist on disk. On next load, SaveSystem reads the real file (unaffected). The stale tmp is overwritten on next save. SaveSystem does not proactively delete stale `.tmp` files — it's not worth the complexity and the OS cleans `user://` on uninstall anyway.
+
+- **If a stale `save.tres.remap` exists** (prior save wrote one and it was not cleaned): `ResourceLoader.load` silently redirects to whatever the `.remap` points at — potentially the OLD file — causing silent data loss. Rule 7 step 4 and Rule 10 both unconditionally delete `save.tres.remap` to eliminate this class of failure (ADR-005 BLOCKING-2).
 
 - **If the disk is full**: All writes fail per above. The game remains playable; progress simply doesn't persist. This is a degraded mode — worth logging loudly so Chester can diagnose Ju's machine if she reports it.
 
 ### Schema Version Edge Cases
 
-- **If `schema_version` is greater than `CURRENT_SCHEMA_VERSION`** (save made by a newer build, then Ju installed an older build): Treat as corrupt. Rename + log + fresh start. Rationale: forward-compatibility is impossible without knowing the future schema. Losing progress is better than loading an unknown structure and crashing on access.
+- **If `schema_version != 1`** (save made by a different build — newer or older): Treat as corrupt per Rule 9. Rename + log + fresh start. No migration is attempted at v1; introducing one requires a new ADR. Rationale for the hard break: this is an N=1 personal gift, not a live-service product with user migrations to preserve. Losing progress is better than loading an unknown structure and crashing downstream.
 
-- **If `schema_version` is less than `CURRENT_SCHEMA_VERSION`** (save from older build): Run the migration chain. Each `_migrate_vN_to_vN+1` is a pure function that takes a Dictionary and returns a Dictionary. If any migration throws, treat as corrupt.
-
-- **If a migration step returns a Dictionary that fails validation after migration**: Treat as corrupt. Each migration is responsible for producing a valid Dictionary for the next version.
+- **If a future ADR introduces schema v2+**: That ADR must specify whether to read v1 saves, reject them, or branch on a versioned `SaveState` subclass. Until such an ADR lands, any `schema_version` other than `1` is corruption.
 
 ### Load / Apply Ordering
 
@@ -265,7 +248,7 @@ At MVP, `CURRENT_SCHEMA_VERSION = 1` and the loop runs zero times. The structure
 
 - **If two game instances run simultaneously** (e.g., Ju accidentally double-clicks the shortcut): Each process will read the file on startup and write on `scene_completed`. Last-write-wins. Not defended against — a personal gift game is not expected to need file locking. If observed, surface to Chester for mitigation.
 
-- **If the save file is edited externally** (Chester opens it in a text editor to debug): On next load, whatever is in the file is read. If the edit is valid JSON matching the schema, it's used. If not, corruption path fires. This is the intended debuggability of JSON format — Chester can manually reset `resume_index` for Ju's system if needed.
+- **If the save file is edited externally** (Chester opens it in a text editor to debug): On next load, whatever is in the file is read. If the edit is a valid `.tres` Resource matching the `SaveState` class, it's used. If not, the `as SaveState` cast returns `null` and the corruption path fires. `.tres` is plaintext (Godot Resource syntax), so Chester can still manually tweak `resume_index` for Ju's system if needed — it remains debuggable, just in Resource syntax rather than JSON.
 
 ## Dependencies
 
@@ -277,7 +260,7 @@ At MVP, `CURRENT_SCHEMA_VERSION = 1` and the loop runs zero times. The structure
 | **Mystery Unlock Tree** | `get_save_state() -> Dictionary` and `load_save_state(data: Dictionary)` — already specified in MUT GDD Section C Rule 3 & OQ-4. | Hard — discovery state is the primary game progress |
 | **`gameplay.tscn` root script** | Calls `load_from_disk()` and `apply_loaded_state()` in order, then emits `game_start_requested`. Owned by the gameplay scene root (composition specified by Main Menu OQ-1 ADR). Main Menu itself does NOT call SaveSystem. | Hard — no other script is positioned to invoke SaveSystem at the right moment in the boot sequence |
 | **EventBus** (ADR-003) | Listens to `scene_completed(scene_id: String)` during Active state. Emits `save_written()` and `save_failed(reason: String)`. | Hard — the save trigger flows through EventBus |
-| **Godot `FileAccess` / `DirAccess` / `JSON`** | Synchronous file I/O, atomic rename, JSON encode/decode. All stable in Godot 4.3. | Hard — engine primitives |
+| **Godot `ResourceLoader` / `ResourceSaver` / `DirAccess`** | Synchronous Resource load/save, atomic rename via `rename_absolute`, `.remap` cleanup via `remove_absolute`. All stable in Godot 4.3. Paths converted to OS-native via `ProjectSettings.globalize_path`. | Hard — engine primitives |
 
 ### Downstream (systems that depend on this)
 
@@ -291,9 +274,9 @@ At MVP, `CURRENT_SCHEMA_VERSION = 1` and the loop runs zero times. The structure
 
 | Asset | Path | Description |
 |-------|------|-------------|
-| **Save file** | `user://moments_save.json` | The canonical save. Created on first `scene_completed`. |
-| **Atomic write staging** | `user://moments_save.json.tmp` | Temporary file during write. Renamed to real path on success. |
-| **Corruption backups** | `user://moments_save.json.corrupt.<iso8601>` | Written when parsing fails. Never read by SaveSystem; exists for Chester-side debugging. |
+| **Save file** | `user://save.tres` | The canonical save. Created on first `scene_completed`. |
+| **Atomic write staging** | `user://save.tres.tmp` | Temporary file during write. Renamed to real path on success. |
+| **Corruption backups** | `user://save.tres.corrupt.<iso8601>` | Written when parsing fails. Never read by SaveSystem; exists for Chester-side debugging. |
 
 ### Signals Emitted
 
@@ -321,17 +304,17 @@ SaveSystem's runtime knobs are minimal — the design is intentionally rigid to 
 | Knob | Type | Default | Safe Range | Too Low | Too High |
 |------|------|---------|------------|---------|----------|
 | `CURRENT_SCHEMA_VERSION` | int (const) | `1` | `1`–`N` | N/A — only incremented when schema changes | Never decrement |
-| `SAVE_FILE_NAME` | String (const) | `"moments_save.json"` | — | Changing breaks all existing saves | Changing breaks all existing saves |
+| `SAVE_FILE_NAME` | String (const) | `"save.tres"` | — | Changing breaks all existing saves | Changing breaks all existing saves |
 | `SAVE_TMP_SUFFIX` | String (const) | `".tmp"` | — | Collision with real save name | — |
+| `SAVE_REMAP_SUFFIX` | String (const) | `".remap"` | — | Name must match what Godot emits as sidecar | — |
 | `CORRUPT_SUFFIX_FORMAT` | String (const) | `".corrupt.%s"` (ISO 8601 timestamp, colons→dashes) | — | — | — |
-| `JSON_INDENT` | String (const) | `"  "` (two spaces) | 0–4 spaces | Unreadable when debugging | Larger file size (negligible) |
 | `SAVE_DEFER_RETRY_FRAMES` | int | `1` | 1–3 | May not clear Loading state race | Delays save until player notices |
 
 **Knobs owned by other systems (referenced for authoring context):**
 
 | Knob | Owner | Description |
 |------|-------|-------------|
-| Scene manifest order | `assets/data/scene-manifest.json` | Defines what `resume_index` means — if order changes between builds, old saves resume into the wrong chapter. Chester must never reorder the shipped manifest post-launch. |
+| Scene manifest order | `assets/data/scene-manifest.tres` | Defines what `resume_index` means — if order changes between builds, old saves resume into the wrong chapter. Chester must never reorder the shipped manifest post-launch. |
 | MUT save schema | Mystery Unlock Tree GDD | SaveSystem passes MUT data through without inspection. MUT owns its own forward compatibility. |
 | `moments_build` value | `project.godot` → `application/config/version` | Read at save time; diagnostic only. |
 
@@ -370,7 +353,7 @@ SaveSystem has no direct UI at MVP. It does not render or display anything to th
 GIVEN `project.godot` is configured, WHEN the game launches, THEN `SaveSystem` is registered as an autoload AND its `_ready()` runs *after* `EventBus`, `SceneGoalSystem`, `CardSpawningSystem`, `TableLayoutSystem`, `MysteryUnlockTree`, and `SceneManager`.
 
 **AC-SP-02 [Logic] — `_ready()` does not auto-load.**
-GIVEN a valid save file exists at `user://moments_save.json`, WHEN SaveSystem's `_ready()` completes, THEN no file I/O has occurred AND `SceneManager._current_index` is still `0` AND `MysteryUnlockTree` has no discoveries. `load_from_disk()` must be called explicitly.
+GIVEN a valid save file exists at `user://save.tres`, WHEN SaveSystem's `_ready()` completes, THEN no file I/O has occurred AND `SceneManager._current_index` is still `0` AND `MysteryUnlockTree` has no discoveries. `load_from_disk()` must be called explicitly.
 
 **AC-SP-03 [Logic] — Initial state.**
 GIVEN SaveSystem has just completed `_ready()`, WHEN inspected, THEN `_state == Idle` AND no scene_completed listener is yet connected (connected lazily on first `apply_loaded_state()` to prevent premature saves).
@@ -381,25 +364,25 @@ GIVEN a valid save with `resume_index: 2` and MUT data for 5 discoveries, WHEN M
 ### Load From Disk (AC-SP-05 – AC-SP-12)
 
 **AC-SP-05 [Logic] — No save file returns NO_SAVE_FOUND.**
-GIVEN `user://moments_save.json` does not exist, WHEN `load_from_disk()` is called, THEN it returns `LoadResult.NO_SAVE_FOUND` AND `_state` becomes `Active` AND no exception is thrown.
+GIVEN `user://save.tres` does not exist, WHEN `load_from_disk()` is called, THEN it returns `LoadResult.NO_SAVE_FOUND` AND `_state` becomes `Active` AND no exception is thrown.
 
 **AC-SP-06 [Logic] — Valid save returns OK and enters LoadedReady.**
 GIVEN a valid save file exists, WHEN `load_from_disk()` is called, THEN it returns `LoadResult.OK` AND `_state` becomes `LoadedReady` AND the parsed Dictionary is buffered internally.
 
-**AC-SP-07 [Logic] — Malformed JSON is treated as corrupt.**
-GIVEN `user://moments_save.json` contains `"not valid json"`, WHEN `load_from_disk()` is called, THEN it returns `LoadResult.CORRUPT_RECOVERED` AND the bad file has been renamed to `user://moments_save.json.corrupt.<iso8601>` AND `_state` becomes `Active` AND an error is logged.
+**AC-SP-07 [Logic] — Unreadable or malformed `.tres` is treated as corrupt.**
+GIVEN `user://save.tres` contains arbitrary bytes that `ResourceLoader.load` cannot parse as a Resource, WHEN `load_from_disk()` is called, THEN it returns `LoadResult.CORRUPT_RECOVERED` AND the bad file has been renamed to `user://save.tres.corrupt.<iso8601>` AND any `user://save.tres.remap` has been removed AND `_state` becomes `Active` AND an error is logged.
 
-**AC-SP-08 [Logic] — Missing schema_version is treated as corrupt.**
-GIVEN the save file contains `{"scene": {"resume_index": 1}}` (no `schema_version`), WHEN `load_from_disk()` is called, THEN it returns `CORRUPT_RECOVERED` AND the file is renamed.
+**AC-SP-08 [Logic] — Non-SaveState Resource is treated as corrupt.**
+GIVEN the save file is a syntactically valid `.tres` but declares a different `class_name` (or a bare `Resource`), WHEN `load_from_disk()` is called, THEN the `as SaveState` cast yields `null` AND it returns `CORRUPT_RECOVERED` AND the file is renamed. This exercises the BLOCKING-1 path from ADR-005 §5.
 
-**AC-SP-09 [Logic] — Missing required keys are treated as corrupt.**
-GIVEN the save file has valid JSON but omits `mystery_unlock_tree`, WHEN `load_from_disk()` is called, THEN it returns `CORRUPT_RECOVERED`.
+**AC-SP-09 [Logic] — Stale `.remap` does not cause silent data loss.**
+GIVEN a valid `save.tres` AND a stale `save.tres.remap` pointing at an older Resource, WHEN a save completes atomically, THEN `save.tres.remap` has been removed BEFORE the next `load_from_disk()` call AND the next load reads the newly-written file, not the redirect target. Exercises BLOCKING-2 from ADR-005 §5.
 
-**AC-SP-10 [Logic] — Future schema version is rejected.**
-GIVEN the save file's `schema_version` is `99` and `CURRENT_SCHEMA_VERSION` is `1`, WHEN `load_from_disk()` is called, THEN it returns `CORRUPT_RECOVERED` AND the file is renamed.
+**AC-SP-10 [Logic] — Schema version mismatch is corrupt (no migration at v1).**
+GIVEN the save file's `schema_version` is `99` AND the expected schema is `1`, WHEN `load_from_disk()` is called, THEN it returns `CORRUPT_RECOVERED` AND the file is renamed. Same outcome for `schema_version == 0` or any value `!= 1`, per Rule 9 (hard break, no migration chain).
 
 **AC-SP-11 [Logic] — Corruption backup filename uses ISO 8601 with dashes.**
-GIVEN a corrupt save at `user://moments_save.json`, WHEN `load_from_disk()` recovers from it at 2026-04-21 14:32:01 UTC, THEN the backup path matches the pattern `user://moments_save.json.corrupt.2026-04-21T14-32-01` (colons replaced).
+GIVEN a corrupt save at `user://save.tres`, WHEN `load_from_disk()` recovers from it at 2026-04-21 14:32:01 UTC, THEN the backup path matches the pattern `user://save.tres.corrupt.2026-04-21T14-32-01` (colons replaced).
 
 **AC-SP-12 [Logic] — Load does not mutate downstream state.**
 GIVEN SaveSystem returns `OK` from `load_from_disk()`, WHEN inspected immediately after, THEN `SceneManager._current_index` is unchanged (still 0) AND MUT state is unchanged. State application happens only in `apply_loaded_state()`.
@@ -418,7 +401,7 @@ GIVEN `apply_loaded_state()` has just returned, WHEN inspected, THEN the interna
 ### Save Trigger (AC-SP-16 – AC-SP-20)
 
 **AC-SP-16 [Integration] — scene_completed triggers atomic save with post-increment index.**
-GIVEN SaveSystem is `Active` AND the autoload order per ADR-004 §1 is in effect (SM before SaveSystem), WHEN `EventBus.scene_completed.emit("home")` fires AND SM's handler runs first (incrementing `_current_index` from 0 to 1) AND SaveSystem's handler runs after, THEN SaveSystem reads `SceneManager.get_resume_index() == 1` AND `user://moments_save.json.tmp` was written AND renamed to `user://moments_save.json` AND the file contains `"resume_index": 1` AND `save_written` is emitted. The post-increment value — NOT the pre-increment value — is always what persists.
+GIVEN SaveSystem is `Active` AND the autoload order per ADR-004 §1 is in effect (SM before SaveSystem), WHEN `EventBus.scene_completed.emit("home")` fires AND SM's handler runs first (incrementing `_current_index` from 0 to 1) AND SaveSystem's handler runs after, THEN SaveSystem reads `SceneManager.get_resume_index() == 1` AND `user://save.tres.tmp` was written AND renamed to `user://save.tres` AND the file contains `"resume_index": 1` AND `save_written` is emitted. The post-increment value — NOT the pre-increment value — is always what persists.
 
 **AC-SP-17 [Logic] — Save writes current authoritative values, not cached.**
 GIVEN a save has just occurred with `resume_index: 1`, WHEN `SceneManager._current_index` changes to `2` and the next `scene_completed` fires, THEN the resulting save file contains `"resume_index": 2` AND MUT state reflects current MUT discoveries (not a cached snapshot).
@@ -427,26 +410,23 @@ GIVEN a save has just occurred with `resume_index: 1`, WHEN `SceneManager._curre
 GIVEN `_state == Loading`, WHEN `scene_completed` is received, THEN the handler is deferred via `call_deferred` AND when Loading completes and state becomes Active, the save executes.
 
 **AC-SP-19 [Logic] — Atomic rename preserves previous save on tmp failure.**
-GIVEN a valid save exists AND the disk rejects writing `moments_save.json.tmp` (simulated via permissions or mock), WHEN `scene_completed` fires, THEN `moments_save.json` on disk still contains the previous good content AND `save_failed(reason)` is emitted AND gameplay continues.
+GIVEN a valid save exists AND the disk rejects writing `save.tres.tmp` (simulated via permissions or mock), WHEN `scene_completed` fires, THEN `save.tres` on disk still contains the previous good content AND `save_failed(reason)` is emitted AND gameplay continues.
 
 **AC-SP-20 [Logic] — Save after final scene contains epilogue-trigger index.**
 GIVEN manifest is `["home", "park", "cafe"]` AND Ju completes "cafe" (the last chapter), WHEN the save fires, THEN the file contains `"resume_index": 3` (== `manifest.size()`) AND on next launch, SM enters Epilogue state immediately without loading a scene.
 
-### Schema & Migration (AC-SP-21 – AC-SP-23)
+### Schema Policy (AC-SP-21 – AC-SP-22)
 
 **AC-SP-21 [Logic] — v1 save round-trips intact.**
-GIVEN a v1 save is written with known values `{scene.resume_index: 2, mut: X}`, WHEN `load_from_disk()` → `apply_loaded_state()` is performed in a fresh game instance, THEN `SM._current_index == 2` AND `MUT.get_save_state()` returns a Dictionary deep-equal to `X`.
+GIVEN a v1 `SaveState` is written with known values `{resume_index: 2, mystery_unlock_tree: X}`, WHEN `load_from_disk()` → `apply_loaded_state()` is performed in a fresh game instance, THEN `SM._current_index == 2` AND `MUT.get_save_state()` returns a Dictionary deep-equal to `X`.
 
-**AC-SP-22 [Logic] — Migration chain runs for older schema.**
-GIVEN `CURRENT_SCHEMA_VERSION == 2` (hypothetical future state) AND a save with `schema_version: 1`, WHEN `load_from_disk()` is called, THEN `_migrate_v1_to_v2()` is invoked AND the resulting Dictionary has `schema_version: 2` AND passes validation.
-
-**AC-SP-23 [Logic] — Migration failure treated as corrupt.**
-GIVEN a save whose `_migrate_v1_to_v2()` throws (hypothetical), WHEN `load_from_disk()` is called, THEN the file is renamed to `.corrupt.<timestamp>` AND `LoadResult.CORRUPT_RECOVERED` is returned.
+**AC-SP-22 [Logic] — No migration runs at v1.**
+GIVEN any save with `schema_version != 1`, WHEN `load_from_disk()` is called, THEN no migration function is invoked AND `LoadResult.CORRUPT_RECOVERED` is returned AND the file is renamed. This codifies Rule 9 — migration is explicitly out of scope until a future ADR authorises it.
 
 ### New Game Reset (AC-SP-24)
 
 **AC-SP-24 [Logic] — clear_save resets file and downstream state in the correct order.**
-GIVEN a valid save file exists AND MUT has 4 discoveries AND `SM._state == ACTIVE` with `_current_index == 2`, WHEN `SaveSystem.clear_save()` is called, THEN the sequence is: (1) `SceneManager.reset_to_waiting()` invoked → SM state back to WAITING, cards cleared, `_current_index == 0`, CONNECT_ONE_SHOT re-armed; (2) `SceneManager.set_resume_index(0)` invoked and accepted (SM is now WAITING); (3) `MUT.load_save_state({})` invoked and MUT has zero discoveries + `_epilogue_conditions_emitted == false`; (4) `user://moments_save.json` no longer exists on disk; (5) `save_written` emitted. The ordering is load-bearing — calling `set_resume_index` BEFORE `reset_to_waiting` would trigger SM's `_state == WAITING` assertion and fail silently.
+GIVEN a valid save file exists AND MUT has 4 discoveries AND `SM._state == ACTIVE` with `_current_index == 2`, WHEN `SaveSystem.clear_save()` is called, THEN the sequence is: (1) `SceneManager.reset_to_waiting()` invoked → SM state back to WAITING, cards cleared, `_current_index == 0`, CONNECT_ONE_SHOT re-armed; (2) `SceneManager.set_resume_index(0)` invoked and accepted (SM is now WAITING); (3) `MUT.load_save_state({})` invoked and MUT has zero discoveries + `_epilogue_conditions_emitted == false`; (4) `user://save.tres` no longer exists on disk; (5) `save_written` emitted. The ordering is load-bearing — calling `set_resume_index` BEFORE `reset_to_waiting` would trigger SM's `_state == WAITING` assertion and fail silently.
 
 ### Epilogue Save Hook (AC-SP-28 – AC-SP-29)
 
@@ -473,7 +453,7 @@ GIVEN `SM.set_resume_index(-1)` is called (corrupt-but-passed-validation edge ca
 |----|----------|-------|--------|
 | OQ-1 | ~~**"Reset Progress" exposure in Settings.**~~ **RESOLVED 2026-04-21** by Settings GDD (`design/gdd/settings.md` Core Rule 6). The Settings panel exposes a "Reset Progress" button with a two-tap 3-second countdown confirmation flow. On commit, `SaveSystem.clear_save()` is called and, if the player was in gameplay, the scene switches to Main Menu. Volume preferences persist (separate file). | — | Closed |
 | OQ-2 | **Platform-specific `user://` resolution.** Godot resolves `user://` differently per OS (`~/Library/Application Support/Godot/app_userdata/Moments/` on macOS, `%APPDATA%/Godot/app_userdata/Moments/` on Windows). For a macOS-only gift (Ju's laptop), this is fine. If Chester ever ships a Windows build for family, confirm path works there. | engine-programmer | Verify at first Windows export |
-| OQ-3 | **Cloud sync / backup strategy.** Not in scope for a single-machine gift. But: if Ju's laptop dies, is the save recoverable? Current answer: no — it's local-only. Chester may want to occasionally copy `user://moments_save.json` to a backup location manually. Document for the player release notes (internal). | Chester (operational decision) | Pre-ship ops note |
+| OQ-3 | **Cloud sync / backup strategy.** Not in scope for a single-machine gift. But: if Ju's laptop dies, is the save recoverable? Current answer: no — it's local-only. Chester may want to occasionally copy `user://save.tres` to a backup location manually. Document for the player release notes (internal). | Chester (operational decision) | Pre-ship ops note |
 | OQ-4 | **Telemetry on save failures.** `save_failed(reason)` is emitted but has no listener at MVP. Post-launch, Chester may want to know if Ju's machine is rejecting writes (full disk, permissions). Could wire to a file-based debug log. | analytics-engineer (if/when added) | Deferred — only if a real issue surfaces |
 | OQ-5 | **Quit-mid-scene safety.** Current design loses within-scene progress (card table state, partial bar values) on quit. If Ju quits mid-scene, she re-enters that chapter at its start. Is this acceptable? MVP answer: yes, aligns with "chapter = page turn" mental model. If playtest reveals friction, consider a lightweight mid-scene checkpoint on `WM_CLOSE_REQUEST`. | playtester + game-designer | Reactive — only if friction observed |
 | OQ-6 | **Multi-install / re-gift scenario.** If Chester ships the game to a second person (a sibling, a future gift), they will share the same `user://` dir only if using the same OS user account. Different OS users get separate saves automatically. No action needed unless gifting strategy changes. | Chester | Non-issue for current scope |

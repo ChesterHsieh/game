@@ -126,6 +126,18 @@ time. The only "tuning" is content authoring:
 
 ## Open Questions
 
-- **File format**: JSON, CSV, or Godot Resource (`.tres`)? JSON is human-readable and easy to edit outside Godot; `.tres` integrates better with the Godot editor. Decision needed before implementation.
+- **File format**: ✅ **RESOLVED by [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md)** — Godot `.tres` Resource files via `ResourceLoader`. Card Database is stored as a single manifest at `res://assets/data/cards.tres` containing an `Array[CardEntry]`. See "File Format and Schema" section below.
 - **Art asset format**: PNG assumed — confirm resolution and size constraints with Card Visual system design.
 - **Localization**: Not required for this game (single player, personal gift), but the schema supports it if `display_name` ever needs translation.
+
+## File Format and Schema
+
+Per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md):
+
+- **Storage**: single manifest file at `res://assets/data/cards.tres`.
+- **Resource class**: `res://src/data/card_entry.gd` declares `class_name CardEntry extends Resource` with typed `@export` fields matching the Card Schema table above.
+- **Manifest class**: a thin wrapper Resource with `@export var entries: Array[CardEntry]`.
+- **Loader**: `CardDatabase._ready()` calls `ResourceLoader.load("res://assets/data/cards.tres")`, casts via `as CardManifest`, asserts non-null, then runs `_validate_entries()` for id uniqueness, non-empty `display_name`, and enum-valid `type`.
+- **No JSON.** Any `FileAccess` + `JSON.parse_string` path for card data is a forbidden pattern per ADR-005 §9.
+- **`type` field** is backed by the `CardEntry.CardType` enum declared inside the Resource class; Inspector shows a dropdown rather than a free-text string.
+- **`art` field** is a `Texture2D` `@export` (UID-safe across asset moves), not a string path.

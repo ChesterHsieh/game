@@ -1,102 +1,62 @@
-## CardDatabase — read-only card definition registry.
-## Autoload singleton. Loads all card JSON from assets/data/cards/ at startup.
-## No system writes to this at runtime.
-
+## CardDatabase — autoload #2. Loads the CardManifest at startup and holds
+## all CardEntry resources for the session.
+## Lookup API (Story 005) and missing-art detection (Story 006) are added by
+## later stories. This autoload owns load, validation (Story 004), and storage.
+##
+## NOTE: class_name is intentionally omitted. Godot 4 does not allow a script
+## registered as an autoload singleton to also declare a class_name matching
+## its autoload name — the engine reports "Class hides an autoload singleton".
+## The autoload is accessed globally via the name assigned in project.godot.
 extends Node
 
-const DATA_PATH := "res://assets/data/cards/"
+const MANIFEST_PATH := "res://assets/data/cards.tres"
 
-var _cards: Dictionary = {}  # id -> card data Dictionary
+## Known scene identifiers. Cards with a scene_id not in this list log a
+## push_warning at load time. Extend this list when the SceneManager epic
+## defines the authoritative scene registry.
+## Note: PackedStringArray literals are not compile-time constants in GDScript
+## 4.3, so this is declared as a var rather than const.
+var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global"])
+
+var _entries: Array[CardEntry] = []
 
 
 func _ready() -> void:
-	_load_all()
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_load_manifest(MANIFEST_PATH)
 
 
-## Returns card data for [param id], or an empty Dictionary if not found.
-## Logs an error on miss — callers should check has_card() when in doubt.
-func get_card(id: String) -> Dictionary:
-	if not _cards.has(id):
-		push_error("CardDatabase: card '%s' not found" % id)
-		return {}
-	return _cards[id]
+## Loads a CardManifest .tres at [param path] and stores its entries on this
+## autoload. Separated from _ready() so tests can inject a fixture path.
+## Fails the assert if the file is missing or is not a CardManifest.
+func _load_manifest(path: String) -> void:
+	var raw: Resource = ResourceLoader.load(path)
+	var manifest: CardManifest = raw as CardManifest
+	assert(manifest != null,
+		"CardDatabase: %s is missing or not a CardManifest" % path)
+	_entries = manifest.entries
+	_validate_entries()
 
 
-## Returns true if a card with [param id] exists in the database.
-func has_card(id: String) -> bool:
-	return _cards.has(id)
+## Validates all loaded entries for semantic correctness.
+## Hard errors (duplicate id, invalid CardType) use assert — they halt
+## execution in debug builds and are caught at dev time.
+## Soft issues (empty display_name, orphaned scene_id) use push_warning —
+## the card remains usable but the designer is alerted.
+## Called once inside _load_manifest(), after the cast succeeds.
+func _validate_entries() -> void:
+	var seen: Dictionary = {}
+	for e: CardEntry in _entries:
+		assert(not seen.has(e.id),
+			"CardDatabase: duplicate card id: %s" % e.id)
+		seen[e.id] = true
 
+		if e.display_name == "":
+			push_warning("CardDatabase: empty display_name on card %s" % e.id)
 
-## Returns all card entries as an Array of Dictionaries.
-func get_all_cards() -> Array:
-	return _cards.values()
+		assert(CardEntry.CardType.values().has(e.type),
+			"CardDatabase: invalid CardType on card %s" % e.id)
 
-
-## Returns all cards whose [code]scene_id[/code] matches [param scene_id],
-## plus any cards with [code]scene_id == "global"[/code].
-func get_cards_for_scene(scene_id: String) -> Array:
-	var result: Array = []
-	for card in _cards.values():
-		if card.get("scene_id", "") == scene_id or card.get("scene_id", "") == "global":
-			result.append(card)
-	return result
-
-
-# ── Private ───────────────────────────────────────────────────────────────────
-
-func _load_all() -> void:
-	var dir := DirAccess.open(DATA_PATH)
-	if dir == null:
-		push_error("CardDatabase: cannot open data directory '%s'" % DATA_PATH)
-		return
-
-	dir.list_dir_begin()
-	var file_name := dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".json"):
-			_load_file(DATA_PATH + file_name)
-		file_name = dir.get_next()
-	dir.list_dir_end()
-
-	print("CardDatabase: loaded %d card(s)" % _cards.size())
-
-
-func _load_file(path: String) -> void:
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		push_error("CardDatabase: cannot read '%s'" % path)
-		return
-
-	var raw := file.get_as_text()
-	file.close()
-
-	var json := JSON.new()
-	if json.parse(raw) != OK:
-		push_error("CardDatabase: JSON parse error in '%s': %s" % [path, json.get_error_message()])
-		return
-
-	_validate_and_store(json.data, path)
-
-
-func _validate_and_store(data: Dictionary, source: String) -> void:
-	# Required: id
-	var id: String = data.get("id", "")
-	if id == "":
-		push_error("CardDatabase: missing or empty 'id' in '%s' — skipping" % source)
-		return
-
-	# Required: type
-	if data.get("type", "") == "":
-		push_error("CardDatabase: missing or empty 'type' for card '%s' — skipping" % id)
-		return
-
-	# Warning: empty display_name
-	if data.get("display_name", "") == "":
-		push_warning("CardDatabase: empty 'display_name' for card '%s'" % id)
-
-	# Duplicate check
-	if _cards.has(id):
-		push_error("CardDatabase: duplicate id '%s' found in '%s' — skipping" % [id, source])
-		return
-
-	_cards[id] = data
+		if not KNOWN_SCENE_IDS.has(String(e.scene_id)):
+			push_warning("CardDatabase: orphaned scene_id '%s' on card %s"
+				% [e.scene_id, e.id])

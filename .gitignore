@@ -13,6 +13,10 @@ Desktop.ini
 .claude/settings.local.json
 CLAUDE.local.md
 production/session-logs/
+production/session-state/
+
+# === Test Reports ===
+reports/
 
 # === Internal Planning (not for public) ===
 

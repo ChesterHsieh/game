@@ -43,7 +43,7 @@
 
 ## Testing
 
-- **Framework**: [TO BE CONFIGURED — GUT or gdUnit4; decide before first test]
+- **Framework**: gdUnit4 — chosen 2026-04-21 during `/create-control-manifest`
 - **Minimum Coverage**: Core gameplay systems (Card Engine, Status Bar System, Hint System)
 - **Required Tests**: Card Engine state machine, bar math formulas, hint timer logic
 

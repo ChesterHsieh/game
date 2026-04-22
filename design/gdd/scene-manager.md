@@ -24,7 +24,7 @@ Scene Manager is successful when the transition between chapters feels like reme
 ### Core Rules
 
 **1. Scene Manifest**
-- Scene Manager holds a fixed, ordered array of `scene_id` strings loaded from `assets/data/scene-manifest.json`. This is the canonical playthrough order.
+- Scene Manager holds a fixed, ordered array of `scene_id` strings loaded from `assets/data/scene-manifest.tres` (a `SceneManifest` Resource per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md)). This is the canonical playthrough order.
 - Scene Manager tracks `_current_index: int` as its primary state. Index starts at 0.
 - The manifest is authored data — no scene order is hardcoded.
 
@@ -121,7 +121,7 @@ is_epilogue = _current_index >= manifest.size()  // after increment
 | Variable | Type | Range | Description |
 |----------|------|-------|-------------|
 | `_current_index` | int | 0 to `manifest.size()` | Current position in the scene manifest. Starts at 0, increments by 1 on each scene completion. |
-| `manifest.size()` | int | 5–8 (authored) | Total number of scenes. Read-only at runtime — defined by `scene-manifest.json`. |
+| `manifest.size()` | int | 5–8 (authored) | Total number of scenes. Read-only at runtime — defined by `scene-manifest.tres`. |
 
 **Output Range:** `_current_index` ranges from 0 (first scene) to `manifest.size()` (epilogue trigger). No clamping needed — the index never decrements.
 
@@ -150,19 +150,19 @@ All substantive math belongs to other systems:
 
 ### Signal Timing
 
-- **If `seed_cards_ready` never fires** (Scene Goal System failed to parse the scene JSON and stayed Idle): Scene Manager must not wait indefinitely. Race a safety timer (5 seconds) against the signal. On timeout: log an error with the `scene_id`, emit `scene_started` with zero seed cards, and enter `Active` so the game doesn't deadlock. A scene with no cards is playable but empty — better than a frozen screen.
+- **If `seed_cards_ready` never fires** (Scene Goal System failed to load the scene `.tres` and stayed Idle): Scene Manager must not wait indefinitely. Race a safety timer (5 seconds) against the signal. On timeout: log an error with the `scene_id`, emit `scene_started` with zero seed cards, and enter `Active` so the game doesn't deadlock. A scene with no cards is playable but empty — better than a frozen screen.
 
 - **If `seed_cards_ready` fires synchronously within the `SceneGoalSystem.load_scene()` call** (before the `await` is registered): Connect the `seed_cards_ready` signal *before* calling `load_scene()`. In GDScript, if the signal fires synchronously before `await` is reached, the await hangs forever.
 
 ### Data Validation
 
-- **If `scene-manifest.json` is missing or unreadable**: Log a fatal error in `_ready()`. Enter Epilogue state immediately — the game cannot proceed without a manifest. Do not crash.
+- **If `scene-manifest.tres` is missing or `ResourceLoader.load() as SceneManifest` returns null**: Log a fatal error in `_ready()`. Enter Epilogue state immediately — the game cannot proceed without a manifest. Do not crash.
 
-- **If `scene-manifest.json` is empty (`[]`)**: Check `manifest.size() == 0` after parsing. Skip directly to Epilogue state and emit `epilogue_started()`. Do not attempt `_load_scene_at_index(0)` — that's an out-of-bounds access.
+- **If `scene-manifest.tres` has an empty scene list**: Check `manifest.size() == 0` after loading. Skip directly to Epilogue state and emit `epilogue_started()`. Do not attempt `_load_scene_at_index(0)` — that's an out-of-bounds access.
 
-- **If `scene-manifest.json` is malformed** (invalid JSON, or not an array of strings): Validate on load. Assert the parsed result is an Array with all String elements. On failure: log an error naming the parse issue and enter Epilogue.
+- **If `scene-manifest.tres` is malformed** (wrong `class_name`, corrupted): The `as SceneManifest` cast returns null — same path as "missing" above. Log an error and enter Epilogue.
 
-- **If the manifest contains a `scene_id` with no corresponding scene JSON file**: Scene Manager delegates to Scene Goal System, which will fail and stay Idle. The `seed_cards_ready` timeout (5 seconds) catches this downstream failure. The scene is skipped gracefully.
+- **If the manifest contains a `scene_id` with no corresponding `scenes/[id].tres` file**: Scene Manager delegates to Scene Goal System, which will fail and stay Idle. The `seed_cards_ready` timeout (5 seconds) catches this downstream failure. The scene is skipped gracefully.
 
 - **If the manifest contains duplicate `scene_id` entries** (e.g., `["home", "park", "home"]`): Allow it. The manifest is an opaque ordered list — Chester may intentionally revisit a chapter. Log a debug note for awareness.
 
@@ -207,8 +207,8 @@ All substantive math belongs to other systems:
 
 | Asset | Path | Description |
 |-------|------|-------------|
-| **Scene manifest** | `assets/data/scene-manifest.json` | Ordered array of `scene_id` strings — the canonical playthrough order |
-| **Per-scene data** | `assets/data/scenes/[scene_id].json` | Read by Scene Goal System, not Scene Manager directly. SM passes the `scene_id`; SGS reads the file. |
+| **Scene manifest** | `assets/data/scene-manifest.tres` | `SceneManifest` Resource — ordered array of `scene_id` strings. Per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md). |
+| **Per-scene data** | `assets/data/scenes/[scene_id].tres` | `SceneData` Resource — read by Scene Goal System, not Scene Manager directly. SM passes the `scene_id`; SGS reads the file. Per ADR-005. |
 
 ### Signals Emitted
 
@@ -229,7 +229,7 @@ All substantive math belongs to other systems:
 
 ## Tuning Knobs
 
-Scene Manager has one system-level knob. All scene content values (bar config, seed cards, goal parameters) are owned by per-scene JSON files and the Scene Goal System — Scene Manager passes them through without modification.
+Scene Manager has one system-level knob. All scene content values (bar config, seed cards, goal parameters) are owned by per-scene `.tres` files and the Scene Goal System — Scene Manager passes them through without modification.
 
 | Knob | Type | Default | Safe Range | Too Low | Too High |
 |------|------|---------|------------|---------|----------|
@@ -239,8 +239,8 @@ Scene Manager has one system-level knob. All scene content values (bar config, s
 
 | Knob | Owner | Description |
 |------|-------|-------------|
-| Scene order | `assets/data/scene-manifest.json` | Chester authors the playthrough order directly in the manifest file |
-| Seed card list per scene | `assets/data/scenes/[scene_id].json` | Authored per-scene; read by Scene Goal System |
+| Scene order | `assets/data/scene-manifest.tres` | Chester authors the playthrough order directly in the manifest Resource |
+| Seed card list per scene | `assets/data/scenes/[scene_id].tres` | Authored per-scene `SceneData` Resource; read by Scene Goal System |
 | Bar config, thresholds, decay | Scene Goal System / Status Bar System | All bar math parameters are per-scene authored data |
 
 **Note**: The manifest itself is the primary "tuning knob" for Scene Manager — it controls the entire game structure. But it is authored data, not a runtime-configurable value.
@@ -269,8 +269,8 @@ The only implicit UI constraint: during `Loading` state, no player input should 
 ## Acceptance Criteria
 
 ### Manifest Loading
-- **GIVEN** `scene-manifest.json` exists with `["home", "park", "cafe"]`, **WHEN** Scene Manager's `_ready()` fires, **THEN** `_manifest` contains `["home", "park", "cafe"]` in that order and `_current_index` is `0`.
-- **GIVEN** `scene-manifest.json` contains `["park", "home"]` (reversed), **WHEN** Scene Manager loads the manifest, **THEN** scenes play in order `park` then `home` — no hardcoded override reorders them.
+- **GIVEN** `scene-manifest.tres` contains `["home", "park", "cafe"]`, **WHEN** Scene Manager's `_ready()` fires, **THEN** `_manifest` contains `["home", "park", "cafe"]` in that order and `_current_index` is `0`.
+- **GIVEN** `scene-manifest.tres` contains `["park", "home"]` (reversed), **WHEN** Scene Manager loads the manifest, **THEN** scenes play in order `park` then `home` — no hardcoded override reorders them.
 
 ### Startup
 - **GIVEN** Scene Manager's `_ready()` fires, **WHEN** the method begins, **THEN** it enters `Waiting` state and connects to `EventBus.game_start_requested` with `CONNECT_ONE_SHOT`. It does **not** call `_load_scene_at_index(0)`.
@@ -329,15 +329,15 @@ The only implicit UI constraint: during `Loading` state, no player input should 
 - **GIVEN** the timeout timer is running and `seed_cards_ready` arrives at 1.5 seconds, **WHEN** the signal is processed, **THEN** the timer is cancelled and seed cards are spawned normally.
 
 ### Data Validation
-- **GIVEN** `scene-manifest.json` does not exist, **WHEN** `_ready()` attempts to load it, **THEN** a fatal error is logged, `_state` becomes `Epilogue`, and `epilogue_started()` is emitted.
-- **GIVEN** `scene-manifest.json` contains `[]`, **WHEN** Scene Manager parses it, **THEN** Epilogue is entered immediately — `_load_scene_at_index(0)` is never called.
-- **GIVEN** `scene-manifest.json` is invalid JSON, **WHEN** Scene Manager validates it, **THEN** a parse error is logged and Epilogue is entered.
+- **GIVEN** `scene-manifest.tres` does not exist (or `ResourceLoader.load() as SceneManifest` returns null), **WHEN** `_ready()` attempts to load it, **THEN** a fatal error is logged, `_state` becomes `Epilogue`, and `epilogue_started()` is emitted.
+- **GIVEN** `scene-manifest.tres` has an empty scene list, **WHEN** Scene Manager loads it, **THEN** Epilogue is entered immediately — `_load_scene_at_index(0)` is never called.
+- **GIVEN** `scene-manifest.tres` is malformed (wrong type), **WHEN** the `as SceneManifest` cast returns null, **THEN** a load error is logged and Epilogue is entered.
 - **GIVEN** manifest contains `["home", "park", "home"]`, **WHEN** loaded, **THEN** all three are accepted (duplicates allowed).
 
 ### Inter-System Coordination
 - **GIVEN** `seed_cards_ready(["a", "b", "c"])` but `get_seed_card_positions()` returns only 2 positions, **WHEN** spawning, **THEN** only 2 cards are spawned, a warning is logged, and `scene_started` still emits.
 - **GIVEN** `spawn_card("bad_card", pos)` returns null, **WHEN** processing seed cards, **THEN** a warning is logged and remaining cards are still spawned.
-- **GIVEN** manifest contains `"nonexistent"` with no scene JSON, **WHEN** `load_scene("nonexistent")` fails and `seed_cards_ready` never fires, **THEN** the timeout handles it — Active with zero cards.
+- **GIVEN** manifest contains `"nonexistent"` with no scene `.tres`, **WHEN** `load_scene("nonexistent")` fails and `seed_cards_ready` never fires, **THEN** the timeout handles it — Active with zero cards.
 
 ## Open Questions
 

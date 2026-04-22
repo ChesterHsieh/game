@@ -1,0 +1,12 @@
+[gd_resource type="RecipeManifest" load_steps=2 format=3]
+
+[sub_resource type="RecipeEntry" id="RecipeEntry_merge_001"]
+id = &"test_merge_001"
+card_a = &"card_rain"
+card_b = &"card_umbrella"
+template = &"merge"
+scene_id = &"global"
+config = {"result_card": &"card_shelter"}
+
+[resource]
+entries = [SubResource("RecipeEntry_merge_001")]

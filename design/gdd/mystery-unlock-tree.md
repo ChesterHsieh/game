@@ -89,10 +89,10 @@ All three dictionaries are included in save state for simplicity, though the sec
 
 A carry-forward card is included if **all** `requires_recipes` have been discovered in any prior scene. MUT exposes `get_carry_forward_cards(carry_forward_spec: Array) -> Array[String]`. Scene Goal System calls this during `load_scene()` and appends the result to `seed_cards` before emitting `seed_cards_ready`. This creates a soft dependency: SGS → MUT (read-only query). If MUT returns empty or is unavailable, the scene loads with base seed cards only.
 
-**7. Final illustrated memory condition.** The set of epilogue-required recipes is declared in a dedicated file `res://assets/data/epilogue-requirements.json` as an explicit array of recipe_ids. At `_ready()`, MUT loads this list into `_epilogue_required_ids`. The per-recipe `epilogue_required` flag on `recipes.json` is NOT used — one file, one place to audit the gift's required memories. On `epilogue_started()`, MUT evaluates completion using `partial_threshold` (see Formulas):
+**7. Final illustrated memory condition.** The set of epilogue-required recipes is declared in a dedicated file `res://assets/data/epilogue-requirements.tres` as an explicit array of recipe_ids. At `_ready()`, MUT loads this list into `_epilogue_required_ids`. The per-recipe `epilogue_required` flag on `recipes.tres` is NOT used — one file, one place to audit the gift's required memories. On `epilogue_started()`, MUT evaluates completion using `partial_threshold` (see Formulas):
    - If `R_found >= ceil(R_total * partial_threshold)`: emit `EventBus.final_memory_ready()`. Set `_final_memory_earned = true`.
    - Otherwise: do not emit. Final Epilogue Screen can call `MUT.get_epilogue_state()` for partial data.
-   - Degenerate case: if `R_total == 0` (empty or missing `epilogue-requirements.json`), neither `epilogue_conditions_met()` nor `final_memory_ready()` is ever emitted — the vacuous-truth cliff is explicitly guarded. An error is logged at `_ready()`.
+   - Degenerate case: if `R_total == 0` (empty or missing `epilogue-requirements.tres`), neither `epilogue_conditions_met()` nor `final_memory_ready()` is ever emitted — the vacuous-truth cliff is explicitly guarded. An error is logged at `_ready()`.
 
 MUT also checks after every new discovery whether the epilogue condition is newly satisfied, and emits `EventBus.epilogue_conditions_met()` at that moment — mid-session, before the epilogue begins. This is a **one-time** signal: once emitted, it does not re-fire for the remainder of the session, and the fact that it fired is persisted via `_epilogue_conditions_emitted` across save/load cycles.
 
@@ -112,7 +112,7 @@ After each new discovery, if `_discovery_order_counter` matches a resolved thres
 
 > **Player-visibility constraint (Pillar 3, anti-celebration):** `discovery_milestone_reached` is for silent narrative beats only (e.g., unlocking a specific carry-forward entry, switching ambient audio bed quietly). Permitted downstream responses: silent gameplay state changes. Forbidden: audio stings, UI flair, visual celebrations, on-screen messages, any response that reads as "you hit a milestone." If the player notices the milestone firing, the tree has failed.
 
-**9. `force_unlock_all` bulk-load bypass (DEV ONLY).** When `debug-config.json` exists and contains `force_unlock_all: true`, MUT runs a **dedicated bulk-load path** inside `_ready()` (AFTER RecipeDB is queried, BEFORE any scene signal could arrive). The bulk path does NOT call the Rule 3 handler in a loop. Instead:
+**9. `force_unlock_all` bulk-load bypass (DEV ONLY).** When `debug-config.tres` exists and contains `force_unlock_all: true`, MUT runs a **dedicated bulk-load path** inside `_ready()` (AFTER RecipeDB is queried, BEFORE any scene signal could arrive). The bulk path does NOT call the Rule 3 handler in a loop. Instead:
    1. Set `_suppress_signals = true`.
    2. Iterate every recipe in Recipe Database. For each recipe, write directly into `_discovered_recipes`, `_scene_discoveries["__debug__"]`, and `_cards_in_discoveries` — bypassing the Rule 3 processing pipeline (no `recipe_discovered` emission).
    3. Set `_discovery_order_counter = R_authored`.
@@ -152,8 +152,8 @@ No `recipe_discovered`, `discovery_milestone_reached`, or `epilogue_conditions_m
 | **EventBus** | MUT emits | `discovery_milestone_reached(milestone_id: String, discovery_count: int)` — silent narrative beat threshold crossed. **Constraint**: downstream systems must NOT produce player-visible feedback (no audio sting, no UI flair). Permitted uses: silent carry-forward unlocks, quiet ambient bed switches. |
 | **EventBus** | MUT emits | `epilogue_conditions_met()` — all required epilogue recipes discovered (fires **at most once per save slot**; `_epilogue_conditions_emitted` flag in save state prevents re-fire across sessions). Suppressed entirely when `partial_threshold == 0.0`. **Constraint**: engine-preparation signal only. Consumer: `gameplay_root.gd` / Scene Manager preloader per ADR-004 §2 — triggers silent texture preload for the final illustrated memory. No player-visible feedback. |
 | **EventBus** | MUT emits | `final_memory_ready()` — emitted on `epilogue_started()` if `R_found >= R_total * partial_threshold`. This signal IS the cue for the Final Epilogue Screen to begin the authored reveal. |
-| **Epilogue Requirements File** | MUT reads at startup | Loads explicit recipe_id array from `res://assets/data/epilogue-requirements.json` into `_epilogue_required_ids`. |
-| **Recipe Database** | MUT reads at startup | Queries `R_authored` (total recipe count) to resolve `_milestone_pct` into absolute thresholds. Validates that every id in `epilogue-requirements.json` exists in Recipe Database — logs an error on any unknown id. |
+| **Epilogue Requirements File** | MUT reads at startup | Loads explicit recipe_id array from `res://assets/data/epilogue-requirements.tres` into `_epilogue_required_ids`. |
+| **Recipe Database** | MUT reads at startup | Queries `R_authored` (total recipe count) to resolve `_milestone_pct` into absolute thresholds. Validates that every id in `epilogue-requirements.tres` exists in Recipe Database — logs an error on any unknown id. |
 | **Scene Goal System** | SGS reads from MUT | `MUT.get_carry_forward_cards(carry_forward_spec: Array) -> Array[String]` — called during `load_scene()` to resolve conditional carry-forward cards |
 | **Save/Progress System** | Pulls from MUT | `MUT.get_save_state() -> Dictionary` and `MUT.load_save_state(data: Dictionary)` for persistence |
 | **Final Epilogue Screen** | Reads from MUT / listens | `MUT.get_epilogue_state() -> Dictionary` query + listens to `final_memory_ready()` on EventBus |
@@ -173,8 +173,8 @@ No `recipe_discovered`, `discovery_milestone_reached`, or `epilogue_conditions_m
 | `is_final_memory_earned` | `() -> bool` | True if all epilogue-required recipes are discovered |
 | `get_save_state` | `() -> Dictionary` | Serializable snapshot of full discovery state |
 | `load_save_state` | `(data: Dictionary) -> void` | Restores discovery state from saved snapshot |
-| `_inject_config` *(test-only)* | `(config: Dictionary) -> void` | Test seam: overrides `mut-config.json` load with an in-memory Dictionary (keys `milestone_pct`, `partial_threshold`). Used by unit tests to set malformed / edge-case configs without touching the filesystem. Must be called before `_ready()` runs, or (in tests) replaces the file-load step entirely. |
-| `_inject_debug_config` *(test-only)* | `(config: Variant) -> void` | Test seam: overrides `debug-config.json` load. Pass a Dictionary to simulate presence, `null` to simulate absent file. |
+| `_inject_config` *(test-only)* | `(config: Dictionary) -> void` | Test seam: overrides `mut-config.tres` load with an in-memory Dictionary (keys `milestone_pct`, `partial_threshold`). Used by unit tests to set malformed / edge-case configs without touching the filesystem. Must be called before `_ready()` runs, or (in tests) replaces the file-load step entirely. |
+| `_inject_debug_config` *(test-only)* | `(config: Variant) -> void` | Test seam: overrides `debug-config.tres` load. Pass a Dictionary to simulate presence, `null` to simulate absent file. |
 
 **Threading caveat.** All MUT state, dictionaries, and API methods assume **single-threaded access via Godot's main thread**. No mutex is used. Do not call query methods from `Thread` or `WorkerThreadPool` worker threads. If future work introduces threaded access (e.g., background carry-forward precomputation), add a `Mutex` and update this caveat.
 
@@ -236,7 +236,7 @@ epilogue_complete = (R_found >= ceil(R_total * partial_threshold))
 
 | Variable | Symbol | Type | Range | Description |
 |---|---|---|---|---|
-| Epilogue-required recipes | _epilogue_required_ids | Set[String] | size ≥ 1 | Recipe IDs declared in `epilogue-requirements.json`; loaded at startup |
+| Epilogue-required recipes | _epilogue_required_ids | Set[String] | size ≥ 1 | Recipe IDs declared in `epilogue-requirements.tres`; loaded at startup |
 | Total required | R_total | int | 1–∞ | `|_epilogue_required_ids|`; fixed at startup |
 | Found required | R_found | int | 0–R_total | How many required recipes have been discovered |
 | Partial threshold | partial_threshold | float | [0.0, 1.0] | Tuning knob; 1.0 = strict completion, 0.80 = recommended softened gate |
@@ -339,8 +339,8 @@ P_discovery = D / R_authored
 |---|---|---|
 | **Interaction Template Framework** | `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` signal via EventBus — primary discovery input | Hard — MUT cannot record discoveries without this signal |
 | **Scene Manager** | `scene_started(scene_id)`, `scene_completed(scene_id)`, `epilogue_started()` signals via EventBus — state machine transitions | Hard — MUT cannot track scene context or trigger epilogue evaluation without these |
-| **Recipe Database** | Queried at `_ready()` for `R_authored` (total recipe count, used to resolve `milestone_pct` into absolute thresholds). Also used for `get_recipe(recipe_id)` reverse lookup to validate every id in `epilogue-requirements.json`. No per-recipe flag scan. | Hard at startup — MUT must resolve milestone thresholds and validate the epilogue set before gameplay begins |
-| **Epilogue Requirements File** | `res://assets/data/epilogue-requirements.json` — explicit Array[String] of recipe_ids; loaded at `_ready()` into `_epilogue_required_ids` | Hard — without this file, the final illustrated memory cannot fire |
+| **Recipe Database** | Queried at `_ready()` for `R_authored` (total recipe count, used to resolve `milestone_pct` into absolute thresholds). Also used for `get_recipe(recipe_id)` reverse lookup to validate every id in `epilogue-requirements.tres`. No per-recipe flag scan. | Hard at startup — MUT must resolve milestone thresholds and validate the epilogue set before gameplay begins |
+| **Epilogue Requirements File** | `res://assets/data/epilogue-requirements.tres` — explicit Array[String] of recipe_ids; loaded at `_ready()` into `_epilogue_required_ids` | Hard — without this file, the final illustrated memory cannot fire |
 | **EventBus** (ADR-003) | Signal bus for all inter-system communication | Hard — no signals flow without it |
 
 ### Downstream (systems that depend on this)
@@ -371,13 +371,15 @@ P_discovery = D / R_authored
 
 ### External Data
 
+All files in this section are Godot `.tres` Resource files loaded via `ResourceLoader`, per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md). `FileAccess` + `JSON.parse_string` is forbidden for MUT data loads.
+
 | Asset | Path | Description |
 |---|---|---|
-| MUT config | `res://assets/data/mut-config.json` | `milestone_pct` array and `partial_threshold` float; loaded at `_ready()` |
-| Epilogue requirements | `res://assets/data/epilogue-requirements.json` | Explicit array of recipe_ids required for the final illustrated memory; single source of truth for the gift's required memory set |
-| Debug config (dev only) | `res://assets/data/debug-config.json` | `force_unlock_all` boolean; **excluded from release exports** via `project.godot` export filter |
-| Scene data (carry-forward) | `res://assets/data/scenes/[scene_id].json` | `carry_forward` array read by SGS, conditions evaluated by MUT |
-| Recipe Database | `res://assets/data/recipes.json` | Queried for `R_authored` at startup and for `get_recipe(recipe_id)` validation. **No per-recipe `epilogue_required` flag is read** — `epilogue-requirements.json` is the authoritative list. |
+| MUT config | `res://assets/data/mut-config.tres` | `milestone_pct` array and `partial_threshold` float; loaded at `_ready()` |
+| Epilogue requirements | `res://assets/data/epilogue-requirements.tres` | Explicit array of recipe_ids required for the final illustrated memory; single source of truth for the gift's required memory set |
+| Debug config (dev only) | `res://assets/data/debug-config.tres` | `force_unlock_all` boolean; **excluded from release exports** via `project.godot` export filter |
+| Scene data (carry-forward) | `res://assets/data/scenes/[scene_id].tres` | `carry_forward` array read by SGS, conditions evaluated by MUT |
+| Recipe Database | `res://assets/data/recipes.tres` | Queried for `R_authored` at startup and for `get_recipe(recipe_id)` validation. **No per-recipe `epilogue_required` flag is read** — `epilogue-requirements.tres` is the authoritative list. |
 
 ### Required Autoload Order
 
@@ -385,7 +387,7 @@ EventBus → RecipeDatabase → MysteryUnlockTree (must be after RecipeDatabase 
 
 **Scene Manager startup coupling:** Scene Manager defers its first `scene_started` emission by one frame (`call_deferred` pattern) to allow autoloads — including MUT — to finish `_ready()` before any signal fires. MUT relies on this: if Scene Manager were to emit `scene_started` synchronously during its own `_ready()`, the signal could arrive before MUT's signal connections are established. If the Scene Manager's deferred-emit behavior changes, MUT must switch to connecting signals in `_enter_tree()` (earlier than `_ready()`). **Why `_enter_tree()` is safe for this fallback:** EventBus signals are declared on the EventBus class body (not inside `_ready()`), so the signal objects exist from autoload instantiation. Connecting to them from MUT's `_enter_tree()` — which fires before any autoload's `_ready()` — is valid because the connect call only needs the signal object to exist, not EventBus's `_ready()` to have run.
 
-**RecipeDatabase synchronous-load requirement (HARD).** MUT queries `R_authored` and validates `epilogue-requirements.json` against RecipeDB during its own `_ready()`. This is safe **only if RecipeDB's own `_ready()` performs a synchronous load of `recipes.json` that completes before returning**. RecipeDB MUST NOT use threaded loading, deferred parsing, or `ResourceLoader.load_threaded_request` for its primary recipe data. If RecipeDB ever moves to an async load path, MUT will silently read `R_authored = 0` at startup and the entire session will run in the degraded R_authored=0 mode (all discoveries discarded as unknown). Document this as a one-line contract in Recipe Database GDD's Dependencies section.
+**RecipeDatabase synchronous-load requirement (HARD).** MUT queries `R_authored` and validates `epilogue-requirements.tres` against RecipeDB during its own `_ready()`. This is safe **only if RecipeDB's own `_ready()` performs a synchronous load of `recipes.tres` that completes before returning**. RecipeDB MUST NOT use threaded loading, deferred parsing, or `ResourceLoader.load_threaded_request` for its primary recipe data. If RecipeDB ever moves to an async load path, MUT will silently read `R_authored = 0` at startup and the entire session will run in the degraded R_authored=0 mode (all discoveries discarded as unknown). Document this as a one-line contract in Recipe Database GDD's Dependencies section.
 
 **Typed-array write discipline.** `_scene_discoveries` is `Dictionary` with values typed as `Array[String]`. Godot 4.3 does not support typed dictionaries (arrives in 4.4), so dictionary value retrieval returns `Variant`. **Every write to `_scene_discoveries[scene_id]` must assign a typed `Array[String]`** (not a plain `Array`) — otherwise subsequent retrieval into a typed local variable raises a type-coercion error. In practice: initialize with `_scene_discoveries[scene_id] = [] as Array[String]` (or declare the initial empty value as typed at the call site).
 
@@ -397,11 +399,11 @@ EventBus → RecipeDatabase → MysteryUnlockTree (must be after RecipeDatabase 
 
 | Knob | Owner | Default | Safe Range | What It Affects |
 |---|---|---|---|---|
-| `milestone_pct` | `mut-config.json` (Array[float]) | `[0.15, 0.50, 0.80]` | Each entry in (0.0, 1.0]; array strictly ascending and unique | Silent narrative beats only — permitted uses: quiet ambient bed switches, silent carry-forward unlocks. Pillar 3 forbids audio stings, UI flair, on-screen messages. Resolved to absolute counts at `_ready()` against `R_authored`. |
-| `partial_threshold` | `mut-config.json` (float) | `1.0` | [0.0, 1.0]; 1.0 = strict full completion (default); lower only on OQ-2 unreachability findings | Fraction of epilogue-required recipes Ju must discover for `final_memory_ready()` to fire. **Default stays at `1.0` for this N=1 gift** — every authored memory matters, and a softened gate dilutes the letter. Lower to `0.80` *only* if the OQ-2 reachability walker identifies a structurally unreachable recipe and recovery is the goal. `0.0` is a dev-only test value that fires `final_memory_ready()` immediately on `epilogue_started()`; mid-session `epilogue_conditions_met()` is suppressed when the threshold is `0.0`. |
-| `epilogue-requirements.json` | `res://assets/data/epilogue-requirements.json` (Array[String]) | *(authored per-gift; expect 20–40 entries)* | Length ≥ 1; each entry must exist in Recipe Database | Explicit list of recipe_ids required for the final illustrated memory. Single source of truth — per-recipe `epilogue_required` flags are NOT used. |
-| `carry_forward` (per scene) | `scenes/[scene_id].json` per-scene array | `[]` for first scene; varied per later scene | 0 ≤ entries ≤ ~10 per scene; `requires_recipes` length 0–3 typical | Which prior-scene cards appear as additional seed cards; shapes scene-to-scene continuity |
-| `force_unlock_all` (DEV ONLY) | `res://assets/data/debug-config.json` (boolean) | `false` | `true` only in dev builds; **must** be excluded from release exports | When `true`, MUT marks every recipe as discovered at `_ready()`; allows jumping to late scenes for testing. Lives in a file that the export preset filters out entirely. |
+| `milestone_pct` | `mut-config.tres` (Array[float]) | `[0.15, 0.50, 0.80]` | Each entry in (0.0, 1.0]; array strictly ascending and unique | Silent narrative beats only — permitted uses: quiet ambient bed switches, silent carry-forward unlocks. Pillar 3 forbids audio stings, UI flair, on-screen messages. Resolved to absolute counts at `_ready()` against `R_authored`. |
+| `partial_threshold` | `mut-config.tres` (float) | `1.0` | [0.0, 1.0]; 1.0 = strict full completion (default); lower only on OQ-2 unreachability findings | Fraction of epilogue-required recipes Ju must discover for `final_memory_ready()` to fire. **Default stays at `1.0` for this N=1 gift** — every authored memory matters, and a softened gate dilutes the letter. Lower to `0.80` *only* if the OQ-2 reachability walker identifies a structurally unreachable recipe and recovery is the goal. `0.0` is a dev-only test value that fires `final_memory_ready()` immediately on `epilogue_started()`; mid-session `epilogue_conditions_met()` is suppressed when the threshold is `0.0`. |
+| `epilogue-requirements.tres` | `res://assets/data/epilogue-requirements.tres` (Array[String]) | *(authored per-gift; expect 20–40 entries)* | Length ≥ 1; each entry must exist in Recipe Database | Explicit list of recipe_ids required for the final illustrated memory. Single source of truth — per-recipe `epilogue_required` flags are NOT used. |
+| `carry_forward` (per scene) | `scenes/[scene_id].tres` per-scene array | `[]` for first scene; varied per later scene | 0 ≤ entries ≤ ~10 per scene; `requires_recipes` length 0–3 typical | Which prior-scene cards appear as additional seed cards; shapes scene-to-scene continuity |
+| `force_unlock_all` (DEV ONLY) | `res://assets/data/debug-config.tres` (boolean) | `false` | `true` only in dev builds; **must** be excluded from release exports | When `true`, MUT marks every recipe as discovered at `_ready()`; allows jumping to late scenes for testing. Lives in a file that the export preset filters out entirely. |
 
 ### Safe Ranges & Failure Modes
 
@@ -414,14 +416,14 @@ EventBus → RecipeDatabase → MysteryUnlockTree (must be after RecipeDatabase 
 - **Post-resolution collision** (distinct authored floats collapsing to the same integer, e.g. `[0.01, 0.02]` with `R_authored = 10` both → `T = 1`): the later duplicate is dropped and a warning names the dropped entries. Each surviving threshold produces a unique `milestone_id`.
 
 **`partial_threshold`**
-- **`1.0`** (**DEFAULT** — keep this unless OQ-2 finds a structurally unreachable recipe): strict completion. Ju must discover every entry in `epilogue-requirements.json` for the final memory. For an N=1 gift, this is the correct default: Chester has already chosen which memories matter, and letting any be skipped dilutes the letter.
+- **`1.0`** (**DEFAULT** — keep this unless OQ-2 finds a structurally unreachable recipe): strict completion. Ju must discover every entry in `epilogue-requirements.tres` for the final memory. For an N=1 gift, this is the correct default: Chester has already chosen which memories matter, and letting any be skipped dilutes the letter.
 - **`0.80`**: fallback value for a specific recovery scenario — *use only after* OQ-2 reachability analysis shows a required recipe cannot be reached on any valid play path and you choose not to rewrite the recipe/scene graph. Not a general softening dial.
 - **Below `1/R_total`** (e.g. `partial_threshold = 0.20` with `R_total = 5` resolves to `ceil = 1`): final memory triggers on the very first required discovery. Almost certainly a footgun — flagged at `_ready()` with a warning.
 - **`< 0.50`** (and above `1/R_total`): final memory feels unearned; risks triggering on a shallow playthrough and undercutting the emotional weight of the discovery arc.
 - **`0.0`**: `final_memory_ready()` fires immediately on any `epilogue_started()` regardless of discovery state. **Mid-session `epilogue_conditions_met()` is suppressed entirely when the threshold is `0.0`** (guard in Rule 3 Step 9 and Rule 7). Only for dev testing of the final epilogue screen in isolation.
 - **Above `1.0` or negative**: MUT clamps to [0.0, 1.0] and logs a warning.
 
-**`epilogue-requirements.json`**
+**`epilogue-requirements.tres`**
 - **Missing file**: MUT logs an error at `_ready()`, treats `_epilogue_required_ids` as empty (see degenerate case).
 - **Empty array `[]`**: `R_total = 0`; `R_found >= ceil(0 * partial_threshold)` always evaluates to `true` (0 >= 0). `epilogue_conditions_met()` would fire on *any* state tick. MUT logs an error and skips emission of both `epilogue_conditions_met` and `final_memory_ready` when `R_total == 0` — explicit guard against vacuous truth.
 - **Contains unknown recipe_ids**: MUT logs an error naming each unknown id at `_ready()`. Unknown ids remain in `_epilogue_required_ids` (cannot be silently dropped — a typo could lock Ju out of the final memory forever). Author must fix the file.
@@ -436,15 +438,15 @@ EventBus → RecipeDatabase → MysteryUnlockTree (must be after RecipeDatabase 
 - **Carry-forward references a recipe from a *later* scene**: condition can never be satisfied during the carrying scene's load. No engine-side check — authors must order scenes correctly.
 
 **`force_unlock_all`**
-- **Lives in a dev-only file**: `res://assets/data/debug-config.json` is excluded from release exports via the exclude filter in `export_presets.cfg`. Release builds cannot load the file — MUT defaults to `false` if the file is missing. This makes "accidentally shipped with true" structurally impossible rather than relying on a checklist.
+- **Lives in a dev-only file**: `res://assets/data/debug-config.tres` is excluded from release exports via the exclude filter in `export_presets.cfg`. Release builds cannot load the file — MUT defaults to `false` if the file is missing. This makes "accidentally shipped with true" structurally impossible rather than relying on a checklist.
 - **Per-preset verification required**: the exclude filter is declared **per preset** in `export_presets.cfg`. If multiple platform presets exist (e.g., desktop + web), each must independently declare the exclusion. There is no global exclude. Release-manager checklist must verify this for every preset.
 - **`true` in dev**: takes the Rule 9 bulk-load bypass. Milestones and `epilogue_conditions_met` do not fire because `_suppress_signals` is held `true` throughout the bulk-mark.
-- **Release verification**: AC confirms `debug-config.json` is absent from packaged release archives.
+- **Release verification**: AC confirms `debug-config.tres` is absent from packaged release archives.
 
 ### Knob Interactions
 
 - **`milestone_pct` × Recipe Database size**: thresholds are percentages, not absolute counts — robust to content-count changes during authoring. No re-tuning needed when new recipes are added mid-development.
-- **`epilogue-requirements.json` size × `carry_forward` graph**: a required recipe in scene 3 that depends on a carry-forward card from scene 1 forms a hidden dependency chain. If the scene 1 carry-forward condition fails, Ju cannot complete the epilogue. Acceptance criteria must verify every required recipe is reachable from every valid play path (OQ-2 reachability tool).
+- **`epilogue-requirements.tres` size × `carry_forward` graph**: a required recipe in scene 3 that depends on a carry-forward card from scene 1 forms a hidden dependency chain. If the scene 1 carry-forward condition fails, Ju cannot complete the epilogue. Acceptance criteria must verify every required recipe is reachable from every valid play path (OQ-2 reachability tool).
 - **`milestone_pct` × `partial_threshold`**: if a milestone percentage happens to coincide with the resolved partial-completion point (e.g., `milestone_pct = [0.80]` and `partial_threshold = 0.80`), the milestone signal and `epilogue_conditions_met` may fire close together. Both are silent signals — no player-visible overlap — but downstream listeners (quiet bed-switch + Final Epilogue pre-load) should handle simultaneous firing idempotently.
 - **`force_unlock_all` × everything**: when true, Rule 9's dedicated bulk-load bypass runs instead of the per-discovery pipeline. `_suppress_signals` is held `true` during the bulk assignment, so no `recipe_discovered`, `discovery_milestone_reached`, or `epilogue_conditions_met` signals are emitted. `_epilogue_conditions_emitted` and `_final_memory_earned` are set to `true` directly. Ju (or a debug build of Ju) jumps straight to a "ready" state queryable via `is_final_memory_earned() == true`. Document this behavior in the debug-config file's comment header.
 
@@ -454,11 +456,11 @@ EventBus → RecipeDatabase → MysteryUnlockTree (must be after RecipeDatabase 
 
 | Knob | Lives In | Why Not Here |
 |---|---|---|
-| Recipe definitions, costs, effects | `recipes.json` (Recipe Database) | MUT is read-only on recipes |
-| Card definitions | `cards.json` (Card Database) | MUT only references card IDs |
-| Scene seed cards (base set) | `scenes/[scene_id].json` (Scene Manager) | MUT only resolves *carry-forward* additions, not base seeds |
-| Bar values, goal thresholds | `scenes/[scene_id].json` (Scene Goal System) | MUT does not gate scenes by score, only by discovery state |
-| Hint timing | `hint-config.json` (Hint System) | Independent system; MUT does not feed hints |
+| Recipe definitions, costs, effects | `recipes.tres` (Recipe Database) | MUT is read-only on recipes |
+| Card definitions | `cards.tres` (Card Database) | MUT only references card IDs |
+| Scene seed cards (base set) | `scenes/[scene_id].tres` (Scene Manager) | MUT only resolves *carry-forward* additions, not base seeds |
+| Bar values, goal thresholds | `scenes/[scene_id].tres` (Scene Goal System) | MUT does not gate scenes by score, only by discovery state |
+| Hint timing | `hint-config.tres` (Hint System) | Independent system; MUT does not feed hints |
 
 ## Visual/Audio Requirements
 
@@ -630,7 +632,7 @@ GIVEN `combination_executed("R1", "additive", "inst-a", "inst-b", "rain", "")` f
 GIVEN MUT is in Inactive state, WHEN `combination_executed(...)` fires, THEN `get_discovery_count() == 0` AND no signals are emitted.
 
 **AC-042 [Logic] — Empty `_epilogue_required_ids` suppresses epilogue signals.**
-GIVEN `epilogue-requirements.json` is missing OR contains an empty array, WHEN MUT's `_ready()` completes AND subsequent `combination_executed` events fire AND `epilogue_started()` eventually fires, THEN an error is logged at `_ready()` naming the empty epilogue requirement set AND `epilogue_conditions_met()` is NEVER emitted during the session AND `final_memory_ready()` is NEVER emitted on `epilogue_started()` AND `get_epilogue_state()["required_count"] == 0` AND `get_epilogue_state()["is_complete"] == false`.
+GIVEN `epilogue-requirements.tres` is missing OR contains an empty array, WHEN MUT's `_ready()` completes AND subsequent `combination_executed` events fire AND `epilogue_started()` eventually fires, THEN an error is logged at `_ready()` naming the empty epilogue requirement set AND `epilogue_conditions_met()` is NEVER emitted during the session AND `final_memory_ready()` is NEVER emitted on `epilogue_started()` AND `get_epilogue_state()["required_count"] == 0` AND `get_epilogue_state()["is_complete"] == false`.
 
 **AC-043 [Config] — Autoload order verified in `project.godot`.**
 GIVEN `project.godot` is inspected, WHEN the autoload section is parsed, THEN `EventBus` appears before `RecipeDatabase` AND `RecipeDatabase` appears before `MysteryUnlockTree` in declaration order.
@@ -642,7 +644,7 @@ GIVEN MUT is initialized via `_inject_config({ "milestone_pct": [0.50, 0.15], "p
 GIVEN MUT is initialized via `_inject_config({ "milestone_pct": [0.25, 1.50, 0.75], "partial_threshold": 1.0 })`, WHEN MUT's `_ready()` runs, THEN a warning is logged naming the out-of-range entry (`1.50`) AND `_milestone_pct` becomes `[0.25, 0.75]` AND `_milestone_thresholds` is resolved from only the retained entries.
 
 **AC-046 [Logic] — `force_unlock_all` disabled when debug-config is absent.**
-GIVEN MUT is initialized via `_inject_debug_config(null)` (simulates release build where export filter excluded the file), WHEN MUT's `_ready()` runs, THEN `_force_unlock_all == false` AND MUT does not bulk-mark any recipes as discovered AND `get_discovery_count() == 0` AND no warning is logged (absent file is normal in release). *(Note: `debug-config.json` exclusion from release exports is enforced via `export_presets.cfg` per-preset and verified by the release-manager's export checklist, not by this AC.)*
+GIVEN MUT is initialized via `_inject_debug_config(null)` (simulates release build where export filter excluded the file), WHEN MUT's `_ready()` runs, THEN `_force_unlock_all == false` AND MUT does not bulk-mark any recipes as discovered AND `get_discovery_count() == 0` AND no warning is logged (absent file is normal in release). *(Note: `debug-config.tres` exclusion from release exports is enforced via `export_presets.cfg` per-preset and verified by the release-manager's export checklist, not by this AC.)*
 
 **AC-047 [Logic] — `force_unlock_all == true` bulk-marks via Rule 9 bypass without firing milestone or epilogue_conditions_met signals.**
 GIVEN MUT is initialized via `_inject_debug_config({ "force_unlock_all": true })` AND Recipe Database has R_authored = 35 recipes AND `_epilogue_required_ids` has 10 entries AND `_milestone_pct = [0.50]`, WHEN MUT's `_ready()` runs, THEN Rule 9's bulk-load bypass executes AND `get_discovery_count() == 35` AND `_discovery_order_counter == 35` AND `recipe_discovered` was NOT emitted during `_ready()` (observed via signal spy — signal spy log contains zero `recipe_discovered` entries from the bulk path) AND `discovery_milestone_reached` was NOT emitted AND `epilogue_conditions_met()` was NOT emitted AND `_epilogue_conditions_emitted == true` AND `is_final_memory_earned() == true` AND `get_epilogue_state()["is_complete"] == true` AND a warning is logged naming the dev-only override.
@@ -656,7 +658,7 @@ GIVEN MUT is in Inactive state with empty `_discovered_recipes` AND `partial_thr
 **AC-049b [Logic] — Inactive → Epilogue with `partial_threshold == 0.0` fires.**
 GIVEN MUT is in Inactive state with empty `_discovered_recipes` AND `partial_threshold == 0.0` AND `_epilogue_required_ids` has 3 entries, WHEN `epilogue_started()` fires, THEN `final_memory_ready()` IS emitted exactly once.
 
-**AC-050 — Deferred to Alpha.** *(Body moved to OQ-2.)* A reachability walker verifying every `epilogue-requirements.json` entry is reachable from scene 1's seed cards will become an AC when OQ-2 lands. Until then, this is tracked only as an Open Question — do not treat its absence as a Vertical Slice gap.
+**AC-050 — Deferred to Alpha.** *(Body moved to OQ-2.)* A reachability walker verifying every `epilogue-requirements.tres` entry is reachable from scene 1's seed cards will become an AC when OQ-2 lands. Until then, this is tracked only as an Open Question — do not treat its absence as a Vertical Slice gap.
 
 **AC-051 [Logic] — Partial threshold gate example.**
 GIVEN `_epilogue_required_ids` has 10 entries AND `partial_threshold == 0.80` AND exactly 8 required recipes are discovered, WHEN `epilogue_started()` fires, THEN `final_memory_ready()` is emitted exactly once (8 >= ceil(10 * 0.80) = 8). GIVEN only 7 required recipes are discovered, WHEN `epilogue_started()` fires, THEN `final_memory_ready()` is NOT emitted.
@@ -678,13 +680,13 @@ GIVEN a representative slice of Chester's authored content is loaded (at least 5
 | # | Question | Owner | Target Resolution |
 |---|---|---|---|
 | OQ-1 | **Performance budget for `combination_executed` processing.** Section D and E do not specify a frame-time budget for the discovery handler. Linear scans over `_epilogue_required_ids` and `_milestone_thresholds` happen on every combination. If recipe count grows to 200+, this could become measurable. | systems-designer + performance-analyst | Before Vertical Slice exit (set numeric ms budget, add to AC) |
-| OQ-2 | **Reachability validation tool + deferred AC-050.** Every entry in `epilogue-requirements.json` must be reachable via some valid play path (seed_cards + carry_forward traversal). No static tool exists. Tool must walk the recipe + scene graph from scene 1's base seed_cards and verify every required recipe_id is produced on some path before `epilogue_started`. Its output becomes AC-050 once it exists. Risk: late-content addition silently breaks epilogue reachability. | tools-programmer | Alpha (when content count makes manual verification impractical) |
+| OQ-2 | **Reachability validation tool + deferred AC-050.** Every entry in `epilogue-requirements.tres` must be reachable via some valid play path (seed_cards + carry_forward traversal). No static tool exists. Tool must walk the recipe + scene graph from scene 1's base seed_cards and verify every required recipe_id is produced on some path before `epilogue_started`. Its output becomes AC-050 once it exists. Risk: late-content addition silently breaks epilogue reachability. | tools-programmer | Alpha (when content count makes manual verification impractical) |
 | OQ-3 | **Scene-graph static checker for carry-forward anomalies.** Currently only author discipline prevents three distinct failure classes: (a) `carry_forward` referencing a recipe from a *later* scene (forward reference — unsatisfiable during the carrying scene's load), (b) **mutual carry-forward cycles** between two scenes (each requires a recipe from the other — both silently produce zero carry-forward cards), and (c) unreachable chains of carry-forward requirements. A single static checker reading the scene manifest should catch all three. | tools-programmer | Alpha (same risk window as OQ-2) |
 | OQ-4 | **Session reset API for "New Game".** When the player starts a new save slot or wipes progress, MUT needs to clear all dictionaries and reset to Inactive without going through `load_save_state({})`. Should this be a new method `clear_state()` or repurpose `load_save_state` with a sentinel value? | game-designer + Save/Progress System author | Designed alongside Save/Progress System (Alpha) |
 | OQ-5 | **Hot-reload deferred.** This GDD chose load-once at `_ready()` for simplicity. If playtest tuning of `milestone_thresholds` becomes painful, revisit hot-reload via a debug signal. | systems-designer | Reactive — only if playtest cycle reveals friction |
 | OQ-6 | **Discovery analytics hook.** No telemetry is specified. If the team wants to measure which recipes get discovered most/least to inform content prioritization, a `recipe_discovered` listener could log to disk. Design intent or post-launch concern? | analytics-engineer + creative-director | Decide before Alpha (analytics scope decision) |
 | OQ-7 | **Provisional ITF signal expansion + consumer lockstep.** This GDD specifies a 6-parameter `combination_executed` signal but the ITF GDD currently emits 4 parameters. Godot 4.3 dispatches signal arguments at **emit time** (not at connect time) — a mismatch raises a runtime dispatch error on the first combination played. Adding parameters is a **breaking change**. Every pre-existing consumer must update its handler signature in the same commit that lands the ITF change; the **only** valid migration path is "declare all 6 params in the handler, ignore unused" (`.bind()` cannot absorb trailing args — see Godot 4.3 Signal Compatibility edge-case block). Cross-GDD edits required: (1) ITF GDD emits 6-param signal, (2) Status Bar System GDD handler accepts 6 params (ignores new two), (3) any other consumer of `combination_executed` updated. AC-037a and AC-037b are blocked until this lands. | itf author (revisit) + statusbar author | Before MUT implementation begins — single-commit lockstep |
 | OQ-8 | **Provisional Scene Goal System dependency.** SGS GDD does not yet mention the soft dependency on `MUT.get_carry_forward_cards()`. SGS GDD must be updated to document this call site in `load_scene()`. | sgs author (revisit) | Before SGS implementation enters Vertical Slice |
-| OQ-9 | **Per-memory display names for Final Epilogue Screen.** `epilogue-requirements.json` currently holds only recipe_ids. The Final Epilogue Screen will likely want a human-readable title per entry (e.g., "The night we walked home in the rain"). Should this be a parallel `display_name` field in the same file, sourced from Recipe Database's `name` field, or authored separately in the epilogue screen's own data? Affects authoring workflow for Chester. | game-designer + narrative-director | Before Final Epilogue Screen GDD is authored (Alpha) |
+| OQ-9 | **Per-memory display names for Final Epilogue Screen.** `epilogue-requirements.tres` currently holds only recipe_ids. The Final Epilogue Screen will likely want a human-readable title per entry (e.g., "The night we walked home in the rain"). Should this be a parallel `display_name` field in the same file, sourced from Recipe Database's `name` field, or authored separately in the epilogue screen's own data? Affects authoring workflow for Chester. | game-designer + narrative-director | Before Final Epilogue Screen GDD is authored (Alpha) |
 | OQ-10 | ~~**Combined autoload manifest.**~~ **RESOLVED 2026-04-21** by `docs/architecture/ADR-004-runtime-scene-composition.md` §1 (canonical 12-autoload order). MUT is position 10; RecipeDatabase is position 3 (before MUT ✓); Scene Manager is position 11 (after MUT ✓). Individual GDDs should cite ADR-004 instead of restating order. | technical-director | Closed |
 | OQ-11 | ~~**`epilogue_conditions_met()` consumer decision.**~~ **RESOLVED 2026-04-20 / 2026-04-21** per FES GDD + ADR-004 §2. Consumer: `gameplay_root.gd` and/or Scene Manager's preloader subsystem — both silent, engine-prep only. The signal is kept (not deleted) because pre-loading the illustrated-memory texture ahead of STUI's amber cover prevents a visible frame-drop during the reveal. | game-designer + FES GDD author | Closed |

@@ -1,0 +1,12 @@
+[gd_resource type="RecipeManifest" load_steps=2 format=3]
+
+[sub_resource type="RecipeEntry" id="RecipeEntry_additive_001"]
+id = &"test_additive_001"
+card_a = &"card_flowers"
+card_b = &"card_music"
+template = &"additive"
+scene_id = &"global"
+config = {"spawns": [&"card_joy", &"card_memory"]}
+
+[resource]
+entries = [SubResource("RecipeEntry_additive_001")]

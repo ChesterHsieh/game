@@ -144,7 +144,7 @@ Transition table:
 | **Input System** | downstream (one call) | STUI calls `InputSystem.cancel_drag()` at frame of `scene_completed`. This is the only cross-system call STUI makes (all other communication is signal-based). |
 | **Final Epilogue Screen** (system #18) | downstream | Listens for `EventBus.epilogue_cover_ready()` to know the canvas is clear. FES is responsible for rendering its content above STUI or signalling STUI to fade. |
 | **Card Engine** | indirect | STUI's `InputBlocker` with `MOUSE_FILTER_STOP` prevents any mouse events reaching cards during transitions. Card Engine does nothing STUI-specific. |
-| **Transition variants config** | reads | `assets/data/ui/transition-variants.json` keyed by `scene_id` provides per-scene knobs (fold duration scale, paper tint). Missing keys fall back to `"default"`. |
+| **Transition variants config** | reads | `assets/data/ui/transition-variants.tres` keyed by `scene_id` provides per-scene knobs (fold duration scale, paper tint). Missing keys fall back to `"default"`. |
 | **ProjectSettings** (provisional) | reads | Reads `ProjectSettings.get_setting("stui/reduced_motion_default", false)` at the start of each transition. Settings v1 (2026-04-21) intentionally defers exposing reduced-motion as a player-facing toggle (Settings OQ-3) — STUI continues to source from ProjectSettings until a Settings schema v2 bump adds a UI toggle. |
 
 ## Formulas
@@ -276,7 +276,7 @@ Scope trimmed per CD guidance (r1): save/load-during-transition, viewport-resize
 | E-7 | `epilogue_started` fires from any non-EPILOGUE state | If in IDLE: normal epilogue entry. If mid-transition: finish the current rise to full opacity (don't restart), then swap tint to amber, suppress paper-breathe, and enter EPILOGUE. Terminal state — no auto-fade. |
 | E-8 | First scene load (boot) — `scene_started` with no prior `scene_completed` | STUI is in FIRST_REVEAL from boot (opaque cream). `scene_started` triggers slow `first_reveal_fade_ms` fade-out, then IDLE. |
 | E-9 | `ProjectSettings.stui/reduced_motion_default` changes mid-transition (dev-time only; not player-facing at v1) | Takes effect on the *next* transition. Current transition completes in its original mode. |
-| E-10 | `transition-variants.json` is missing or malformed | STUI uses hardcoded default tuning knobs and logs a warning at `_enter_tree()`. Color values in JSON are validated (clamped to [0,1] per channel); out-of-range entries fall back to default tint. |
+| E-10 | `transition-variants.tres` is missing or wrong `class_name` (`as TransitionVariants` cast returns null) | STUI uses hardcoded default tuning knobs and logs a warning at `_enter_tree()`. Color values are validated (clamped to [0,1] per channel); out-of-range entries fall back to default tint. |
 | E-11 | `epilogue_cover_ready` is emitted but no FES exists | STUI holds indefinitely in EPILOGUE. Acceptable — FES wiring is a milestone concern, not a runtime failure. |
 
 ## Dependencies
@@ -289,7 +289,7 @@ Scope trimmed per CD guidance (r1): save/load-during-transition, viewport-resize
 | **Scene Goal System** (`design/gdd/scene-goal-system.md`) | Signal emitter | Must emit `scene_completed(scene_id)` via EventBus when hidden goal is satisfied. Emission must happen on the same frame the goal transitions to satisfied; STUI relies on this for the satisfaction-peak alignment (Core Rule 3). |
 | **Scene Manager** (`design/gdd/scene-manager.md`) | Signal emitter + loader | Must emit `scene_loading(scene_id)` before despawning old cards, `scene_started(scene_id)` after seed cards are placed, and `epilogue_started()` for the terminal scene. Scene Manager owns the load; STUI assumes synchronous load during the HOLDING phase. |
 | **Input System** (`design/gdd/input-system.md`) | Method call | Must expose `cancel_drag() -> void` — safe to call when no drag is active (no-op). STUI calls this at frame of `scene_completed` (Core Rule 6). |
-| **assets/data/ui/transition-variants.json** | Config file (optional) | Dictionary keyed by `scene_id`; each value is a dict of per-scene knobs (e.g., `fold_duration_scale`, `paper_tint`). Missing key → `"default"` fallback. Missing file → hardcoded defaults from Tuning Knobs (E-22). |
+| **assets/data/ui/transition-variants.tres** | Config file (optional) | Dictionary keyed by `scene_id`; each value is a dict of per-scene knobs (e.g., `fold_duration_scale`, `paper_tint`). Missing key → `"default"` fallback. Missing file → hardcoded defaults from Tuning Knobs (E-22). |
 | **assets/ui/paper_texture.png** (or similar) | Art asset | Seamless cream paper texture used as overlay fill. Missing asset → solid cream ColorRect fallback (E-20). |
 | **assets/audio/sfx/page_turn_*.ogg** | Audio assets | Paper rustle / page turn SFX. Multiple variants recommended for non-identical repetition. Missing → no SFX, transition plays silently. |
 | **Settings** (system #20, Designed — `design/gdd/settings.md`) | Config read | Settings v1 does NOT expose `reduced_motion` (Settings OQ-3 defers). STUI reads `ProjectSettings.stui/reduced_motion_default` as the authoritative source at v1. Migration: when a schema-v2 Settings bump adds a player-facing reduced-motion toggle, STUI's read-site moves to `SettingsManager.get_reduced_motion()`. |
@@ -306,7 +306,7 @@ Scope trimmed per CD guidance (r1): save/load-during-transition, viewport-resize
 
 - **Godot 4.3** — Tween API (`create_tween()`, chained `.tween_property()`, `Tween.kill()` for cancellation), `CanvasLayer`, `Polygon2D` (with `polygon` vertex array write), `ColorRect`, `AudioStreamPlayer`, `MOUSE_FILTER_STOP`/`MOUSE_FILTER_IGNORE`. All stable in 4.3 per `docs/engine-reference/godot/VERSION.md`.
 - **Process mode** — `process_mode = PROCESS_MODE_ALWAYS` on the STUI root so Tweens run even if the game tree is paused. Note: `PROCESS_MODE_ALWAYS` propagates to children — including `RustleAudio` — which is intentional (audio must continue during any future pause overlay).
-- **Scene load mechanism** — Scene Manager's responsibility, not STUI's. STUI assumes synchronous load within the HOLDING budget; the mechanism (`FileAccess` + `JSON`, `ResourceLoader`, etc.) is specified in `scene-manager.md`.
+- **Scene load mechanism** — Scene Manager's responsibility, not STUI's. STUI assumes synchronous load within the HOLDING budget; the mechanism (`ResourceLoader` per ADR-005) is specified in `scene-manager.md`.
 
 ### Systems-index note (bidirectional consistency)
 
@@ -374,7 +374,7 @@ And STUI is referenced by (systems that will list STUI upstream when designed):
 | `input_block_scope` | `all` (mouse + keyboard) | `all` or `mouse_only` | Scope of input swallowed during transitions (Core Rule 7). `mouse_only` would let Escape/keyboard through — NOT recommended until Settings is designed. |
 | `canvas_layer_value` | 10 | 5–15 | Godot `CanvasLayer.layer`. 10 places STUI above gameplay (layer 0) but below reserved HUD/debug range (20+). |
 
-### Per-scene override (transition-variants.json)
+### Per-scene override (transition-variants.tres)
 
 Per-scene knobs keyed by `scene_id`. Only names listed here may be overridden; any other keys are ignored.
 
@@ -384,12 +384,20 @@ Per-scene knobs keyed by `scene_id`. Only names listed here may be overridden; a
 | `paper_tint` | `[r, g, b]` float array | Overrides `overlay_color_cream` for this scene's outgoing transition |
 | `sfx_variant_id` | string | Selects a specific rustle SFX variant by name, e.g., `"page_turn_paper_heavy"` |
 
-Example `transition-variants.json`:
-```json
-{
-  "home":  { "fold_duration_scale": 1.0, "paper_tint": [0.98, 0.95, 0.88] },
-  "park":  { "fold_duration_scale": 0.9, "paper_tint": [0.95, 0.98, 0.90] },
-  "default": { "fold_duration_scale": 1.0, "paper_tint": [0.98, 0.95, 0.88] }
+The `transition-variants.tres` file is a `TransitionVariants` Resource per ADR-005:
+
+```gdscript
+class_name TransitionVariants extends Resource
+@export var variants: Dictionary = {}
+# variants = { "scene_id": { "fold_duration_scale": float, "paper_tint": Color, ... }, ... }
+```
+
+Example content (authored in the Godot inspector or `.tres` file):
+```
+variants = {
+  "home":    { "fold_duration_scale": 1.0, "paper_tint": Color(0.98, 0.95, 0.88) },
+  "park":    { "fold_duration_scale": 0.9, "paper_tint": Color(0.95, 0.98, 0.90) },
+  "default": { "fold_duration_scale": 1.0, "paper_tint": Color(0.98, 0.95, 0.88) }
 }
 ```
 
@@ -543,7 +551,7 @@ Scope trimmed to 20 testable behavioural assertions per CD guidance (r1). Previo
 
 - **OQ-3** **Epilogue ambient audio — required or optional?** `epilogue_paper_breath.ogg` is listed as optional. If the epilogue hold is 3+ seconds of silence, does that land as "reverence" (intended) or "did the game freeze"? Resolve through playtest with Ju once Final Epilogue Screen (system #18) is designed — without FES, the hold is open-ended and silence is unbounded, which may actually read as a bug.
 
-- **OQ-4** **Scene Manager OQ-4 cross-reference** — Scene Manager's Open Question 4 asks whether `scene_completed` payload should be enriched (reward card? animation variant?). STUI's position is **no enrichment** — STUI looks up per-scene config via `transition-variants.json`. This should be formalised as a Scene Manager GDD edit: close SM's OQ-4 with "enrichment rejected; presentation systems own their own config data" and cross-reference this GDD. Action item when this GDD is approved.
+- **OQ-4** **Scene Manager OQ-4 cross-reference** — Scene Manager's Open Question 4 asks whether `scene_completed` payload should be enriched (reward card? animation variant?). STUI's position is **no enrichment** — STUI looks up per-scene config via `transition-variants.tres`. This should be formalised as a Scene Manager GDD edit: close SM's OQ-4 with "enrichment rejected; presentation systems own their own config data" and cross-reference this GDD. Action item when this GDD is approved.
 
 - **OQ-5** ~~**First-reveal edge case on New Game vs Load**~~ **RESOLVED 2026-04-21**: Main Menu (#17) and Save/Progress (#19) are now Designed. FIRST_REVEAL fires on the first `scene_started` of a session regardless of whether the session is a new game or a resumed save. A loaded save does not "feel different" — Ju presses Start, a scene reveals, whether from index 0 or index 4. This aligns with Settings GDD's framing (no "Continue" button — Start always resumes).
 

@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: ""
+last_updated: "2026-04-21"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -131,7 +131,69 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: authored_data_file_format
+    status: active
+    api: "Godot .tres Resource files loaded via ResourceLoader.load() + typed `as <CustomClass>` cast"
+    not: "FileAccess + JSON.parse_string(); ConfigFile; external YAML/TOML parsers"
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    reason: "Type safety at load time (typed @export on custom Resource classes catches schema drift at cast, not on first runtime read), in-editor inspector support, no handwritten parse layer, and Godot's own asset pipeline handles path remapping on export."
+    scope:
+      - Card Database (assets/data/cards.tres)
+      - Recipe Database (assets/data/recipes.tres)
+      - Scene Goal configs (assets/data/scenes/[scene_id].tres)
+      - Mystery Unlock Tree config (assets/data/mut-config.tres)
+      - Hint System per-scene overrides (read from SceneData.tres)
+      - Epilogue requirements (assets/data/epilogue-requirements.tres)
+      - Scene manifest (assets/data/scene-manifest.tres)
+    referenced_by:
+      - docs/architecture/adr-0005-data-file-format-convention.md
+      - design/gdd/card-database.md
+      - design/gdd/recipe-database.md
+      - design/gdd/scene-goal-system.md
+      - design/gdd/mystery-unlock-tree.md
+      - design/gdd/hint-system.md
+      - design/gdd/save-progress-system.md
+    added: 2026-04-21
+    revised: ""
+
+  - purpose: save_file_format
+    status: active
+    api: "Godot .tres Resource serialised via ResourceSaver.save() + restored via ResourceLoader.load() + `as SaveState` cast"
+    not: "JSON.stringify() to user:// file; ConfigFile; binary FileAccess.store_buffer()"
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    reason: "Schema drift across builds is detected at cast time (BLOCKING-1 fix from ADR-005 §5). The typed SaveState Resource class is the schema; no hand-maintained validation predicate required. Plaintext .tres remains Chester-debuggable."
+    scope:
+      - user://save.tres  (typed SaveState Resource)
+    referenced_by:
+      - docs/architecture/adr-0005-data-file-format-convention.md
+      - design/gdd/save-progress-system.md
+    added: 2026-04-21
+    revised: ""
+
+  - purpose: atomic_file_rename
+    status: active
+    api: "DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), ProjectSettings.globalize_path(real))"
+    not: "DirAccess.rename() (takes user:// URIs which rename_absolute rejects on some platforms); File.rename() (removed in Godot 4)"
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    reason: "rename_absolute requires OS-native paths. globalize_path() converts user:// to the platform-specific absolute path. POSIX rename() semantics give atomicity across APFS/NTFS/ext4."
+    referenced_by:
+      - docs/architecture/adr-0005-data-file-format-convention.md
+      - design/gdd/save-progress-system.md
+    added: 2026-04-21
+    revised: ""
+
+  - purpose: resource_remap_hygiene
+    status: active
+    api: "After every atomic rename of a .tres file, if FileAccess.file_exists(path + '.remap'), call DirAccess.remove_absolute(globalize_path(path + '.remap'))."
+    not: "Rely on Godot to clean stale .remap sidecars on its own"
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    reason: "A stale .remap silently redirects ResourceLoader.load to the old file — silent data loss (BLOCKING-2 fix from ADR-005 §5). Applies to saves, corruption quarantines, and clear_save()."
+    referenced_by:
+      - docs/architecture/adr-0005-data-file-format-convention.md
+      - design/gdd/save-progress-system.md
+    added: 2026-04-21
+    revised: ""
 
 # Example:
 #
@@ -157,7 +219,38 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: json_for_authored_data
+    status: active
+    description: "Authored game data (cards, recipes, scenes, MUT config, epilogue requirements, scene manifest, hint config) must not be stored as .json and must not be parsed with FileAccess + JSON.parse_string. Use Godot custom Resource classes + .tres files per ADR-005."
+    why: "JSON parsing produces untyped Dictionaries that drift silently when the schema changes — bugs surface at runtime feature-use time rather than load time. Typed @export fields on a custom Resource class catch schema drift at ResourceLoader cast."
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    scope: ["src/systems/**", "src/data/**", "src/autoloads/**"]
+    added: 2026-04-21
+
+  - pattern: bare_null_check_on_resource_load
+    status: active
+    description: "After ResourceLoader.load(), code must cast to the expected custom class (`as SaveState`, `as CardManifest`, etc.) and check the casted variable for null. A bare null-check on the raw Resource is insufficient — a .tres with mismatched class_name loads as generic Resource with default fields and passes a bare null-check."
+    why: "BLOCKING-1 case from ADR-005 §5 — schema drift across builds produces a syntactically-valid .tres that maps to the wrong shape. Only the typed cast catches it."
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    scope: ["any code that calls ResourceLoader.load"]
+    added: 2026-04-21
+
+  - pattern: missing_remap_cleanup_after_rename
+    status: active
+    description: "After DirAccess.rename_absolute on any .tres that is subsequently loaded via ResourceLoader (saves, quarantined corrupt files, reset_save deletes), the code must delete the corresponding .remap sidecar if it exists."
+    why: "BLOCKING-2 case from ADR-005 §5 — a stale .remap silently redirects ResourceLoader to the old target, causing silent data loss. Applies wherever a .tres is atomically replaced or removed."
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    scope: ["src/autoloads/save_system.gd", "any future atomic-rename code path"]
+    added: 2026-04-21
+
+  - pattern: schema_migration_at_v1
+    status: active
+    description: "SaveSystem must not implement a migration chain at schema_version = 1. Any schema_version != 1 is treated as CORRUPT_RECOVERED (hard break). Introducing migrations requires a new ADR."
+    why: "Moments is N=1 — the complexity budget for runtime migration is better spent elsewhere. Hard break is acceptable for a single player; if the product scales, a new ADR explicitly authorises migration logic."
+    adr: docs/architecture/adr-0005-data-file-format-convention.md
+    scope: ["src/autoloads/save_system.gd"]
+    added: 2026-04-21
 
 # Example:
 #

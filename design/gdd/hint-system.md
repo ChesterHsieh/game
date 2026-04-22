@@ -158,11 +158,11 @@ no separate knob — the two-level system is always proportional. If
 `stagnation_sec = 300`, Level 2 is always at 600s.
 
 **Per-scene override (added 2026-04-21 in response to `/review-all-gdds` W-D3):**
-`stagnation_sec` is a per-scene authored value read from `assets/data/scenes/[scene_id].json` key `"hint_stagnation_sec"`. If the scene file omits the key, Hint System falls back to the system-level default of 300s. This allows late-chapter scenes (with larger card trees and longer genuine exploration time) to authorize a longer window (e.g. 450s for scene 5, 600s for scene 7) without editing the MVP default. Early playtest sessions will tune these per-scene values from observation rather than guessing upfront.
+`stagnation_sec` is a per-scene authored value read from `assets/data/scenes/[scene_id].tres` (field `hint_stagnation_sec` on the scene's `SceneData` Resource, per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md)). If the scene file omits the key, Hint System falls back to the system-level default of 300s. This allows late-chapter scenes (with larger card trees and longer genuine exploration time) to authorize a longer window (e.g. 450s for scene 5, 600s for scene 7) without editing the MVP default. Early playtest sessions will tune these per-scene values from observation rather than guessing upfront.
 
 | Knob (per-scene) | Default fallback | Safe Range | Source |
 |---|---|---|---|
-| `hint_stagnation_sec` | `300.0` (if key absent) | 60–900s | `assets/data/scenes/[scene_id].json` |
+| `hint_stagnation_sec` | `300.0` (if key absent) | 60–900s | `assets/data/scenes/[scene_id].tres` |
 
 **Rationale**: Per `/review-all-gdds` W-D3, flat global hint timing was flagged as a risk — the "discovery friction increases" design intent cannot be matched with a constant. Promoting to per-scene config now is trivial; post-authoring it would require edits across every scene file.
 

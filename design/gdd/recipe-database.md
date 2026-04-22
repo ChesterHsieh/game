@@ -153,8 +153,17 @@ No runtime tuning knobs. All values are authored at design time. Content targets
 - [ ] A recipe can be added or edited in the data file without changing any code
 - [ ] Database loads fully before any card combination can be attempted
 
-## Open Questions
+## File Format and Schema
 
-- **File format**: Same decision as Card Database — JSON vs Godot `.tres`. Should use the same format for consistency. Resolve when Card Database format is decided.
+Per [ADR-005](../../docs/architecture/adr-0005-data-file-format-convention.md):
+
+- **Storage**: single manifest file at `res://assets/data/recipes.tres`.
+- **Resource class**: `res://src/data/recipe_entry.gd` declares `class_name RecipeEntry extends Resource` with typed `@export` fields (`id: StringName`, `card_a: StringName`, `card_b: StringName`, `template: StringName`, `config: Dictionary`).
+- **Manifest class**: a thin wrapper Resource with `@export var entries: Array[RecipeEntry]`.
+- **Loader**: `RecipeDatabase._ready()` calls `ResourceLoader.load("res://assets/data/recipes.tres")`, casts via `as RecipeManifest`, asserts non-null, then validates that every `card_a` / `card_b` StringName exists in `CardDatabase` (fail-loud on unknown IDs).
+- **`config` field** remains a `Dictionary` because its shape is template-specific; keys are owned by `interaction-template-framework.md`. This is the documented exception in ADR-005 §8.
+- **No JSON.** `FileAccess` + `JSON.parse_string` for recipe data is a forbidden pattern per ADR-005 §9.
+
+## Open Questions
 - **Animate motions**: Are `drift`, `orbit`, `pulse`, `float` the right four? Needs validation when Card Engine and Interaction Template Framework are prototyped.
 - **Multi-fire rules**: Can the same pair fire again after being combined once? (e.g., you split a Merge and try again.) Currently undefined — the Interaction Template Framework will need to decide whether combinations are one-time or repeatable. Flag as provisional.

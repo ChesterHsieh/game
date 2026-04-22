@@ -1,0 +1,12 @@
+[gd_resource type="RecipeManifest" load_steps=2 format=3]
+
+[sub_resource type="RecipeEntry" id="RecipeEntry_generator_001"]
+id = &"test_generator_001"
+card_a = &"card_seed"
+card_b = &"card_soil"
+template = &"generator"
+scene_id = &"global"
+config = {"generates": &"card_sprout", "interval_sec": 3.0, "max_count": 5, "generator_card": &"card_seed"}
+
+[resource]
+entries = [SubResource("RecipeEntry_generator_001")]

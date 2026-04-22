@@ -257,7 +257,7 @@ system-level tuning knobs.
 
 ## Open Questions
 
-- ~~**Status Bar recipe config**: Status Bar System (undesigned) will need to know *how* a combination affects bar values.~~ **RESOLVED**: Status Bar System is Designed. Per `design/gdd/status-bar-system.md` Rule 4, SBS maintains its own lookup keyed by `recipe_id` against `assets/data/bar-effects.json`. Recipes themselves do NOT carry bar-effect data — SBS owns its own mapping.
+- ~~**Status Bar recipe config**: Status Bar System (undesigned) will need to know *how* a combination affects bar values.~~ **RESOLVED**: Status Bar System is Designed. Per `design/gdd/status-bar-system.md` Rule 4, SBS maintains its own lookup keyed by `recipe_id` against `assets/data/bar-effects.tres`. Recipes themselves do NOT carry bar-effect data — SBS owns its own mapping.
 - ~~**`combination_executed` payload**: Mystery Unlock Tree (undesigned) may need the actual `card_id`s (not just `instance_id`s) to track unique discoveries.~~ **RESOLVED** 2026-04-18 per MUT GDD Rule 4 — signal expanded to 6 params including `card_id_a`, `card_id_b`. Cascade applied to ITF/SBS/SGS/HS on 2026-04-21.
 - **Cooldown per-scene or global**: Current design: cooldown is global (timers persist across scenes). Should cooldown reset when a new scene loads? Resolve with Scene Goal System design.
 - **Animate stopping conditions**: For infinite-loop animations, the only stop is scene transition. Should a specific combination be able to stop an animation (e.g., combining the animating card with a third card)? Cards in Executing state currently can't be dragged. Resolve if a design calls for it.

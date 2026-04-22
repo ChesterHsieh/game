@@ -17,12 +17,22 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+EventBus="*res://src/core/event_bus.gd"
 CardDatabase="*res://src/core/card_database.gd"
 RecipeDatabase="*res://src/core/recipe_database.gd"
 InputSystem="*res://src/core/input_system.gd"
+AudioManager="*res://src/core/audio_manager.gd"
 CardSpawning="*res://src/gameplay/card_spawning_system.gd"
 CardEngine="*res://src/gameplay/card_engine.gd"
 ITF="*res://src/gameplay/interaction_template_framework.gd"
 StatusBarSystem="*res://src/gameplay/status_bar_system.gd"
 SceneGoal="*res://src/gameplay/scene_goal_system.gd"
 HintSystem="*res://src/gameplay/hint_system.gd"
+
+[audio]
+
+buses/default_bus_layout="res://assets/data/default_bus_layout.tres"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")

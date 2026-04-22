@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardManifest" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="CardEntry_001"]
+script = ExtResource("2_entry")
+id = &"test_seed_001"
+display_name = "Test Seed Card"
+flavor_text = ""
+type = 6
+scene_id = &"global"
+tags = PackedStringArray()
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("CardEntry_001")]

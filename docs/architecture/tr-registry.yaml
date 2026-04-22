@@ -25,32 +25,2762 @@
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
 version: 1
-last_updated: ""
+last_updated: "2026-04-21"
+# Revised 2026-04-21 by /architecture-review — three TRs (TR-card-database-009,
+# TR-recipe-database-010, TR-scene-goal-system-001) updated from "JSON or .tres"
+# wording to the `.tres` resolution mandated by ADR-005 (now Accepted). IDs
+# preserved; `revised` date stamped. No new TR entries appended — all 299
+# remain active and covered.
 
-requirements: []
+requirements:
 
-# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
-#
-# - id: TR-combat-001
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Player takes damage from enemies based on attack power minus defence"
-#   created: 2026-03-10
-#   revised: ""
-#   status: active
-#
-# - id: TR-combat-002
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Combo window timing is 0.4 seconds between hits"
-#   created: 2026-03-10
-#   revised: "2026-04-01"
-#   status: active
-#
-# - id: TR-combat-003
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Old damage formula using raw stats"
-#   created: 2026-03-10
-#   revised: ""
-#   status: superseded-by: TR-combat-001
+# =============================================================================
+# FOUNDATION LAYER — autoloaded singletons
+# =============================================================================
+
+# --- card-database -----------------------------------------------------------
+
+- id: TR-card-database-001
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Load all card definitions once at game start and hold in memory for session (no lazy load)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-002
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Expose read-only lookup by `id` returning full card entry (id, display_name, flavor_text, art_path, type, scene_id, tags)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-003
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Enforce unique kebab-case `id` per card; fail loudly at load time on duplicate IDs"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-004
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Support 7 card types enum: person, place, feeling, object, moment, inside_joke, seed"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-005
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Validate `display_name` non-empty and log warning for empty entries at load time"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-006
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Log clear error naming missing ID when lookup requests unknown card; do not crash"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-007
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Reference card art via `res://assets/cards/*.png` paths; missing asset falls back to placeholder with warning"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-008
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Resolve cards by `scene_id` string or `global`; warn on orphaned scene_id references at load"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-009
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Persist card definitions in `res://assets/data/cards.tres` as a typed Resource manifest of `CardEntry` SubResources (ADR-005); no hardcoded card content in code; load via `ResourceLoader.load() as CardManifest`"
+  domain: Data
+  created: 2026-04-21
+  revised: "2026-04-21"
+  status: active
+
+- id: TR-card-database-010
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Guarantee full DB load completes before any card instantiation (no race condition)"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-database-011
+  system: card-database
+  gdd: design/gdd/card-database.md
+  requirement: "Scale to ~120-200 total card entries across 5-8 scenes with ~20-30 cards per scene"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- recipe-database ---------------------------------------------------------
+
+- id: TR-recipe-database-001
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Load all recipe definitions once at game start and hold in memory for session"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-002
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Expose symmetric lookup by `(card_a_id, card_b_id)` pair returning recipe or null; normalize pair order"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-003
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Support 4 template enum: Additive, Merge, Animate, Generator, each with template-specific `config` schema"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-004
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Validate all card_a/card_b/result IDs exist in Card Database at load time; fail loudly on unknown ID"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-005
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Detect duplicate rules for same pair within same scene at load time and fail loudly"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-006
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Resolve scene-scoped rules with precedence over global rules for same pair"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-007
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Clamp Generator `interval_sec` minimum to 0.5 seconds; log warning on values below"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-008
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Return null for unmatched pairs as non-error signaling incompatibility"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-009
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Remain stateless — no runtime writes; all execution state owned by Interaction Template Framework"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-010
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Persist recipes in `res://assets/data/recipes.tres` as a typed Resource manifest of `RecipeEntry` SubResources (ADR-005); load via `ResourceLoader.load() as RecipeManifest`; no hardcoded recipe content in code"
+  domain: Data
+  created: 2026-04-21
+  revised: "2026-04-21"
+  status: active
+
+- id: TR-recipe-database-011
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Guarantee full DB load completes before any combination attempt can be made"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-recipe-database-012
+  system: recipe-database
+  gdd: design/gdd/recipe-database.md
+  requirement: "Scale to ~150-300 total recipes, ~30-60 per scene"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- input-system ------------------------------------------------------------
+
+- id: TR-input-system-001
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Register as autoload singleton `InputSystem`; sole owner of raw mouse InputEvent for drag interactions"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-002
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Perform per-frame hit-test (area query / raycast) to identify card under cursor by `card_id`"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-003
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Emit signal `drag_started(card_id: String, world_pos: Vector2)` on left-mouse press on a card"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-004
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Emit signal `drag_moved(card_id: String, world_pos: Vector2, delta: Vector2)` each frame during active drag"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-005
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Emit signal `drag_released(card_id: String, world_pos: Vector2)` on left-mouse release"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-006
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Emit signals `proximity_entered`/`proximity_exited(dragged_id, target_id)` on snap_radius crossings"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-007
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Convert screen -> world coordinates via Camera2D transform; all world_pos parameters in world space"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-008
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Enforce single active drag; second press while dragging is ignored (active drag takes precedence)"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-009
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Resolve overlapping cards by highest `z_index` (topmost picked up)"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-010
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Per-frame proximity check between dragged card and all other cards; guard against dragged_id == target_id"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-011
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Expose `cancel_drag()` method that emits `drag_released` at last known position and returns to Idle"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-012
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Operate purely as signal emitter; make no direct method calls into gameplay systems"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-013
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Expose tunable `snap_radius: float` (default 80px, range 40-160) as designer-adjustable parameter"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-input-system-014
+  system: input-system
+  gdd: design/gdd/input-system.md
+  requirement: "Track drag state machine with exactly two states (Idle, Dragging); right-click ignored in MVP"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- audio-manager -----------------------------------------------------------
+
+- id: TR-audio-manager-001
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Register as autoload singleton `AudioManager`, ordered after EventBus in autoload list"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-002
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Allocate fixed pool of 8 `AudioStreamPlayer` nodes at startup, all assigned to `SFX` bus"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-003
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Allocate 2 dedicated music players (`music_a`, `music_b`) on `Music` bus for crossfade support"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-004
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Configure audio bus tree: `Master` -> `Music`, `SFX` (PascalCase names locked per Settings AC-SET-24)"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-005
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Connect to EventBus signals in `_ready()`; one-way flow EventBus -> AudioManager -> AudioStreamPlayer"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-006
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Claim first IDLE pool node on SFX request; return to IDLE on `finished` signal (fire-and-forget)"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-007
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Pool-full policy: silently drop non-win events; `win_condition_met` steals node with least remaining time"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-008
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Apply per-play pitch randomization via `pitch_scale = 2^(semitone_offset/12)`, range +/-pitch_range"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-009
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Apply per-play volume randomization: `base_volume_db + uniform(+/-variance)` clamped to [-80, 0] dB"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-010
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Enforce per-event cooldowns via `Time.get_ticks_msec()` comparison (80-500ms plus once-per-scene for win)"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-011
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Run music state machine (STOPPED / PLAYING / CROSSFADING) with linear dB ramp over `crossfade_duration`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-012
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Cancel in-flight crossfade on new track request; incoming node becomes outgoing at current dB"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-013
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Skip crossfade when consecutive scenes reference same track path (compare resource paths as strings)"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-014
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Load all sounds, ranges, cooldowns, variants from `assets/data/audio_config.tres`; no hardcoded paths"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-015
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "On missing `audio_config.tres`, log error and enter silent-fallback mode; game runs without crash"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-016
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Expose public API `set_bus_volume(bus_name: String, volume_db: float)` clamped to [-80, 0]"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-017
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Expose public API `fade_out_all(duration: float)` linear dB ramp to -80 on all buses; one-shot per session"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-018
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Clamp `fade_out_all` duration to [0.1, 10.0]s; warn and no-op on subsequent calls after first completes"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-019
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Keep SFX cooldowns and pool transitions running even when Master bus is muted (mute = output gate only)"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-audio-manager-020
+  system: audio-manager
+  gdd: design/gdd/audio-manager.md
+  requirement: "Log warning and drop silently when EventBus signal has no corresponding entry in audio config"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# =============================================================================
+# CORE LAYER — card feel
+# =============================================================================
+
+# --- card-engine -------------------------------------------------------------
+
+- id: TR-card-engine-001
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Consume 5 Input System signals: drag_started, drag_moved, drag_released, proximity_entered, proximity_exited"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-002
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Per-card finite state machine with 6 states: Idle, Dragged, Attracting, Snapping, Pushed, Executing"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-003
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Own authoritative runtime Vector2 position per card node; Table Layout only provides initial placement"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-004
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "In Dragged state, update card.position to cursor world_pos every frame with zero perceptible lag"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-005
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "In Attracting state, apply lerp(cursor_world_pos, target.position, attraction_factor) each frame"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-006
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Target-follow: attraction lerp re-reads target_card.position each frame so moving targets are tracked"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-007
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "All motion (drag, attraction, snap, push, merge) uses Godot Tween nodes; must be cancellable mid-flight"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-008
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Snap tween targets target_card.position + snap_offset; duration = snap_duration_sec (default 0.12s, range 0.05-0.3)"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-009
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "On snap tween complete, emit combination_attempted(instance_id_a: String, instance_id_b: String)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-010
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Listen for combination_succeeded(a, b, template, config) and combination_failed(a, b) from ITF"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-011
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Push-away: tween card to pos + normalize(pos - target.pos) * push_distance with ease_out over push_duration_sec"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-012
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Clamp push_target to table bounds before tweening to prevent off-table placement"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-013
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Merge template: tween both cards to midpoint, scale to 0, fade to 0 over merge_duration_sec (default 0.25s)"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-014
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Emit merge_animation_complete(a, b, midpoint) and animate_complete(instance_id) to ITF"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-015
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Enforce single in-flight combination: ignore new combination_attempted until current resolves"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-016
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "On card_removing signal, cancel any in-flight tween bound to that instance_id before node free"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-017
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Dragged card renders on top via elevated z_index; interact with Card Visual for z-order policy"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-018
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Listen to card_spawned to register node; listen to card_removed to deregister and null-check references"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-019
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "Snap tween interruption: new drag_started cancels Snapping and transitions card back to Dragged"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-engine-020
+  system: card-engine
+  gdd: design/gdd/card-engine.md
+  requirement: "attraction_factor in 0.0-0.5 range (default 0.4); snap_duration 0.05-0.3s; push_distance 20-80px (default 60)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- table-layout-system -----------------------------------------------------
+
+- id: TR-table-layout-system-001
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "System is stateless at runtime: every call is pure function (inputs -> position); no tracking of placed cards"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-002
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Expose get_seed_card_positions(scene_data) -> [{card_id, position, seed_used}] for Scene Manager"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-003
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Expose get_spawn_position(combination_point, existing_cards: Vector2[], spawn_seed) -> (Vector2, seed)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-004
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "All RNG uses seeded Godot RandomNumberGenerator; deterministic output for identical seed input"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-005
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "When spawn_seed/placement_seed is null, generate random seed and log it to console for author capture"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-006
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Treat seed value 0 as valid fixed seed, distinct from null"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-007
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Spawn sampling: offset=randf_range(spawn_min_distance, spawn_max_distance); angle=randf_range(0, TAU)"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-008
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Candidate = combination_point + Vector2(cos(angle), sin(angle)) * offset"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-009
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Clamp candidate to Rect2(table_bounds.position, table_bounds.end - card_size) before overlap check"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-010
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Overlap avoidance: reject candidate if within min_card_spacing of any existing card; retry up to max_scatter_attempts"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-011
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "On attempt exhaustion, accept least-overlapping candidate and log warning; never fail to return a position"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-012
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Resolve zone enum (left/center/right/top/bottom) to Rect2 region of table for seed placement"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-013
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Clamp combination_point to table bounds before sampling to handle mid-tween edge cases"
+  domain: Physics
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-014
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Self-correct misconfigured spawn_min_distance > spawn_max_distance by swapping values with warning"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-015
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Validate card_id against Card Database; log error on zone smaller than card_size and fall back to zone center"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-016
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Tuning knobs: spawn_min_distance 40-120px (default 80), spawn_max_distance 100-250px (default 160)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-table-layout-system-017
+  system: table-layout-system
+  gdd: design/gdd/table-layout-system.md
+  requirement: "Tuning knobs: min_card_spacing 0-30px (default 10), max_scatter_attempts 3-20 (default 8)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- card-spawning-system ----------------------------------------------------
+
+- id: TR-card-spawning-system-001
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Sole authority for card node instantiate()/queue_free(); no other system may create or destroy card nodes"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-002
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Maintain internal registry Dictionary {instance_id: String -> Node} of all live card nodes on table"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-003
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Maintain per-card_id counter Dictionary _next_counter; increment on each spawn, never reset during session"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-004
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Generate instance_id as card_id + '_' + str(counter); retired counters are never reused (ADR-002 pool safety)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-005
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "spawn_card(card_id, position) -> instance_id; validates card_id in Card Database, returns null on failure"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-006
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "On spawn: instantiate scene, set card_id/instance_id properties, set position, add_child, register, emit signal"
+  domain: Pool
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-007
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Emit card_spawned(instance_id: String, card_id: String, position: Vector2) after add_child completes"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-008
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "remove_card(instance_id): emit card_removing BEFORE erase+free; emit card_removed AFTER free"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-009
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "card_removing must fire before queue_free to allow Card Engine to cancel in-flight tweens on the node"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-010
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "remove_card with unknown instance_id: log warning, no crash, no action (idempotent)"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-011
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "spawn_card with unknown card_id: log error naming ID and caller, return null, do not instantiate"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-012
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Internal state machine: Ready (accepts requests) vs Clearing (queues spawns until clear completes)"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-013
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "clear_all_cards(): enter Clearing, emit card_removing+card_removed for each live card, empty registry"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-014
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "During Clearing, queue incoming spawn_card() calls and execute after clear completes"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-015
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "spawn_seed_cards(scene_data) -> instance_id[]; preserves input ordering in returned array"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-016
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Expose get_live_cards() returning authoritative list of current instance_ids on table"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-017
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Only ITF and Scene Manager may invoke spawn_card / remove_card / spawn_seed_cards / clear_all_cards"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-spawning-system-018
+  system: card-spawning-system
+  gdd: design/gdd/card-spawning-system.md
+  requirement: "Downstream signal consumers: Card Engine (register/cancel/deregister) and Card Visual (attach visuals)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# =============================================================================
+# FEATURE LAYER — gameplay logic
+# =============================================================================
+
+# --- interaction-template-framework ------------------------------------------
+
+- id: TR-interaction-template-framework-001
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "ITF is sole listener of Card Engine `combination_attempted(instance_id_a, instance_id_b)` signal"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-002
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Derive `card_id` from `instance_id` by stripping counter suffix (e.g., `morning-light_0 -> morning-light`)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-003
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Query Recipe Database `lookup(card_id_a, card_id_b) -> recipe|null` on every attempt"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-004
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Emit 6-param `combination_executed(recipe_id, template, instance_id_a, instance_id_b, card_id_a, card_id_b)` (Godot 4.3 arity-strict)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-005
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Support 4 template types: Additive, Merge, Animate, Generator — dispatch via `recipe.template` field"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-006
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Emit `combination_succeeded(a, b, template, config)` and `combination_failed(a, b)` to Card Engine"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-007
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Maintain per-recipe cooldown timers using `Time.get_ticks_msec()`; default `combination_cooldown_sec = 30s`"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-008
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Maintain `_active_generators` dict keyed by `generator_instance_id` with `{generates, interval_sec, max_count, count_produced}`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-009
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Listen to Card Engine `merge_animation_complete(a, b, midpoint)` to finalize Merge template"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-010
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Listen to Card Engine `animate_complete(instance_id)` for Animate template with `duration_sec`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-011
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Listen to Card Spawning `card_removing(instance_id)` to cancel Generator timers and merge waits"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-012
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Call `TableLayoutSystem.get_spawn_position(origin, live_positions, seed) -> Vector2` before every spawn"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-013
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Call `CardSpawningSystem.spawn_card(card_id, position)` and `remove_card(instance_id)` for template results"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-014
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Expose `suspend()` / `resume()` methods called by Scene Manager on scene transition boundaries"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-015
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "In `Suspended` state: ignore `combination_attempted`, pause all cooldown and generator timers"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-interaction-template-framework-016
+  system: interaction-template-framework
+  gdd: design/gdd/interaction-template-framework.md
+  requirement: "Per-recipe state machine: `Available` <-> `Cooling`; per-generator: `Generating` -> `Exhausted`/`Stopped`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- status-bar-system -------------------------------------------------------
+
+- id: TR-status-bar-system-001
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Status Bar System is an autoload singleton with states `Dormant`, `Active`, `Complete`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-002
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Expose `configure(scene_bar_config)` method accepting `{bars[], max_value, win_condition}`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-003
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Load bar effects from `assets/data/bar-effects.json` mapping `recipe_id -> {bar_id: delta}`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-004
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Listen to `combination_executed` with 6-param handler; read only `recipe_id` (Godot 4.3 arity-strict)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-005
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Apply `new_value = clamp(current + delta, 0, max_value)` per recipe-bar delta"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-006
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Per-frame decay: `value -= decay_rate_per_sec * delta_time` via `_process(delta)`, clamp to 0"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-007
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Emit `bar_values_changed(values: Dictionary)` after any value change (combo or decay)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-008
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Per-frame win check: if all bars >= threshold accumulate `sustained_time`; else reset to 0"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-009
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Emit `win_condition_met()` exactly once when `sustained_time >= duration_sec`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-010
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "On `win_condition_met()`: enter `Complete` state, stop decay and monitoring"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-011
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "On scene transition: reset to `Dormant`, clear all bar values"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-system-012
+  system: status-bar-system
+  gdd: design/gdd/status-bar-system.md
+  requirement: "Log warning and skip effect when `bar-effects.json` references unknown `bar_id`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- scene-goal-system -------------------------------------------------------
+
+- id: TR-scene-goal-system-001
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Read per-scene data from `assets/data/scenes/[scene_id].tres` as a typed `SceneData` Resource with `id`, `seed_cards`, `goal`, `bar_config`, `hint_stagnation_sec` (ADR-005); load via `ResourceLoader.load() as SceneData`"
+  domain: Data
+  created: 2026-04-21
+  revised: "2026-04-21"
+  status: active
+
+- id: TR-scene-goal-system-002
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Expose `load_scene(scene_id)` and `reset()` methods; states `Idle`, `Active`, `Complete`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-003
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "For `sustain_above` / `reach_value` goals, call `StatusBarSystem.configure(scene_bar_config)`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-004
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "For `find_key` / `sequence` goals, skip Status Bar configure (stays Dormant)"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-005
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Emit `seed_cards_ready(seed_cards: Array[String])` after successful scene JSON parse"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-006
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Listen for `win_condition_met()` from Status Bar System; emit `scene_completed(scene_id)`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-007
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "For `find_key`/`sequence` goals, listen to ITF `combination_executed` with 6-param handler"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-008
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Expose read-only `get_goal_config() -> Dictionary` for Hint System; return null when Idle"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-009
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "On malformed/missing scene JSON: log error, stay Idle, do not configure downstream"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-010
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Ignore duplicate `win_condition_met()` while in `Complete` state — emit `scene_completed` only once"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-011
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "`sequence` goal: advance only on next expected `recipe_id`; out-of-order fires do not advance"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-012
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "`load_scene()` while Active: internally call `reset()` first, log warning, then load new scene"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- hint-system -------------------------------------------------------------
+
+- id: TR-hint-system-001
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Hint System is goal-conditional: call `SceneGoalSystem.get_goal_config()` on scene load; Dormant for non-bar goals"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-002
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "States: `Dormant`, `Watching`, `Hint1`, `Hint2` — driven by stagnation timer"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-003
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Listen to `seed_cards_ready` to enter Watching; reset stagnation_timer=0, hint_level=0"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-004
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Listen to `combination_executed` with 6-param handler; reset stagnation_timer to 0 on each fire"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-005
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Advance `stagnation_timer += delta_time` per frame in `_process`; no advance while game paused"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-006
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Emit `hint_level_changed(1)` at `stagnation_timer >= stagnation_sec` (Level 1 faint arc)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-007
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Emit `hint_level_changed(2)` at `stagnation_timer >= stagnation_sec * 2` (Level 2 full arc)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-008
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "On combo fire while hint_level > 0: emit `hint_level_changed(0)`, reset clock"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-009
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Listen to `win_condition_met()` and `scene_completed` to enter Dormant and emit level 0"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-010
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Read per-scene `hint_stagnation_sec` from `scenes/[scene_id].json`; fallback default 300.0s"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-011
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "Arc UI is counterclockwise; opacity driven by Status Bar UI via `hint_level_changed(level)`"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-hint-system-012
+  system: hint-system
+  gdd: design/gdd/hint-system.md
+  requirement: "`hint_level_changed(0)` is idempotent — emit even if already at level 0 on combo fire"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- scene-manager -----------------------------------------------------------
+
+- id: TR-scene-manager-001
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Scene Manager is autoload singleton at position 11 of 12 per ADR-004 autoload order"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-002
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "States: `Waiting`, `Loading`, `Active`, `Transitioning`, `Epilogue` with strict transition guards"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-003
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Load ordered scene manifest from `assets/data/scene-manifest.json` into `_manifest` on `_ready()`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-004
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Track `_current_index: int` starting at 0; increment on each `scene_completed`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-005
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Subscribe to `EventBus.game_start_requested` with `CONNECT_ONE_SHOT` in Waiting state"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-006
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Scene load sequence emits `scene_loading(scene_id)` -> `SceneGoalSystem.load_scene()` -> await `seed_cards_ready`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-007
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "On `seed_cards_ready`: call `TableLayoutSystem.get_seed_card_positions()` then `CardSpawningSystem.spawn_card()` per card"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-008
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Emit `scene_started(scene_id)` after seed cards placed; enter Active state"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-009
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "On `scene_completed`: call `clear_all_cards()`, `await process_frame`, then `SceneGoalSystem.reset()`"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-010
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Emit `epilogue_started()` when `_current_index >= manifest.size()`; terminal state"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-011
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Expose `get_resume_index() -> int` (pure read) and `set_resume_index(index)` (guarded to Waiting) for SaveSystem"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-012
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Expose `reset_to_waiting()` — clears cards, resets SGS, sets index=0, re-arms CONNECT_ONE_SHOT"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-013
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Watchdog timer `seed_cards_ready_timeout_sec` default 5.0s; on timeout emit `scene_started` with zero cards"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-014
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Connect `seed_cards_ready` handler BEFORE calling `SceneGoalSystem.load_scene()` (avoid sync-emit hang)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-015
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Set `process_mode = PROCESS_MODE_ALWAYS` so Scene Manager processes during pause"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-016
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Validate EventBus, SGS, CSS, TLS autoloads non-null in `_ready()`; log fatal error if any missing"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-017
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Defer first load by `await get_tree().process_frame` at top of `_ready()` for autoload ordering"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-018
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "Ignore `scene_completed` with mismatched `scene_id` != `_manifest[_current_index]`; log warning"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-019
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "On saved-completed-game resume (`_current_index >= manifest.size()`): skip load, go straight to Epilogue"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-manager-020
+  system: scene-manager
+  gdd: design/gdd/scene-manager.md
+  requirement: "All inter-system communication flows through EventBus autoload (ADR-003)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- mystery-unlock-tree -----------------------------------------------------
+
+- id: TR-mystery-unlock-tree-001
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "MUT is autoload singleton `MysteryUnlockTree`; required autoload order: EventBus -> RecipeDatabase -> MUT"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-002
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Maintain `_discovered_recipes: Dictionary` keyed by `recipe_id` with record `{card_id_a, card_id_b, scene_id, discovery_order, template}`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-003
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Maintain `_scene_discoveries` (scene_id -> Array[String]) and `_cards_in_discoveries` (card_id -> scene_id) indices"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-004
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "States: `Inactive`, `Active`, `Transitioning`, `Epilogue`; process `combination_executed` only in Active"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-005
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Listen to `scene_started`, `scene_completed`, `epilogue_started` via EventBus for state transitions"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-006
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Listen to `combination_executed` (6-param); first-writer-wins for `_cards_in_discoveries`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-007
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Emit `recipe_discovered(recipe_id, card_id_a, card_id_b, scene_id)` on first-time recipe fire only"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-008
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Emit `discovery_milestone_reached(milestone_id, count)` at resolved thresholds; each fires at most once"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-009
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Emit `epilogue_conditions_met()` at most once per save slot when `R_found >= ceil(R_total * partial_threshold)`"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-010
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Emit `final_memory_ready()` on `epilogue_started()` if epilogue condition satisfied"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-011
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Load `res://assets/data/epilogue-requirements.json` array into `_epilogue_required_ids` at `_ready()`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-012
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Load `res://assets/data/mut-config.json` for `milestone_pct` and `partial_threshold` at `_ready()`"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-013
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Resolve `T_i = max(1, ceil(P_i * R_authored))` at `_ready()`; dedupe thresholds preserving lowest-index"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-014
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Expose `get_carry_forward_cards(carry_forward_spec) -> Array[String]` read-only query for SGS"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-015
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Expose `get_save_state() -> Dictionary` and `load_save_state(data)` including `_epilogue_conditions_emitted` flag"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-016
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "On load, prune saved recipes no longer in Recipe Database and recalculate `_discovery_order_counter`"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-017
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "`force_unlock_all` dev bypass: set `_suppress_signals=true`, bulk-write state, emit no signals"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-018
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Suppress mid-session `epilogue_conditions_met()` check entirely when `partial_threshold == 0.0`"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-019
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Typed-array write discipline: `_scene_discoveries[scene_id] = [] as Array[String]` (Godot 4.3 no typed dicts)"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-mystery-unlock-tree-020
+  system: mystery-unlock-tree
+  gdd: design/gdd/mystery-unlock-tree.md
+  requirement: "Single-threaded main-thread access only; no Mutex; do not call query methods from WorkerThreadPool"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# =============================================================================
+# PRESENTATION LAYER
+# =============================================================================
+
+# --- card-visual -------------------------------------------------------------
+
+- id: TR-card-visual-001
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Per-card rendering node; reads display_name/art_path/badge from CardDatabase on spawn and caches"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-002
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Reads card state enum from CardEngine each frame to apply visual config"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-003
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Renders label, circular-masked art, optional badge inside bordered frame"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-004
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Dragged/Attracting/Snapping states: scale 1.05 + drop shadow + top z-order"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-005
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Merge execute: tween scale 1.0->0.0 and modulate.a 1.0->0.0 over merge_duration_sec (Godot Tween)"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-006
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Z-order restored to authored position on transition to Idle/Pushed/Executing"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-007
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Missing art asset: render fallback circular placeholder and log warning with card_id"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-008
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Invalid card_id: render full placeholder (label='?', fallback circle) and log error"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-009
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Long display_name clipped/truncated to label region; does not overflow art area"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-010
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Cancel active merge tween cleanly on scene transition; no partial-scale artifact"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-card-visual-011
+  system: card-visual
+  gdd: design/gdd/card-visual.md
+  requirement: "Emits no signals; pure consumer of CardDatabase + CardEngine"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- status-bar-ui -----------------------------------------------------------
+
+- id: TR-status-bar-ui-001
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Reads bar count/IDs via SceneGoalSystem.get_goal_config() on scene load"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-002
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Subscribes to EventBus bar_values_changed(values: Dictionary) from StatusBarSystem"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-003
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Subscribes to EventBus hint_level_changed(level: int) from HintSystem"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-004
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Animates bar fill height bottom-to-top via tween over bar_tween_sec (default 0.15s)"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-005
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Cancels in-flight fill tween on new bar_values_changed; resumes from current displayed height"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-006
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Hint arc opacity tween over arc_fade_sec (default 1.5s): L0=0, L1=0.3, L2=1.0"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-007
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Arc traces counterclockwise around each bar border starting at top"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-008
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Dormant/Active/Frozen states drive whether signals are applied or ignored"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-009
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Non-bar goal scenes render empty panel; no bars, no arcs, no error"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-010
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Panel resets (bars empty, arcs hidden, Dormant) on scene transition"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-status-bar-ui-011
+  system: status-bar-ui
+  gdd: design/gdd/status-bar-ui.md
+  requirement: "Emits no signals; pure display component"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- scene-transition-ui -----------------------------------------------------
+
+- id: TR-scene-transition-ui-001
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "CanvasLayer (layer=10) scene instanced in gameplay.tscn; not autoload"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-002
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Subscribes in _enter_tree() to EventBus scene_completed, scene_started, epilogue_started"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-003
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Emits EventBus epilogue_cover_ready() when EPILOGUE overlay reaches full opacity"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-004
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "State machine: IDLE/FADING_OUT/HOLDING/FADING_IN/EPILOGUE/FIRST_REVEAL"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-005
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Polygon2D overlay (12-segment strip, 26 vertices) with per-vertex y-displacement curl"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-006
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Phase timings: rise 400ms + hold 1000ms + fade 500ms; total clamped to [1700, 2200] ms"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-007
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Calls InputSystem.cancel_drag() at frame of scene_completed"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-008
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "InputBlocker ColorRect uses MOUSE_FILTER_STOP during non-IDLE; IGNORE in IDLE"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-009
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "process_mode = PROCESS_MODE_ALWAYS so Tweens run when tree is paused"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-010
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Signal-storm guard: ignore scene_completed when not IDLE"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-011
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Pitch variation via ratio 2^(r*S_range/12) on AudioStreamPlayer.pitch_scale"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-012
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Reads transition-variants.json keyed by scene_id; fallback to 'default' then defaults"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-013
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Reads ProjectSettings.stui/reduced_motion_default per transition for reduced-motion path"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-014
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Stateless across save/load; persists nothing"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-015
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "FIRST_REVEAL: begin opaque, fade out over first_reveal_fade_ms (1200ms) on scene_started"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- main-menu ---------------------------------------------------------------
+
+- id: TR-main-menu-001
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Instanced scene at res://src/ui/main_menu/main_menu.tscn; set as project run/main_scene"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-002
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Renders CenterContainer->VBoxContainer with Title TextureRect + Start TextureButton"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-003
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "On _ready(): %StartButton.grab_focus(); enters Idle; emits nothing"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-004
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Start activation calls get_tree().change_scene_to_file('res://src/scenes/gameplay.tscn')"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-005
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Disables button on Start press to block double-activation during scene switch"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-006
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Esc via _unhandled_input calls get_tree().quit() only while _state == IDLE"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-007
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Rule 6 No Game-State Coupling: no references to SaveSystem/SceneManager/EventBus"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-008
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Gear icon exception rendered outside CenterContainer as corner affordance at Full Vision"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-009
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "game_start_requested signal emitted by gameplay.tscn root (not Main Menu itself)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-010
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Synchronous non-OK return from change_scene_to_file: log, re-enable button, return to Idle"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-011
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "Focus recovery: re-focus %StartButton on any keyboard event when focus owner is null"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-main-menu-012
+  system: main-menu
+  gdd: design/gdd/main-menu.md
+  requirement: "No animation, no audio; state feedback is color modulate only"
+  domain: Rendering
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- final-epilogue-screen ---------------------------------------------------
+
+- id: TR-final-epilogue-screen-001
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Pre-instanced in gameplay.tscn at EpilogueLayer CanvasLayer layer=20 (ADR-004 §2)"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-002
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Connects to EventBus.epilogue_cover_ready with CONNECT_ONE_SHOT in _ready()"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-003
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "State machine: Dormant/Preloading/Armed/Loading/Ready/Revealing/Blackout/Holding/Quitting"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-004
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Preloads illustration via ResourceLoader.load_threaded_request on epilogue_conditions_met"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-005
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Guard in _ready(): if MUT.is_final_memory_earned() false, log error + get_tree().quit()"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-006
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Fade-in tween modulate:a 0->1 over FADE_IN_DURATION (2000ms) EASE_OUT+TRANS_QUAD"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-007
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Input blackout Timer of 1500ms after fade-in finished before _input_armed"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-008
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Input filter rejects MouseMotion, button-release, key-release, key-echo, and KEY_ESCAPE"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-009
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Dismiss calls get_tree().quit(); no scene swap, no Main Menu return"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-010
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Sets Input.mouse_mode = MOUSE_MODE_HIDDEN at fade-in start"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-011
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Calls AudioManager.fade_out_all(FADE_IN_DURATION) on reveal entry (has_method guarded)"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-012
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "5000ms COVER_READY_TIMEOUT safety timer: begin fade-in if epilogue_cover_ready never fires"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-013
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Writes no save state; crash/force-quit leaves save unchanged relative to pre-FES"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-final-epilogue-screen-014
+  system: final-epilogue-screen
+  gdd: design/gdd/final-epilogue-screen.md
+  requirement: "Control root PRESET_FULL_RECT; illustration centered via CenterContainer KEEP_ASPECT_CENTERED"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# =============================================================================
+# POLISH LAYER — persistence + meta
+# =============================================================================
+
+# --- save-progress-system ----------------------------------------------------
+
+- id: TR-save-progress-system-001
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Autoload singleton SaveSystem; position 12/12 per ADR-004 §1 (after SceneManager)"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-002
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Single-slot JSON file at user://moments_save.json; UTF-8, pretty-printed indent=2"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-003
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Subscribes to EventBus scene_completed and final_memory_ready to trigger writes"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-004
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Atomic write: serialize->.tmp->DirAccess.rename_absolute() to real path"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-005
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Schema-v1 envelope: {schema_version, saved_at_unix, moments_build, scene.resume_index, mystery_unlock_tree}"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-006
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Corruption policy: rename bad file to moments_save.json.corrupt.<iso8601> (colons->dashes)"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-007
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "load_from_disk() returns LoadResult enum (OK/NO_SAVE_FOUND/CORRUPT_RECOVERED)"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-008
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "apply_loaded_state() calls SM.set_resume_index() + MUT.load_save_state()"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-009
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "save_now() synchronous API for final_memory_ready hook (ADR-004 §6)"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-010
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "clear_save(): reset_to_waiting->set_resume_index(0)->MUT.load_save_state({})->delete file"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-011
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Emits EventBus save_written() and save_failed(reason: String)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-012
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "State machine: Idle/Loading/LoadedReady/Active/Saving"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-013
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Listener ordering locked: SM handles scene_completed before SaveSystem (post-increment capture)"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-014
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "scene_completed during Loading state deferred via call_deferred one frame"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-save-progress-system-015
+  system: save-progress-system
+  gdd: design/gdd/save-progress-system.md
+  requirement: "Migration chain: loop _migrate_vN_to_vN+1(data) while v < CURRENT_SCHEMA_VERSION"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+# --- settings ----------------------------------------------------------------
+
+- id: TR-settings-001
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "SettingsManager autoload position 6/12 per ADR-004 §1 (after AudioManager, before SaveSystem)"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-002
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Separate JSON file at user://moments_settings.json (distinct from save file)"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-003
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Three HSlider widgets for Master/Music/SFX buses, range [0.0, 1.0] step 0.01"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-004
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Slider->dB: volume_db = 20 * log10(max(s, 0.0001)); clamps to [-80, 0]"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-005
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Each slider value_changed calls AudioManager.set_bus_volume(bus, volume_db) immediately"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-006
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Debounced disk write 500ms after last slider change"
+  domain: Timing
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-007
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Settings panel is CanvasLayer layer=15 (SettingsPanelHost) per ADR-004 §2"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-008
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Reset Progress two-tap confirmation with 3-second countdown window"
+  domain: UI
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-009
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Reset commit calls SaveSystem.clear_save() then change_scene_to_file to main_menu.tscn"
+  domain: Scene
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-010
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Panel instanced on gear press; disables gear trigger; one live panel at a time"
+  domain: State
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-011
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Dim overlay ColorRect at Color(0,0,0,0.45) with MOUSE_FILTER_STOP suppresses card input"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-012
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Close via button, overlay click, or Escape; flushes pending debounced save"
+  domain: Input
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-013
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Atomic tmp+rename write; corruption rename to moments_settings.json.corrupt.<iso8601>"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-014
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "flush_pending_save() on NOTIFICATION_WM_CLOSE_REQUEST ensures volumes persist on quit"
+  domain: Save/Load
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-015
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Schema-v1 envelope: {schema_version, saved_at_unix, volumes.{Master,Music,SFX}}"
+  domain: Data
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-016
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "Uses no EventBus signals; all communication via direct autoload method calls"
+  domain: Signals
+  created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-settings-017
+  system: settings
+  gdd: design/gdd/settings.md
+  requirement: "apply_all_volumes() at startup pushes loaded values into AudioManager before first sound"
+  domain: Audio
+  created: 2026-04-21
+  revised: ""
+  status: active
