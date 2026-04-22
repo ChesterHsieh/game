@@ -17,7 +17,7 @@ func _ready() -> void:
 # ── Input / Card Engine ───────────────────────────────────────────────────────
 
 signal drag_started(card_id: String, world_pos: Vector2)
-signal drag_moved(card_id: String, world_pos: Vector2, delta: float)
+signal drag_moved(card_id: String, world_pos: Vector2, delta: Vector2)
 signal drag_released(card_id: String, world_pos: Vector2)
 signal proximity_entered(dragged_id: String, target_id: String)
 signal proximity_exited(dragged_id: String, target_id: String)

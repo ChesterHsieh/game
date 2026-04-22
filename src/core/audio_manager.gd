@@ -146,6 +146,67 @@ func _get_remaining_time(index: int) -> float:
 	return player.stream.get_length() - player.get_playback_position()
 
 
+## Applies pitch and volume randomization from event_config to the pool node at
+## index, then plays it. Called after _claim_sfx_node() returns a valid index.
+## Silent mode callers must guard before calling this (TR-019).
+##
+## event_config keys (all optional — missing keys fall back to safe defaults):
+##   path: String           — res:// path to the AudioStream resource
+##   pitch_range: float     — semitone variance; 0 disables randomization
+##   base_volume_db: float  — base volume in dB
+##   volume_variance: float — dB variance; 0 disables randomization
+##
+## Example:
+##   var idx: int = _claim_sfx_node(false)
+##   if idx == -1:
+##       return
+##   _play_on_node(idx, {"path": "res://assets/audio/sfx/click.wav",
+##                        "pitch_range": 2.0, "base_volume_db": -6.0,
+##                        "volume_variance": 3.0})
+func _play_on_node(index: int, event_config: Dictionary) -> void:
+	var player: AudioStreamPlayer = _sfx_pool[index]
+	var path: String = event_config.get("path", "")
+	if not path.is_empty():
+		player.stream = load(path)
+	player.pitch_scale = _randomize_pitch(event_config.get("pitch_range", 0.0))
+	player.volume_db = _randomize_volume(
+		event_config.get("base_volume_db", 0.0),
+		event_config.get("volume_variance", 0.0)
+	)
+	_sfx_pool_state[index] = true
+	player.play()
+
+
+## Returns a pitch_scale multiplier by drawing a uniform semitone offset from
+## [−pitch_range, +pitch_range] and applying the equal-temperament formula:
+##   pitch_scale = 2^(offset / 12)
+##
+## When pitch_range <= 0 returns 1.0 (no randomization).
+##
+## Example:
+##   var scale: float = _randomize_pitch(2.0)  # ≈ [0.891, 1.122]
+static func _randomize_pitch(pitch_range: float) -> float:
+	if pitch_range <= 0.0:
+		return 1.0
+	var offset: float = randf_range(-pitch_range, pitch_range)
+	return pow(2.0, offset / 12.0)
+
+
+## Returns a final volume in dB by adding a uniform offset drawn from
+## [−variance, +variance] to base_db, then clamping to [−80, 0] dB.
+##   final_volume_db = clamp(base_db + uniform(−variance, +variance), −80, 0)
+##
+## When variance <= 0 returns base_db clamped to [−80, 0] (no randomization).
+##
+## Example:
+##   var db: float = _randomize_volume(-6.0, 3.0)  # ∈ [−9.0, −3.0]
+static func _randomize_volume(base_db: float, variance: float) -> float:
+	if variance <= 0.0:
+		return clampf(base_db, -80.0, 0.0)
+	var offset: float = randf_range(-variance, variance)
+	return clampf(base_db + offset, -80.0, 0.0)
+
+
 ## Resets pool slot at index to IDLE when its AudioStreamPlayer emits finished.
 ## Bound at pool construction time — one closure per slot index.
 func _on_sfx_finished(index: int) -> void:

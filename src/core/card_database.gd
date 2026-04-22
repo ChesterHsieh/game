@@ -16,7 +16,7 @@ const MANIFEST_PATH := "res://assets/data/cards.tres"
 ## defines the authoritative scene registry.
 ## Note: PackedStringArray literals are not compile-time constants in GDScript
 ## 4.3, so this is declared as a var rather than const.
-var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global"])
+var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global", "scene-01"])
 
 var _entries: Array[CardEntry] = []
 var _index: Dictionary = {}   # StringName → CardEntry
@@ -62,6 +62,9 @@ func _validate_entries() -> void:
 		if not KNOWN_SCENE_IDS.has(String(e.scene_id)):
 			push_warning("CardDatabase: orphaned scene_id '%s' on card %s"
 				% [e.scene_id, e.id])
+
+		if e.art == null:
+			push_warning("CardDatabase: missing art on card %s" % e.id)
 
 
 ## Builds the id→entry index from _entries. Called once at the end of

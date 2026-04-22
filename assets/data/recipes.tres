@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="RecipeEntry_placeholder_001"]
+script = ExtResource("2_entry")
+id = &"placeholder-additive-001"
+card_a = &"placeholder_card_a"
+card_b = &"placeholder_card_b"
+template = &"additive"
+scene_id = &"global"
+config = {"spawns": [&"placeholder_card_result"]}
+
+[sub_resource type="Resource" id="RecipeEntry_placeholder_002"]
+script = ExtResource("2_entry")
+id = &"placeholder-merge-001"
+card_a = &"placeholder_card_c"
+card_b = &"placeholder_card_d"
+template = &"merge"
+scene_id = &"global"
+config = {"result_card": &"placeholder_card_merged"}
+
+[sub_resource type="Resource" id="RecipeEntry_placeholder_003"]
+script = ExtResource("2_entry")
+id = &"placeholder-animate-001"
+card_a = &"placeholder_card_e"
+card_b = &"placeholder_card_f"
+template = &"animate"
+scene_id = &"global"
+config = {"motion": &"float", "speed": 1.0, "target": &"placeholder_card_target", "duration_sec": 1.5}
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("RecipeEntry_placeholder_001"), SubResource("RecipeEntry_placeholder_002"), SubResource("RecipeEntry_placeholder_003")]

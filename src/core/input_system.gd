@@ -12,7 +12,7 @@
 ##
 ## Story 001: FSM skeleton + coordinate conversion.
 ## Story 002: hit-test + drag_started emission.
-## Story 003: drag_moved + drag_released (pending).
+## Story 003: drag_moved + drag_released.
 ## Story 004: proximity detection (pending).
 ## Story 005: cancel_drag() (pending).
 extends Node
@@ -60,6 +60,10 @@ func _ready() -> void:
 ## Entry point for raw mouse input.
 ## Using _unhandled_input so UI elements (buttons, panels) consume events first.
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_handle_mouse_motion(event as InputEventMouseMotion)
+		return
+
 	if not event is InputEventMouseButton:
 		return
 
@@ -72,20 +76,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 		return
 
-	# Delegate to Stories 002 / 003 handlers (not yet implemented).
 	if mouse_event.pressed:
 		_handle_left_press(mouse_event.position)
 	else:
 		_handle_left_release(mouse_event.position)
-
-
-func _process(_delta: float) -> void:
-	if _state != State.DRAGGING:
-		return
-
-	# Drag tracking implemented in Story 003.
-	var world_pos: Vector2 = _screen_to_world(get_viewport().get_mouse_position())
-	_last_world_pos = world_pos
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -161,13 +155,29 @@ func _handle_left_press(screen_pos: Vector2) -> void:
 
 
 ## Handle a left-mouse-button release at [param screen_pos].
-## Full implementation (drag_released emit) added in Story 003.
+## Emits drag_released on EventBus and transitions to Idle.
+## Guard: no-op when not in DRAGGING state.
 func _handle_left_release(screen_pos: Vector2) -> void:
 	if _state != State.DRAGGING:
 		return
 	var world_pos: Vector2 = _screen_to_world(screen_pos)
 	EventBus.drag_released.emit(_dragged_card_id, world_pos)
 	_end_drag()
+
+
+## Handle mouse motion during an active drag.
+## Converts the screen-space position to world space, computes the frame delta,
+## updates _last_world_pos, and emits EventBus.drag_moved.
+## Guard: no-op when not in DRAGGING state.
+##
+## [param motion_event] The raw InputEventMouseMotion from _unhandled_input.
+func _handle_mouse_motion(motion_event: InputEventMouseMotion) -> void:
+	if _state != State.DRAGGING:
+		return
+	var world_pos: Vector2 = _screen_to_world(motion_event.position)
+	var delta: Vector2 = world_pos - _last_world_pos
+	_last_world_pos = world_pos
+	EventBus.drag_moved.emit(_dragged_card_id, world_pos, delta)
 
 
 ## Returns the card_id of the topmost card (highest z_index) under

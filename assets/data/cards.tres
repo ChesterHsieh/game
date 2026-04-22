@@ -1,17 +1,209 @@
-[gd_resource type="Resource" script_class="CardManifest" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="CardManifest" load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
+[ext_resource type="Texture2D" path="res://assets/cards/home.png" id="3_placeholder_art"]
 
-[sub_resource type="Resource" id="CardEntry_placeholder"]
+[sub_resource type="Resource" id="CardEntry_chester"]
 script = ExtResource("2_entry")
-id = &"placeholder-seed"
-display_name = "Placeholder"
+id = &"chester"
+display_name = "Chester"
+flavor_text = "The one who made this for you."
+art = ExtResource("3_placeholder_art")
+type = 0
+scene_id = &"scene-01"
+tags = PackedStringArray("person")
+
+[sub_resource type="Resource" id="CardEntry_ju"]
+script = ExtResource("2_entry")
+id = &"ju"
+display_name = "Ju"
 flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 0
+scene_id = &"scene-01"
+tags = PackedStringArray("person")
+
+[sub_resource type="Resource" id="CardEntry_shared-friend"]
+script = ExtResource("2_entry")
+id = &"shared-friend"
+display_name = "That friend we share"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 0
+scene_id = &"scene-01"
+tags = PackedStringArray("person")
+
+[sub_resource type="Resource" id="CardEntry_our-cafe"]
+script = ExtResource("2_entry")
+id = &"our-cafe"
+display_name = "Our Café"
+flavor_text = "The corner table."
+art = ExtResource("3_placeholder_art")
+type = 1
+scene_id = &"scene-01"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_home"]
+script = ExtResource("2_entry")
+id = &"home"
+display_name = "Home"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 1
+scene_id = &"scene-01"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_that-park"]
+script = ExtResource("2_entry")
+id = &"that-park"
+display_name = "That park"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 1
+scene_id = &"scene-01"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_safe"]
+script = ExtResource("2_entry")
+id = &"safe"
+display_name = "Safe"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"scene-01"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_nervous"]
+script = ExtResource("2_entry")
+id = &"nervous"
+display_name = "Nervous"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"scene-01"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_3am-energy"]
+script = ExtResource("2_entry")
+id = &"3am-energy"
+display_name = "3am energy"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"scene-01"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_handmade-gift"]
+script = ExtResource("2_entry")
+id = &"handmade-gift"
+display_name = "The handmade gift"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 3
+scene_id = &"scene-01"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_our-song"]
+script = ExtResource("2_entry")
+id = &"our-song"
+display_name = "Our song"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 3
+scene_id = &"scene-01"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_that-photo"]
+script = ExtResource("2_entry")
+id = &"that-photo"
+display_name = "That photo"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 3
+scene_id = &"scene-01"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_rainy-afternoon"]
+script = ExtResource("2_entry")
+id = &"rainy-afternoon"
+display_name = "Rainy afternoon"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"scene-01"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_first-call"]
+script = ExtResource("2_entry")
+id = &"first-call"
+display_name = "The first call"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"scene-01"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_that-argument"]
+script = ExtResource("2_entry")
+id = &"that-argument"
+display_name = "That argument we fixed"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"scene-01"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_joke-placeholder-1"]
+script = ExtResource("2_entry")
+id = &"joke-placeholder-1"
+display_name = "Joke placeholder 1"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 5
+scene_id = &"scene-01"
+tags = PackedStringArray("inside_joke")
+
+[sub_resource type="Resource" id="CardEntry_joke-placeholder-2"]
+script = ExtResource("2_entry")
+id = &"joke-placeholder-2"
+display_name = "Joke placeholder 2"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 5
+scene_id = &"scene-01"
+tags = PackedStringArray("inside_joke")
+
+[sub_resource type="Resource" id="CardEntry_seed-start"]
+script = ExtResource("2_entry")
+id = &"seed-start"
+display_name = "Beginning"
+flavor_text = "Every story starts somewhere."
+art = ExtResource("3_placeholder_art")
 type = 6
 scene_id = &"global"
-tags = PackedStringArray()
+tags = PackedStringArray("seed")
+
+[sub_resource type="Resource" id="CardEntry_seed-together"]
+script = ExtResource("2_entry")
+id = &"seed-together"
+display_name = "Together"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 6
+scene_id = &"global"
+tags = PackedStringArray("seed")
+
+[sub_resource type="Resource" id="CardEntry_seed-memory"]
+script = ExtResource("2_entry")
+id = &"seed-memory"
+display_name = "Memory"
+flavor_text = ""
+art = ExtResource("3_placeholder_art")
+type = 6
+scene_id = &"global"
+tags = PackedStringArray("seed")
 
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("CardEntry_placeholder")]
+entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared-friend"), SubResource("CardEntry_our-cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that-park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am-energy"), SubResource("CardEntry_handmade-gift"), SubResource("CardEntry_our-song"), SubResource("CardEntry_that-photo"), SubResource("CardEntry_rainy-afternoon"), SubResource("CardEntry_first-call"), SubResource("CardEntry_that-argument"), SubResource("CardEntry_joke-placeholder-1"), SubResource("CardEntry_joke-placeholder-2"), SubResource("CardEntry_seed-start"), SubResource("CardEntry_seed-together"), SubResource("CardEntry_seed-memory")]

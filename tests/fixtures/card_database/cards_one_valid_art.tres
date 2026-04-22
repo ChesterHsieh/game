@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CardManifest" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
+[ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
+[ext_resource type="Texture2D" path="res://assets/cards/home.png" id="3_art"]
+
+[sub_resource type="Resource" id="CardEntry_with_art_001"]
+script = ExtResource("2_entry")
+id = &"card-with-art"
+display_name = "Has Art"
+flavor_text = ""
+type = 1
+scene_id = &"global"
+art = ExtResource("3_art")
+tags = PackedStringArray()
+
+[resource]
+script = ExtResource("1_manifest")
+entries = [SubResource("CardEntry_with_art_001")]
