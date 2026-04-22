@@ -19,6 +19,10 @@
 ## The autoload is accessed globally via the name assigned in project.godot.
 extends Node
 
+## Emitted by fade_out_all() once the tween reaches −80 dB on all buses.
+## FES listens to this to know when it is safe to proceed after the audio fade.
+signal fade_out_completed
+
 ## Path to the typed AudioConfig resource. Missing file triggers silent mode.
 const CONFIG_PATH := "res://assets/data/audio_config.tres"
 
@@ -55,6 +59,38 @@ var _win_played_this_scene: bool = false
 ## Time.get_ticks_msec. Override in tests for deterministic timing.
 var _clock_fn: Callable = func() -> int: return Time.get_ticks_msec()
 
+# ── Story 006: music crossfade state machine ─────────────────────────────────
+
+## Three-state music FSM. STOPPED = no track loaded, PLAYING = one player
+## active at target volume, CROSSFADING = outgoing fading out / incoming fading in.
+enum MusicState { STOPPED, PLAYING, CROSSFADING }
+
+## Current FSM state. Read-only from outside the manager.
+var _music_state: MusicState = MusicState.STOPPED
+
+## Double-buffer music players. Both live on the Music bus.
+var _music_a: AudioStreamPlayer = null
+var _music_b: AudioStreamPlayer = null
+
+## The player that is currently the "canonical" foreground track.
+## Points to _music_a or _music_b. Null when STOPPED.
+var _active_music: AudioStreamPlayer = null
+
+## res:// path of the track that _active_music is (or will be) playing.
+## Empty string means STOPPED or no track for the current scene.
+var _current_track_path: String = ""
+
+## In-flight crossfade Tween. Killed on mid-crossfade interrupts.
+var _crossfade_tween: Tween = null
+
+# ── Story 007: public API state ───────────────────────────────────────────────
+
+## One-shot guard for fade_out_all. Once true, subsequent calls are no-ops.
+var _fade_out_completed: bool = false
+
+## In-flight fade_out_all Tween reference (kept to allow future cancel if needed).
+var _fade_out_tween: Tween = null
+
 
 func _ready() -> void:
 	process_mode = PROCESS_MODE_ALWAYS
@@ -72,8 +108,10 @@ func _ready() -> void:
 	# transitions run even without audio. Streams are not assigned here —
 	# Story 003 assigns them at play time.
 	_init_sfx_pool()
+	# Music players always initialize regardless of silent mode (TR-019):
+	# FSM state transitions run even without audio.
+	_init_music_players()
 	_connect_signals()
-	# Story 006 adds music player init here
 
 
 ## Returns true if AudioManager is in silent-fallback mode (no config loaded).
@@ -226,6 +264,224 @@ func _on_sfx_finished(index: int) -> void:
 	_sfx_pool_state[index] = false
 
 
+# ── Story 006: Music crossfade state machine ──────────────────────────────────
+
+## Creates the two double-buffer AudioStreamPlayer nodes on the Music bus.
+## Called once from _ready(). Both nodes are always created — silent mode only
+## skips stream loading and playback (TR-019).
+##
+## Example:
+##   # Called automatically from _ready() — do not call manually.
+func _init_music_players() -> void:
+	_music_a = AudioStreamPlayer.new()
+	_music_a.bus = &"Music"
+	add_child(_music_a)
+	_music_b = AudioStreamPlayer.new()
+	_music_b.bus = &"Music"
+	add_child(_music_b)
+
+
+## Returns the music track path registered for scene_id, or an empty String
+## when no entry exists in config.music_tracks or config is null.
+##
+## Example:
+##   var path: String = _get_music_track("scene-01")  # "res://...ambient.ogg"
+func _get_music_track(scene_id: String) -> String:
+	if _config == null:
+		return ""
+	return _config.music_tracks.get(scene_id, "") as String
+
+
+## Entry point for scene-based music changes. Called by _on_scene_started().
+## Handles the STOPPED → PLAYING (no crossfade) and PLAYING → CROSSFADING
+## transitions per the FSM spec (AC-AM-12, AC-AM-13).
+##
+## In silent mode this method is a no-op: FSM state and _current_track_path are
+## NOT updated so the state machine stays STOPPED (nothing to reconcile without
+## audio). TR-019 only requires that cooldown/pool state ticks — the music FSM
+## itself has no cooldown side-effect.
+##
+## Example:
+##   _play_music_for_scene("scene-02")
+func _play_music_for_scene(scene_id: String) -> void:
+	if _silent_mode:
+		return
+	var track_path: String = _get_music_track(scene_id)
+	if track_path.is_empty():
+		_stop_music()
+		return
+	if track_path == _current_track_path:
+		return  # same track — no crossfade (AC-AM-13)
+	if _music_state == MusicState.STOPPED:
+		_start_first_play(track_path)
+	else:
+		_start_crossfade(track_path)
+
+
+## STOPPED → PLAYING. No crossfade, no tween — stream starts immediately at
+## target volume (default 0.0 dB, scaled by the Music bus).
+## Sets _active_music, _current_track_path, and transitions FSM to PLAYING.
+##
+## Example:
+##   _start_first_play("res://assets/audio/music/ambient_a.ogg")
+func _start_first_play(track_path: String) -> void:
+	_music_a.stream = load(track_path)
+	_music_a.volume_db = 0.0
+	_music_a.play()
+	_active_music = _music_a
+	_current_track_path = track_path
+	_music_state = MusicState.PLAYING
+
+
+## PLAYING / CROSSFADING → CROSSFADING. Kills any in-flight tween, then starts
+## a new parallel tween: outgoing ramps from its current volume to −80 dB;
+## incoming ramps from −80 dB to 0 dB. On completion the outgoing player is
+## stopped and FSM moves to PLAYING.
+##
+## Mid-crossfade interrupt: the in-flight tween is killed (freezing the current
+## outgoing at its instantaneous volume). The player that was incoming becomes
+## the new outgoing at whatever dB it was frozen at. A fresh crossfade begins.
+##
+## Example:
+##   _start_crossfade("res://assets/audio/music/ambient_b.ogg")
+func _start_crossfade(new_track_path: String) -> void:
+	if _crossfade_tween != null and _crossfade_tween.is_running():
+		_crossfade_tween.kill()
+
+	var outgoing: AudioStreamPlayer = _active_music
+	var incoming: AudioStreamPlayer = _music_a if _active_music == _music_b else _music_b
+
+	incoming.stream = load(new_track_path)
+	incoming.volume_db = -80.0
+	incoming.play()
+
+	var duration: float = _config.crossfade_duration if _config != null else 2.0
+
+	_crossfade_tween = create_tween()
+	_crossfade_tween.set_parallel(true)
+	if outgoing != null and outgoing.playing:
+		_crossfade_tween.tween_property(outgoing, "volume_db", -80.0, duration)
+	_crossfade_tween.tween_property(incoming, "volume_db", 0.0, duration)
+	_crossfade_tween.chain().tween_callback(_on_crossfade_complete.bind(outgoing))
+
+	_active_music = incoming
+	_current_track_path = new_track_path
+	_music_state = MusicState.CROSSFADING
+
+
+## Stops music immediately. Kills any in-flight crossfade, stops both players,
+## and resets FSM to STOPPED.
+##
+## Example:
+##   _stop_music()
+func _stop_music() -> void:
+	if _crossfade_tween != null and _crossfade_tween.is_running():
+		_crossfade_tween.kill()
+	if _music_a != null:
+		_music_a.stop()
+	if _music_b != null:
+		_music_b.stop()
+	_active_music = null
+	_current_track_path = ""
+	_music_state = MusicState.STOPPED
+
+
+## Callback fired by the crossfade tween chain after both ramps complete.
+## Stops the outgoing player and transitions FSM to PLAYING.
+func _on_crossfade_complete(outgoing: AudioStreamPlayer) -> void:
+	if outgoing != null:
+		outgoing.stop()
+	_music_state = MusicState.PLAYING
+
+
+# ── Story 007: Public API ─────────────────────────────────────────────────────
+
+## Sets the named audio bus volume immediately to volume_db, clamped to
+## [−80, 0] dB. Uses PascalCase bus names: "Master", "Music", "SFX".
+## Silently clamps out-of-range values — no error is raised.
+## No-op for unknown bus names (push_warning logged).
+##
+## This is the only sanctioned path for gameplay or settings code to adjust
+## bus volumes (ADR-003 — no direct AudioServer calls from gameplay systems).
+##
+## Example:
+##   AudioManager.set_bus_volume("Music", -20.0)
+func set_bus_volume(bus_name: String, volume_db: float) -> void:
+	var idx: int = AudioServer.get_bus_index(bus_name)
+	if idx < 0:
+		push_warning("AudioManager: unknown bus '%s'" % bus_name)
+		return
+	volume_db = clampf(volume_db, -80.0, 0.0)
+	AudioServer.set_bus_volume_db(idx, volume_db)
+
+
+## Returns the current volume in dB for the named audio bus.
+## Returns 0.0 and logs a warning for unknown bus names.
+##
+## Example:
+##   var vol: float = AudioManager.get_bus_volume("Music")
+func get_bus_volume(bus_name: String) -> float:
+	var idx: int = AudioServer.get_bus_index(bus_name)
+	if idx < 0:
+		push_warning("AudioManager: unknown bus '%s'" % bus_name)
+		return 0.0
+	return AudioServer.get_bus_volume_db(idx)
+
+
+## Resets all three buses (Master, Music, SFX) to 0.0 dB.
+## Intended for test teardown and settings revert. Does not affect the
+## one-shot _fade_out_completed guard — call only when appropriate.
+##
+## Example:
+##   AudioManager.reset_bus_volumes()
+func reset_bus_volumes() -> void:
+	for bus_name: String in ["Master", "Music", "SFX"]:
+		var idx: int = AudioServer.get_bus_index(bus_name)
+		if idx < 0:
+			continue
+		AudioServer.set_bus_volume_db(idx, 0.0)
+
+
+## Linearly ramps Master, Music, and SFX buses from their current dB to −80 dB
+## over duration seconds, then emits the fade_out_completed signal.
+##
+## One-shot per session: a second call is a no-op and logs push_warning.
+## Duration is clamped to [0.1, 10.0] seconds.
+## Cancels any in-flight music crossfade (per AC-AM-17).
+## In silent mode the method still executes: buses are at their current dB
+## values and the tween will ramp them regardless.
+##
+## Example:
+##   AudioManager.fade_out_all(2.0)
+##   await AudioManager.fade_out_completed
+func fade_out_all(duration: float) -> void:
+	if _fade_out_completed:
+		push_warning("AudioManager: fade_out_all already completed — no-op")
+		return
+	duration = clampf(duration, 0.1, 10.0)
+	# Cancel in-flight crossfade so music does not fight the bus fade.
+	if _crossfade_tween != null and _crossfade_tween.is_running():
+		_crossfade_tween.kill()
+	_fade_out_tween = create_tween()
+	_fade_out_tween.set_parallel(true)
+	for bus_name: String in ["Master", "Music", "SFX"]:
+		var idx: int = AudioServer.get_bus_index(bus_name)
+		if idx < 0:
+			continue
+		var current_db: float = AudioServer.get_bus_volume_db(idx)
+		_fade_out_tween.tween_method(
+			func(db: float) -> void: AudioServer.set_bus_volume_db(idx, db),
+			current_db,
+			-80.0,
+			duration
+		)
+	_fade_out_tween.chain().tween_callback(
+		func() -> void:
+			_fade_out_completed = true
+			fade_out_completed.emit()
+	)
+
+
 # ── Story 004: Per-event cooldowns ───────────────────────────────────────────
 
 ## Returns true when event_name is ready to play.
@@ -346,11 +602,14 @@ func _on_win_condition_met() -> void:
 	_dispatch_sfx("win_condition_met")
 
 
-## Resets the win once-per-scene gate and delegates to Story 006 for music.
+## Resets the win once-per-scene gate. Music FSM is not reset here — music
+## continues playing across scene boundaries until _on_scene_started picks a
+## new track (or no-track scene triggers _stop_music).
 func _on_scene_completed(_scene_id: String) -> void:
 	_win_played_this_scene = false
 
 
-## Scene lifecycle — Story 006 adds music track lookup here.
-func _on_scene_started(_scene_id: String) -> void:
-	pass
+## Triggers music track selection for the incoming scene. Delegates to
+## _play_music_for_scene which handles all FSM transitions (Story 006).
+func _on_scene_started(scene_id: String) -> void:
+	_play_music_for_scene(scene_id)

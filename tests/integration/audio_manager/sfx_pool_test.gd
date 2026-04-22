@@ -57,11 +57,14 @@ func test_sfx_pool_creates_exactly_eight_children() -> void:
 	# Arrange + Act
 	var manager: Node = _make_manager()
 
-	# Count AudioStreamPlayer children only (ignore other potential children).
+	# Count AudioStreamPlayer children on the SFX bus only.
+	# Story 006 adds 2 Music bus players — we must not count those here.
 	var count: int = 0
 	for child: Node in manager.get_children():
 		if child is AudioStreamPlayer:
-			count += 1
+			var player: AudioStreamPlayer = child as AudioStreamPlayer
+			if String(player.bus) == "SFX":
+				count += 1
 
 	# Assert
 	assert_int(count).is_equal(8)
@@ -72,11 +75,11 @@ func test_sfx_pool_all_nodes_assigned_to_sfx_bus() -> void:
 	# Arrange + Act
 	var manager: Node = _make_manager()
 
-	# Assert every AudioStreamPlayer child has bus == "SFX".
-	for child: Node in manager.get_children():
-		if child is AudioStreamPlayer:
-			var player: AudioStreamPlayer = child as AudioStreamPlayer
-			assert_str(String(player.bus)).is_equal("SFX")
+	# Assert every SFX pool member has bus == "SFX".
+	# Story 006 adds Music bus players — use _sfx_pool array directly so the
+	# assertion targets only the pool, not music nodes.
+	for player: AudioStreamPlayer in manager._sfx_pool:
+		assert_str(String(player.bus)).is_equal("SFX")
 
 	manager.free()
 
@@ -290,14 +293,14 @@ func test_sfx_pool_silent_mode_children_on_sfx_bus() -> void:
 	var manager: Node = AudioManagerScript.new()
 	add_child(manager)
 
-	# Assert: nodes still exist and are on SFX bus (no stream assigned).
+	# Assert: SFX pool nodes exist, are on SFX bus, and have no stream assigned.
+	# Story 006 adds 2 Music bus players — count only SFX bus nodes to isolate
+	# the pool assertion from the music double-buffer.
 	var count: int = 0
-	for child: Node in manager.get_children():
-		if child is AudioStreamPlayer:
-			var player: AudioStreamPlayer = child as AudioStreamPlayer
-			assert_str(String(player.bus)).is_equal("SFX")
-			assert_object(player.stream).is_null()
-			count += 1
+	for player: AudioStreamPlayer in manager._sfx_pool:
+		assert_str(String(player.bus)).is_equal("SFX")
+		assert_object(player.stream).is_null()
+		count += 1
 	assert_int(count).is_equal(8)
 
 	manager.free()
