@@ -186,6 +186,12 @@ func _on_merge_complete(instance_id_a: String, instance_id_b: String, midpoint: 
 				eject_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 				eject_tween.tween_property(new_node, "position", pos, 0.30)
 
+	# Emote reaction — RO-style thought bubble at the merge midpoint.
+	# EmoteHandler (gameplay.tscn) listens and spawns the bubble.
+	var emote_name: String = String(config.get("emote", ""))
+	if emote_name != "" and emote_name != "none":
+		EventBus.emote_requested.emit(emote_name, midpoint)
+
 	_fire_executed(recipe["id"], "Merge", instance_id_a, instance_id_b)
 
 

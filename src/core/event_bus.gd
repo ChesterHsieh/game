@@ -31,6 +31,11 @@ signal combination_executed(recipe_id: String, template: String, instance_id_a: 
 signal merge_animation_complete(instance_id_a: String, instance_id_b: String, midpoint: Vector2)
 signal animate_complete(instance_id: String)
 
+## Emitted by ITF when a fired recipe has config.emote set. The emote
+## renderer (EmoteHandler in gameplay.tscn) subscribes and spawns the
+## bubble at world_pos.
+signal emote_requested(emote_name: String, world_pos: Vector2)
+
 # ── Card Spawning System ──────────────────────────────────────────────────────
 
 signal card_spawned(instance_id: String, card_id: String, position: Vector2)
@@ -55,6 +60,9 @@ signal epilogue_started()
 
 signal recipe_discovered(recipe_id: String, card_id_a: String, card_id_b: String, scene_id: String)
 signal discovery_milestone_reached(milestone_id: String, discovery_count: int)
+## Emitted by SceneGoalSystem when a bar reaches a declared milestone value.
+## Scene Manager listens and spawns the listed card IDs onto the table.
+signal milestone_cards_spawn(card_ids: PackedStringArray)
 signal epilogue_conditions_met()
 signal final_memory_ready()
 

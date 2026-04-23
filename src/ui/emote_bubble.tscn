@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/emote_bubble.gd" id="1_emote_bubble"]
+
+[node name="EmoteBubble" type="Node2D"]
+script = ExtResource("1_emote_bubble")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+pivot_offset = Vector2(40, 40)

@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/scenes/gameplay_root.gd" id="1_root"]
 [ext_resource type="PackedScene" path="res://src/ui/status_bar_ui.tscn" id="2_status_bar"]
 [ext_resource type="PackedScene" path="res://src/ui/scene_transition_ui.tscn" id="3_transition"]
 [ext_resource type="PackedScene" path="res://src/ui/final_epilogue_screen/final_epilogue_screen.tscn" id="4_epilogue"]
 [ext_resource type="Script" path="res://src/ui/ambient_indicator.gd" id="5_ambient"]
+[ext_resource type="Script" path="res://src/ui/emote_handler.gd" id="6_emote_handler"]
 
 [node name="GameplayRoot" type="Node2D"]
 script = ExtResource("1_root")
@@ -42,6 +43,12 @@ axis_stretch_vertical = 0
 layer = 5
 
 [node name="StatusBarUI" parent="HudLayer" instance=ExtResource("2_status_bar")]
+
+[node name="EmoteLayer" type="CanvasLayer" parent="."]
+layer = 7
+
+[node name="EmoteHandler" type="Node2D" parent="EmoteLayer"]
+script = ExtResource("6_emote_handler")
 
 [node name="TransitionLayer" type="CanvasLayer" parent="."]
 layer = 10
