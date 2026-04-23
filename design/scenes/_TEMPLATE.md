@@ -174,39 +174,60 @@ full background, but new scenes should default to `"full_viewport"`.
 - **Forbidden**: motifs that steal attention from cards (heavy ink,
   high contrast, saturated colour, animation)
 
-**Reusable nano-banana prompt template** (fill in `{SCENE_CONCEPT}` +
-`{CORNER_MOTIFS}` and run):
+**Reusable nano-banana prompt — proven to converge on directly-usable
+output in 1–2 generations.** Fill in `{SCENE_CONCEPT}` +
+`{CORNER_MOTIFS}` and run:
 
 ```
-Ornamental parchment background plate for a card game — wide landscape
-aspect ratio. Aged warm cream parchment paper texture as the base
-(#F4EEDE with very subtle tonal variation, no gradients, no strong
-color blocks). Fine-line ornamental filigree border frames the full
-rectangle in thin warm brown ink — scrollwork, vine curls, leaves.
-Decorative corner flourishes SUBTLY weave in abstracted {SCENE_CONCEPT}
-concepts as stylized line-art hints only: {CORNER_MOTIFS}, all rendered
-as if they are PART of the ornamental filigree itself, NOT placed as
-separate objects. The center 70% of the image is completely empty cream
-parchment with very subtle paper texture only — this is the gameplay
-surface where cards will sit. Overall feeling: vintage recipe book title
-plate, ornate but understated, like a tarot card back or medieval herbal
-manuscript frontispiece. Ink is soft warm brown, never black, never
-harsh.
+Wide landscape 1440×900 (16:10) ornamental parchment game background
+plate. Aged warm cream parchment paper (#F4EEDE base) with subtle
+texture. Thin refined warm-brown ink filigree frame along all four
+edges — the frame occupies LESS THAN 10% of the total image area
+(thin and elegant, not heavy). The four corner flourishes subtly
+integrate {SCENE_CONCEPT} concepts INTO the line work itself — the
+motifs ARE the ornament, not placed beside it: {CORNER_MOTIFS}.
+Center 80%+ of the image is completely empty warm parchment with
+subtle paper grain only — no focal subject, no objects, no gradient.
+This is the gameplay surface.
 
 NEGATIVE: text, letters, numbers, words, names, signatures, watermarks,
-any center focal subject, literal objects placed in the middle, strong
-color blocks, photographic realism, 3D render, perspective, deep shadows,
-human figures, modern UI elements, busy loud patterns, gradient fills
-in the center, heavy dark ink, anime, cyberpunk, neon, pixel art. The
-center MUST remain empty parchment — if it is not empty the image fails.
+logo marks, any center focal subject, literal objects placed in the
+middle, heavy ornament covering more than 10% of image area, strong
+color blocks, gradient fills in center, photographic realism, 3D
+render, perspective, deep shadows, human figures, modern UI elements,
+busy loud patterns, heavy dark ink, anime, cyberpunk, neon, pixel art,
+square aspect, portrait orientation.
 ```
 
-Example fill — coffee-intro:
-- `{SCENE_CONCEPT}`: *kitchen-morning*
-- `{CORNER_MOTIFS}`: *a tiny mortar-and-pestle silhouette in one corner,
-  a small whisk curl in another, a sheaf of coffee beans / wheat stalk
-  as a curving line in a third corner, a minimalist steam curl or coffee
-  cup edge suggestion in the fourth*
+### Prompt rules (why this works)
+
+- **Pattern**: 場景概念融入 filigree 線條 → the kitchen tools ARE the
+  ornament, not placed beside it
+- **Pattern**: 編筐 < 10% 畫面比例 → thin, elegant, doesn't compete
+  with cards
+- **Anti-pattern**: 出現文字 / 浮水印 → explicitly in NEGATIVE
+- **Anti-pattern**: 中央干擾主視覺 → 80%+ empty cream is non-negotiable
+- **Anti-pattern**: 直接按照場景把東西擺在編筐 → phrased "INTO the line
+  work itself" + "NOT placed beside"
+
+### Known limitation
+
+Gemini 2.5 Flash Image (via nano-banana) **does not reliably honour
+aspect-ratio directives** — expect a ~square output even when 16:10 is
+stated multiple times. This is handled at runtime by rendering through
+`NinePatchRect` with `patch_margin_* = 180`: the four ornamental
+corners stay pixel-perfect and the centre + edges stretch to whatever
+aspect the viewport actually is. So the image doesn't need to match
+the viewport aspect — just keep the filigree corners reasonably compact
+within the source PNG.
+
+### Example fill — coffee-intro
+
+- `{SCENE_CONCEPT}`: kitchen-morning
+- `{CORNER_MOTIFS}`: top-left = mortar-and-pestle woven into the
+  scrollwork, top-right = whisk blending with vine curl, bottom-left =
+  wheat stalk and rolling pin emerging from filigree, bottom-right =
+  coffee cup with a steam curl integrated into the flourish
 
 **Code wiring** (live in `src/ui/ambient_indicator.gd` — see
 `production/epics/scene-composition/story-006`):
