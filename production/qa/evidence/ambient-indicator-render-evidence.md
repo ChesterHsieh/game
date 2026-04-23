@@ -49,3 +49,18 @@ check:
 Implementation is complete and robust against missing data. Manual
 visual verification (AC-4) is gated on the first ambient asset landing,
 not on this code story.
+
+---
+
+## Follow-up — 2026-04-23 (same session)
+
+Coffee Intro's ambient PNG landed on the same day via nano-banana:
+`assets/ambient/coffee-intro.png` (135 KB, 320×320 after sips -Z 320).
+`assets/data/scenes/coffee-intro.json` got its `ambient` block wired to
+that path. Post-update smoke was clean (seed cards still spawn, no
+AmbientIndicator warnings).
+
+AC-4 (mouse pass-through) still pending user-run visual verification —
+next time the game is launched by hand, drag a card into the bottom-right
+corner and confirm CardEngine still receives the drag event. When
+verified, flip AC-4 to ✅ and drop this deferred caveat.

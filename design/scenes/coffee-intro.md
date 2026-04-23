@@ -159,15 +159,16 @@ in the scene JSON (SceneGoal already reads this).
 
 | Field | Value |
 |---|---|
-| `ambient_path` | `res://assets/ambient/coffee-intro.png` *(not yet commissioned — renders nothing until asset + rendering story land)* |
+| `ambient_path` | `res://assets/ambient/coffee-intro.png` ✅ committed 2026-04-23 |
 | `ambient_anchor` | `bottom_right` |
-| `ambient_size_px` | `{ w: 160, h: 120 }` |
-| `ambient_alpha` | `0.85` |
+| `ambient_size_px` | `{ w: 160, h: 160 }` (1:1 — the vignette ended up square-ish) |
+| `ambient_alpha` | `0.9` |
 
-**Subject for commission**: a small parchment sketch of a kitchen morning —
-steam rising off a cup, a window with soft light. Template B register
-(ink line on cream paper), hand-lettered "morning kitchen" label optional.
-Tracked in asset backlog, not blocking Coffee Intro MVP.
+**Subject**: morning kitchen vignette — coffee cup + saucer + window
+frame + steam curl + hand-lettered "morning" label at the bottom.
+Template B register (ink line on cream paper with thin grey deckle frame
+baked in). Generated via nano-banana, downscaled to 320px longest side
+(~135 KB on disk).
 
 ---
 

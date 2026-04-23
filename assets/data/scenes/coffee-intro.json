@@ -14,5 +14,11 @@
     "max_value": 100,
     "threshold": 100,
     "duration_sec": 0.1
+  },
+  "ambient": {
+    "path": "res://assets/ambient/coffee-intro.png",
+    "anchor": "bottom_right",
+    "size_px": { "w": 160, "h": 160 },
+    "alpha": 0.9
   }
 }

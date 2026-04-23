@@ -6,7 +6,11 @@
 
 | Total | Needed | In Progress | Done | Approved |
 |-------|--------|-------------|------|----------|
-| 5 | 5 | 0 | 0 | 0 |
+| 6 | 0 | 0 | 6 | 5 |
+
+> Note: "Done" = committed to repo. "Approved" excludes the ambient
+> indicator PNG until user runs the game and visually verifies the
+> bottom-right placement looks right (AC-4 of story-006).
 
 ## Assets by Context
 
@@ -18,7 +22,8 @@
 | ASSET-002 | Ju Portrait | Sprite (person card) | Needed | design/assets/specs/card-database-assets.md |
 | ASSET-003 | Coffee Machine | Sprite (object card) | Needed | design/assets/specs/card-database-assets.md |
 | ASSET-004 | Coffee Beans | Sprite (object card) | Needed | design/assets/specs/card-database-assets.md |
-| ASSET-005 | Coffee (Brewed) | Sprite (object card) | Needed | design/assets/specs/card-database-assets.md |
+| ASSET-005 | Coffee (Brewed) | Sprite (object card) | Done | design/assets/specs/card-database-assets.md |
+| ASSET-006 | Coffee Intro ambient vignette | Sprite (ambient indicator) | Done | design/scenes/coffee-intro.md §10.2 |
 
 ## Style Templates
 
