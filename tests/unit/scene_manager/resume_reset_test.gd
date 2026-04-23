@@ -53,8 +53,8 @@ func test_get_resume_index_has_no_side_effects() -> void:
 	sm._state = 0  # WAITING
 
 	# Multiple calls should not change state
-	var _r1 := sm.get_resume_index()
-	var _r2 := sm.get_resume_index()
+	var _r1: int = sm.get_resume_index()
+	var _r2: int = sm.get_resume_index()
 
 	assert_int(sm._state).is_equal(0)
 	assert_int(sm._current_index).is_equal(1)

@@ -16,16 +16,30 @@
 ## assert on _state == QUITTING without the process actually exiting.
 extends GdUnitTestSuite
 
-const FESScript := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.gd")
+func before_test() -> void:
+	# FES._ready() guards on MysteryUnlockTree.is_final_memory_earned().
+	# Without this stub, tests hang because _ready() calls get_tree().quit().
+	if Engine.has_singleton("MysteryUnlockTree") or MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = true
+
+
+func after_test() -> void:
+	if MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = false
+
+
+const FESScene := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.tscn")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 ## Creates a FES node and forces it into HOLDING state, bypassing the Tween
 ## and blackout timer. This is the canonical "ready to accept input" state.
 func _make_fes_in_holding() -> FinalEpilogueScreen:
-	var fes: FinalEpilogueScreen = FESScript.new()
+	var fes: FinalEpilogueScreen = FESScene.instantiate()
 	add_child(fes)
 	fes._state = FinalEpilogueScreen.State.HOLDING
+	# Stub _on_dismiss's terminal quit so the runner survives the test.
+	fes._quit_override = func() -> void: pass
 	return fes
 
 
@@ -141,7 +155,7 @@ func test_fes_input_filter_mouse_motion_never_dismisses_in_holding() -> void:
 
 func test_fes_input_filter_mouse_motion_never_dismisses_in_revealing() -> void:
 	# Arrange: REVEALING state
-	var fes: FinalEpilogueScreen = FESScript.new()
+	var fes: FinalEpilogueScreen = FESScene.instantiate()
 	add_child(fes)
 	fes._state = FinalEpilogueScreen.State.REVEALING
 

@@ -44,7 +44,7 @@ const CardEngineScript := preload("res://src/gameplay/card_engine.gd")
 ## Creates a fresh CardEngine node and adds it to the scene tree.
 ## Caller is responsible for calling .free() in cleanup.
 func _make_engine() -> Node:
-	var engine: Node = CardEngineScript.new()
+	var engine: Node = auto_free(CardEngineScript.new())
 	add_child(engine)
 	return engine
 

@@ -203,7 +203,7 @@ func test_card_database_known_scene_ids_includes_scene_01() -> void:
 
 func test_card_database_loads_production_manifest_via_load_manifest() -> void:
 	# Arrange
-	var db: Node = CardDatabaseScript.new()
+	var db: Node = auto_free(CardDatabaseScript.new())
 
 	# Act — this will assert-fail if the manifest is invalid
 	db._load_manifest(PRODUCTION_MANIFEST)

@@ -15,13 +15,25 @@
 ## AC-AUDIO-2 (no audio after fade-out) is a manual playtest — see evidence doc.
 extends GdUnitTestSuite
 
-const FESScript := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.gd")
+func before_test() -> void:
+	# FES._ready() guards on MysteryUnlockTree.is_final_memory_earned().
+	# Without this stub, tests hang because _ready() calls get_tree().quit().
+	if Engine.has_singleton("MysteryUnlockTree") or MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = true
+
+
+func after_test() -> void:
+	if MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = false
+
+
+const FESScene := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.tscn")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 ## Creates a FES node and adds it to the scene tree.
 func _make_fes() -> FinalEpilogueScreen:
-	var fes: FinalEpilogueScreen = FESScript.new()
+	var fes: FinalEpilogueScreen = FESScene.instantiate()
 	add_child(fes)
 	return fes
 

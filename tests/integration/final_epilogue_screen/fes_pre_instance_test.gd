@@ -18,7 +18,19 @@
 ## here; tests that need it to return false use direct state injection on the FES node.
 extends GdUnitTestSuite
 
-const FESScript := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.gd")
+func before_test() -> void:
+	# FES._ready() guards on MysteryUnlockTree.is_final_memory_earned().
+	# Without this stub, tests hang because _ready() calls get_tree().quit().
+	if Engine.has_singleton("MysteryUnlockTree") or MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = true
+
+
+func after_test() -> void:
+	if MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = false
+
+
+const FESScene := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.tscn")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +38,7 @@ const FESScript := preload("res://src/ui/final_epilogue_screen/final_epilogue_sc
 ## Only valid when MysteryUnlockTree.is_final_memory_earned() returns true.
 ## If MUT returns false, _ready() will call get_tree().quit() — see AC-FAIL-1 test.
 func _make_fes_armed() -> FinalEpilogueScreen:
-	var fes: FinalEpilogueScreen = FESScript.new()
+	var fes: FinalEpilogueScreen = FESScene.instantiate()
 	add_child(fes)
 	return fes
 
@@ -153,7 +165,7 @@ func test_fes_pre_instance_fail1_guard_state_does_not_advance_past_armed() -> vo
 	# in the story evidence doc.
 
 	# Arrange: create a FES instance without adding to scene tree
-	var fes: FinalEpilogueScreen = FESScript.new()
+	var fes: FinalEpilogueScreen = FESScene.instantiate()
 
 	# Assert: _state starts at ARMED (no transition has occurred without _ready())
 	assert_int(fes._state).is_equal(FinalEpilogueScreen.State.ARMED)

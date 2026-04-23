@@ -35,6 +35,11 @@ enum State { IDLE, STARTING, EXITING }
 ## Current menu state.  Starts as IDLE after _ready() completes.
 var _state: State = State.IDLE
 
+## Test seams: production code leaves both null. Tests assign no-op / stub
+## callables to exercise state transitions without terminating the runner.
+var _quit_override: Callable = Callable()
+var _change_scene_override: Callable = Callable()
+
 
 # ── Node references ───────────────────────────────────────────────────────────
 
@@ -80,7 +85,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		_state = State.EXITING
-		get_tree().quit()
+		if _quit_override.is_valid():
+			_quit_override.call()
+		else:
+			get_tree().quit()
 
 
 # ── Start activation ──────────────────────────────────────────────────────────
@@ -101,7 +109,11 @@ func _on_start_button_pressed() -> void:
 	_start_button.disabled = true
 
 	# AC-START-1 step 3: request scene switch.
-	var err: Error = get_tree().change_scene_to_file(GAMEPLAY_SCENE_PATH)
+	var err: Error
+	if _change_scene_override.is_valid():
+		err = _change_scene_override.call(GAMEPLAY_SCENE_PATH) as Error
+	else:
+		err = get_tree().change_scene_to_file(GAMEPLAY_SCENE_PATH)
 
 	# AC-FAIL-1: synchronous non-OK error recovery.
 	# Deferred failures (missing tscn, parse errors) return OK and are invisible

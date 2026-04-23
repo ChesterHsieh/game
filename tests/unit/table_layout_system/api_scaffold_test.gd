@@ -214,10 +214,10 @@ func test_get_seed_positions_is_idempotent_for_same_seed() -> void:
 	var result_b: Dictionary = sys.get_seed_positions(seed_cards, 55)
 
 	# Assert — same seed → same positions
-	assert_vector2(result_a["card-x"]) \
+	assert_vector(result_a["card-x"]) \
 		.override_failure_message("card-x position must be identical on repeated call with same seed") \
 		.is_equal(result_b["card-x"])
-	assert_vector2(result_a["card-y"]) \
+	assert_vector(result_a["card-y"]) \
 		.override_failure_message("card-y position must be identical on repeated call with same seed") \
 		.is_equal(result_b["card-y"])
 
@@ -236,7 +236,7 @@ func test_get_spawn_position_is_idempotent_for_same_seed() -> void:
 	var result_b: Vector2 = sys.get_spawn_position(combination_point, occupied, 123)
 
 	# Assert
-	assert_vector2(result_a) \
+	assert_vector(result_a) \
 		.override_failure_message("get_spawn_position must return identical Vector2 for same seed on repeated call") \
 		.is_equal(result_b)
 

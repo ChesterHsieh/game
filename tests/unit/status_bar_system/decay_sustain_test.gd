@@ -30,7 +30,7 @@ func _make_active_sbs(
 	win_duration_sec: float = 30.0,
 	max_value: float = 100.0
 ) -> Node:
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 	# Inject empty bar effects so no recipe look-ups fire during _process
 	sbs._bar_effects = {}
 	var config: Dictionary = {
@@ -373,7 +373,7 @@ func test_sustain_win_fires_after_sustained_recovery() -> void:
 
 func test_sustain_process_while_dormant_does_not_decay() -> void:
 	# Arrange: manually set bar in Dormant state (no configure())
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 	sbs._bar_effects = {}
 	sbs._values["warmth"] = 70.0
 	sbs._decay_rates["warmth"] = 10.0
@@ -389,7 +389,7 @@ func test_sustain_process_while_dormant_does_not_decay() -> void:
 
 func test_sustain_process_while_dormant_does_not_increment_timer() -> void:
 	# Arrange: inject some pre-existing timer value in Dormant state
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 	sbs._bar_effects = {}
 	sbs._sustain_timer = 0.0
 	# Status: DORMANT

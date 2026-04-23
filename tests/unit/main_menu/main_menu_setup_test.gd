@@ -30,6 +30,8 @@ func _make_main_menu() -> Control:
 	var packed: PackedScene = load(MAIN_MENU_SCENE_PATH)
 	var menu: Control = packed.instantiate()
 	add_child(menu)
+	menu._quit_override = func() -> void: pass
+	menu._change_scene_override = func(_p: String) -> int: return OK
 	return menu
 
 
@@ -119,10 +121,11 @@ func test_main_menu_idle_state_unchanged_after_large_delta() -> void:
 
 	var initial_state: int = menu._state
 
-	# Act: drive _process for 30 simulated seconds.
-	# MainMenu does nothing in _process — no-op loop verifies no accidental mutation.
-	for _i in range(30):
-		menu._process(1.0)
+	# Act: advance the scene tree for a few frames.
+	# MainMenu declares no _process() override, so the no-op is verified by
+	# state equality after idle ticks rather than by calling _process directly.
+	for _i in range(5):
+		await get_tree().process_frame
 
 	# Assert: state unchanged.
 	assert_int(menu._state) \
@@ -176,8 +179,16 @@ func test_main_menu_source_has_no_status_bar_ui_reference() -> void:
 
 func test_main_menu_source_has_no_event_bus_reference() -> void:
 	var source: String = FileAccess.open(MAIN_MENU_SCRIPT_PATH, FileAccess.READ).get_as_text()
-	assert_bool(source.contains("EventBus")) \
-		.override_failure_message("main_menu.gd must NOT reference EventBus") \
+	# Strip comment lines — "EventBus" is allowed in doc comments explaining
+	# that EventBus is specifically NOT used. Only flag code-level references.
+	var code_only := ""
+	for line in source.split("\n"):
+		var stripped: String = line.strip_edges()
+		if stripped.begins_with("#") or stripped.begins_with("##"):
+			continue
+		code_only += line + "\n"
+	assert_bool(code_only.contains("EventBus")) \
+		.override_failure_message("main_menu.gd must NOT reference EventBus in code") \
 		.is_false()
 
 

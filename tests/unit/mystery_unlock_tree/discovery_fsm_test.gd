@@ -81,7 +81,8 @@ func test_discovery_fsm_recipe_discovered_signal_emitted() -> void:
 
 	# Assert
 	assert_str(emitted_recipe).is_equal(_known_recipe())
-	EventBus.recipe_discovered.disconnect_all()
+	for c in EventBus.recipe_discovered.get_connections():
+		EventBus.recipe_discovered.disconnect(c["callable"])
 	mut.free()
 
 
@@ -141,7 +142,8 @@ func test_discovery_fsm_duplicate_recipe_signal_not_emitted_twice() -> void:
 
 	# Assert
 	assert_int(emit_count).is_equal(1)
-	EventBus.recipe_discovered.disconnect_all()
+	for c in EventBus.recipe_discovered.get_connections():
+		EventBus.recipe_discovered.disconnect(c["callable"])
 	mut.free()
 
 
@@ -297,7 +299,8 @@ func test_discovery_fsm_unknown_recipe_no_signal_emitted() -> void:
 
 	# Assert
 	assert_bool(emitted).is_false()
-	EventBus.recipe_discovered.disconnect_all()
+	for c in EventBus.recipe_discovered.get_connections():
+		EventBus.recipe_discovered.disconnect(c["callable"])
 	mut.free()
 
 

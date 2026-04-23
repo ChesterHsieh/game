@@ -178,7 +178,7 @@ func test_drag_attract_attracting_position_uses_lerp_formula() -> void:
 	engine._process(0.016)
 
 	# Assert: position == lerp(cursor=200,200, target=400,400, factor=0.4) = 280,280
-	var expected := lerp(Vector2(200.0, 200.0), Vector2(400.0, 400.0), engine.ATTRACTION_FACTOR)
+	var expected: Vector2 = lerp(Vector2(200.0, 200.0), Vector2(400.0, 400.0), engine.ATTRACTION_FACTOR)
 	assert_float(card_node.position.x) \
 		.override_failure_message("Attracting x must follow lerp formula") \
 		.is_between(expected.x - 0.01, expected.x + 0.01)
@@ -218,7 +218,7 @@ func test_drag_attract_attracting_tracks_moving_target_each_frame() -> void:
 	# Frame 2: card must lerp toward new target position
 	engine._process(0.016)
 
-	var expected := lerp(Vector2(200.0, 200.0), Vector2(600.0, 600.0), engine.ATTRACTION_FACTOR)
+	var expected: Vector2 = lerp(Vector2(200.0, 200.0), Vector2(600.0, 600.0), engine.ATTRACTION_FACTOR)
 	assert_float(card_node.position.x) \
 		.override_failure_message("Card must track moving target each frame") \
 		.is_between(expected.x - 0.01, expected.x + 0.01)

@@ -28,6 +28,8 @@ func _make_main_menu() -> Control:
 	var packed: PackedScene = load(MAIN_MENU_SCENE_PATH)
 	var menu: Control = packed.instantiate()
 	add_child(menu)
+	menu._quit_override = func() -> void: pass
+	menu._change_scene_override = func(_p: String) -> int: return OK
 	return menu
 
 

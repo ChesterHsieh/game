@@ -39,7 +39,7 @@ func _make_config(overrides: Dictionary = {}) -> Dictionary:
 ## This avoids _ready() which tries to load bar-effects.json and connect ITF.
 ## Tests call configure() manually to enter Active state.
 func _make_sbs() -> Node:
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 	# Prevent _ready() side effects: pre-populate _bar_effects so the JSON
 	# load does not error in headless, and skip ITF signal connection by
 	# not adding to tree until after configure() when needed.

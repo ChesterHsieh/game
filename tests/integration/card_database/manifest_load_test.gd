@@ -47,21 +47,21 @@ func test_card_database_accessible_at_root() -> void:
 # ── AC-2: Happy-path load from fixture ───────────────────────────────────────
 
 func test_load_manifest_populates_entries_from_fixture() -> void:
-	var db: Node = CardDatabaseScript.new()
+	var db: Node = auto_free(CardDatabaseScript.new())
 	db._load_manifest("res://tests/fixtures/card_database/cards_minimal.tres")
 	assert_int(db._entries.size()).is_equal(1)
 	db.free()
 
 
 func test_load_manifest_fixture_entry_is_card_entry_instance() -> void:
-	var db: Node = CardDatabaseScript.new()
+	var db: Node = auto_free(CardDatabaseScript.new())
 	db._load_manifest("res://tests/fixtures/card_database/cards_minimal.tres")
 	assert_bool(db._entries[0] is CardEntry).is_true()
 	db.free()
 
 
 func test_load_manifest_fixture_entry_id_matches() -> void:
-	var db: Node = CardDatabaseScript.new()
+	var db: Node = auto_free(CardDatabaseScript.new())
 	db._load_manifest("res://tests/fixtures/card_database/cards_minimal.tres")
 	assert_that(db._entries[0].id == &"test_seed_001").is_true()
 	db.free()
@@ -96,7 +96,7 @@ func test_bare_resource_cast_to_card_manifest_yields_null() -> void:
 
 
 func test_card_entry_cast_to_card_manifest_yields_null() -> void:
-	var wrong: CardEntry = CardEntry.new()
+	var wrong: CardEntry = auto_free(CardEntry.new())
 	var cast_result: CardManifest = wrong as CardManifest
 	assert_object(cast_result).is_null()
 

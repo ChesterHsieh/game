@@ -47,7 +47,7 @@ func test_get_spawn_position_same_seed_returns_identical_position() -> void:
 	var pos_b: Vector2 = sys.get_spawn_position(combination_point, occupied, fixed_seed)
 
 	# Assert
-	assert_vector2(pos_a) \
+	assert_vector(pos_a) \
 		.override_failure_message("get_spawn_position with seed 12345 must return the same position on every call") \
 		.is_equal(pos_b)
 
@@ -68,7 +68,7 @@ func test_get_spawn_position_same_seed_is_deterministic_across_instances() -> vo
 	var pos_b: Vector2 = sys_b.get_spawn_position(combination_point, occupied, fixed_seed)
 
 	# Assert
-	assert_vector2(pos_a) \
+	assert_vector(pos_a) \
 		.override_failure_message("Different instances with the same seed must produce identical positions") \
 		.is_equal(pos_b)
 
@@ -134,7 +134,7 @@ func test_get_spawn_position_seed_zero_is_deterministic() -> void:
 	var pos_b: Vector2 = sys.get_spawn_position(combination_point, occupied, 0)
 
 	# Assert
-	assert_vector2(pos_a) \
+	assert_vector(pos_a) \
 		.override_failure_message("Seed 0 must be treated as a valid fixed seed and produce deterministic output") \
 		.is_equal(pos_b)
 
@@ -152,7 +152,7 @@ func test_get_seed_positions_seed_zero_is_deterministic() -> void:
 	var result_b: Dictionary = sys.get_seed_positions(seed_cards, 0)
 
 	# Assert
-	assert_vector2(result_a["morning-light"]) \
+	assert_vector(result_a["morning-light"]) \
 		.override_failure_message("Seed 0 must produce the same placement position on every call") \
 		.is_equal(result_b["morning-light"])
 
@@ -238,7 +238,7 @@ func test_get_seed_positions_deterministic_per_card_for_same_seed() -> void:
 
 	# Assert — every card lands at the same position on both calls
 	for card_id: String in ["alpha", "beta", "gamma"]:
-		assert_vector2(result_a[card_id]) \
+		assert_vector(result_a[card_id]) \
 			.override_failure_message("%s position must be identical on repeated call with seed 777" % card_id) \
 			.is_equal(result_b[card_id])
 

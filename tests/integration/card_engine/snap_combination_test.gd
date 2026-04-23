@@ -64,7 +64,7 @@ func _ready() -> void:
 
 func _make_engine() -> Node:
 	var cls := _setup_engine_class()
-	var engine: Node = cls.new()
+	var engine: Node = auto_free(cls.new())
 	add_child(engine)
 	return engine
 

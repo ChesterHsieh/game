@@ -34,7 +34,7 @@ func _make_active_sbs(
 	initial_values: Dictionary = { "warmth": 50.0 },
 	max_value: float = 100.0
 ) -> Node:
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 
 	# Inject bar effects directly so no filesystem read is required
 	sbs._bar_effects = bar_effects
@@ -195,7 +195,7 @@ func test_bar_effects_bar_at_zero_with_negative_delta_stays_at_zero() -> void:
 
 func test_bar_effects_dormant_sbs_ignores_combination_executed() -> void:
 	# Arrange: SBS freshly created (Dormant), bar effects injected, but NOT configured
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 	sbs._bar_effects = { "morning-light": { "warmth": 20.0 } }
 	# _status is DORMANT; _values is empty
 
@@ -209,7 +209,7 @@ func test_bar_effects_dormant_sbs_ignores_combination_executed() -> void:
 
 func test_bar_effects_dormant_sbs_does_not_emit_bar_values_changed() -> void:
 	# Arrange
-	var sbs: Node = SBSScript.new()
+	var sbs: Node = auto_free(SBSScript.new())
 	sbs._bar_effects = { "morning-light": { "warmth": 20.0 } }
 	var emitted: bool = false
 	sbs.bar_values_changed.connect(func(_v: Dictionary) -> void: emitted = true)

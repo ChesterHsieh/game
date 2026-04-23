@@ -33,7 +33,7 @@ const ITFScript := preload("res://src/gameplay/interaction_template_framework.gd
 ## Returns a fresh ITF node without calling _ready() (avoids autoload signal
 ## connection errors in headless test runs).
 func _make_itf() -> Node:
-	var itf: Node = ITFScript.new()
+	var itf: Node = auto_free(ITFScript.new())
 	return itf
 
 

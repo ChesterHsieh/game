@@ -15,7 +15,19 @@
 ## and that the Tween is created and started (modulate.a > 0 after one frame).
 extends GdUnitTestSuite
 
-const FESScript := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.gd")
+func before_test() -> void:
+	# FES._ready() guards on MysteryUnlockTree.is_final_memory_earned().
+	# Without this stub, tests hang because _ready() calls get_tree().quit().
+	if Engine.has_singleton("MysteryUnlockTree") or MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = true
+
+
+func after_test() -> void:
+	if MysteryUnlockTree != null:
+		MysteryUnlockTree._final_memory_earned = false
+
+
+const FESScene := preload("res://src/ui/final_epilogue_screen/final_epilogue_screen.tscn")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +38,7 @@ func _make_fes(earned: bool = true) -> FinalEpilogueScreen:
 	# We inject the return value by patching via set() on the autoload directly.
 	# Safer: we skip _ready() guard by setting _state manually if earned=false tests
 	# need to bypass the quit call — see dedicated AC-FAIL-1 test in integration suite.
-	var fes: FinalEpilogueScreen = FESScript.new()
+	var fes: FinalEpilogueScreen = FESScene.instantiate()
 	# Prevent _ready() from calling get_tree().quit() by patching autoload stub.
 	# gdUnit4 provides mock_node() but we use a lightweight approach: replace the
 	# callable reference on MysteryUnlockTree if possible, else rely on the

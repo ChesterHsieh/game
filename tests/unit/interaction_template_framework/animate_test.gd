@@ -31,7 +31,7 @@ const ITFScript := preload("res://src/gameplay/interaction_template_framework.gd
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 func _make_itf() -> Node:
-	var itf: Node = ITFScript.new()
+	var itf: Node = auto_free(ITFScript.new())
 	add_child(itf)
 	return itf
 

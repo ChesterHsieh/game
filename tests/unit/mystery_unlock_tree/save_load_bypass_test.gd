@@ -242,7 +242,8 @@ func test_save_load_force_unlock_all_does_not_emit_recipe_discovered() -> void:
 
 	# Assert
 	assert_bool(emitted).is_false()
-	EventBus.recipe_discovered.disconnect_all()
+	for c in EventBus.recipe_discovered.get_connections():
+		EventBus.recipe_discovered.disconnect(c["callable"])
 	mut.free()
 
 

@@ -63,7 +63,8 @@ func test_milestones_milestone_fires_at_threshold() -> void:
 	# Assert
 	assert_str(fired_milestone).is_equal("milestone_0")
 	assert_int(fired_count).is_equal(1)
-	EventBus.discovery_milestone_reached.disconnect_all()
+	for c in EventBus.discovery_milestone_reached.get_connections():
+		EventBus.discovery_milestone_reached.disconnect(c["callable"])
 	mut.free()
 
 
@@ -80,7 +81,8 @@ func test_milestones_milestone_does_not_refire_after_threshold() -> void:
 
 	# Assert — milestone fired exactly once
 	assert_int(fire_count).is_equal(1)
-	EventBus.discovery_milestone_reached.disconnect_all()
+	for c in EventBus.discovery_milestone_reached.get_connections():
+		EventBus.discovery_milestone_reached.disconnect(c["callable"])
 	mut.free()
 
 
@@ -99,7 +101,8 @@ func test_milestones_second_threshold_fires_independently() -> void:
 	assert_int(milestones_fired.size()).is_equal(2)
 	assert_bool("milestone_0" in milestones_fired).is_true()
 	assert_bool("milestone_1" in milestones_fired).is_true()
-	EventBus.discovery_milestone_reached.disconnect_all()
+	for c in EventBus.discovery_milestone_reached.get_connections():
+		EventBus.discovery_milestone_reached.disconnect(c["callable"])
 	mut.free()
 
 
@@ -170,7 +173,8 @@ func test_milestones_epilogue_conditions_met_at_partial_threshold() -> void:
 	# Assert
 	assert_bool(emitted).is_true()
 	assert_bool(mut._epilogue_conditions_emitted).is_true()
-	EventBus.epilogue_conditions_met.disconnect_all()
+	for c in EventBus.epilogue_conditions_met.get_connections():
+		EventBus.epilogue_conditions_met.disconnect(c["callable"])
 	mut.free()
 
 
@@ -187,7 +191,8 @@ func test_milestones_epilogue_conditions_not_emitted_twice() -> void:
 
 	# Assert
 	assert_int(emit_count).is_equal(1)
-	EventBus.epilogue_conditions_met.disconnect_all()
+	for c in EventBus.epilogue_conditions_met.get_connections():
+		EventBus.epilogue_conditions_met.disconnect(c["callable"])
 	mut.free()
 
 
@@ -206,7 +211,8 @@ func test_milestones_epilogue_conditions_suppressed_when_threshold_zero() -> voi
 
 	# Assert — signal suppressed mid-session
 	assert_bool(emitted).is_false()
-	EventBus.epilogue_conditions_met.disconnect_all()
+	for c in EventBus.epilogue_conditions_met.get_connections():
+		EventBus.epilogue_conditions_met.disconnect(c["callable"])
 	mut.free()
 
 
@@ -230,7 +236,8 @@ func test_milestones_final_memory_ready_fires_on_epilogue_started() -> void:
 	# Assert
 	assert_bool(emitted).is_true()
 	assert_bool(mut._final_memory_earned).is_true()
-	EventBus.final_memory_ready.disconnect_all()
+	for c in EventBus.final_memory_ready.get_connections():
+		EventBus.final_memory_ready.disconnect(c["callable"])
 	mut.free()
 
 
@@ -250,7 +257,8 @@ func test_milestones_final_memory_not_emitted_when_requirements_not_met() -> voi
 	# Assert
 	assert_bool(emitted).is_false()
 	assert_bool(mut._final_memory_earned).is_false()
-	EventBus.final_memory_ready.disconnect_all()
+	for c in EventBus.final_memory_ready.get_connections():
+		EventBus.final_memory_ready.disconnect(c["callable"])
 	mut.free()
 
 
@@ -265,7 +273,8 @@ func test_milestones_final_memory_not_emitted_when_epilogue_ids_empty() -> void:
 
 	# Assert
 	assert_bool(emitted).is_false()
-	EventBus.final_memory_ready.disconnect_all()
+	for c in EventBus.final_memory_ready.get_connections():
+		EventBus.final_memory_ready.disconnect(c["callable"])
 	mut.free()
 
 
@@ -355,7 +364,8 @@ func test_milestones_resolve_sets_empty_thresholds_when_no_recipes() -> void:
 
 	# Assert
 	assert_bool(fired).is_false()
-	EventBus.discovery_milestone_reached.disconnect_all()
+	for c in EventBus.discovery_milestone_reached.get_connections():
+		EventBus.discovery_milestone_reached.disconnect(c["callable"])
 	mut.free()
 
 
@@ -384,5 +394,6 @@ func test_milestones_suppress_signals_prevents_milestone_evaluation() -> void:
 	_discover(mut, RECIPE_A)
 
 	assert_bool(fired).is_false()
-	EventBus.discovery_milestone_reached.disconnect_all()
+	for c in EventBus.discovery_milestone_reached.get_connections():
+		EventBus.discovery_milestone_reached.disconnect(c["callable"])
 	mut.free()

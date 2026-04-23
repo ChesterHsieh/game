@@ -217,10 +217,19 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ── Story 003: dismiss ────────────────────────────────────────────────────────
 
+## Test seam: called instead of `get_tree().quit()` when non-null.
+## Production code leaves this null; tests assign a no-op callable to verify
+## that _state == QUITTING is reached without terminating the runner.
+var _quit_override: Callable = Callable()
+
+
 ## Terminal dismiss handler. Sets state to QUITTING first as a re-entrant guard,
 ## then calls get_tree().quit(). No scene swap. No signal emitted.
 ## FES is a terminal leaf node — application exit is the complete dismiss action
 ## (GDD Core Rule 9, GDD §Dependencies — Downstream: None).
 func _on_dismiss() -> void:
 	_state = State.QUITTING
-	get_tree().quit()
+	if _quit_override.is_valid():
+		_quit_override.call()
+	else:
+		get_tree().quit()
