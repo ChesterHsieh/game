@@ -7,6 +7,7 @@
 ##   002 — State-driven visual config (scale, shadow, z-order per CardEngine state)
 ##   003 — Merge tween animation (scale-to-zero + opacity-to-zero; pool reset)
 ##   004 — Error handling and fallbacks (missing art, invalid card_id, long names)
+##   005 — Badge system (optional top-bar badge text; truncates with ellipsis)
 
 class_name CardVisual extends Node2D
 
@@ -29,6 +30,23 @@ class_name CardVisual extends Node2D
 
 ## Fallback circle colour when art is missing.
 @export var fallback_art_color: Color = Color(0.84, 0.81, 0.76, 1.0)
+
+## Height of the badge bar drawn at the top of the card (pixels).
+@export var badge_bar_height: float = 18.0
+
+## Font size for the badge text.
+@export var badge_font_size: int = 12
+
+## Badge bar background colour.
+@export var badge_background_color: Color = Color.BLACK
+
+## Badge text colour.
+@export var badge_text_color: Color = Color.WHITE
+
+## Badge bar vertical offset (pixels). Negative = up. 0 = bar sits flush
+## with the card's top edge. -8 = bar peeks above the card by 8px, so it
+## reads as a "tag" pinned onto the card.
+@export var badge_y_offset: float = -8.0
 
 # ── Layout constants ───────────────────────────────────────────────────────────
 
@@ -62,7 +80,7 @@ const COLOR_LABEL       := Color(0.18, 0.15, 0.12, 1.0)
 var _instance_id: String    = ""
 var _display_name: String   = INVALID_CARD_LABEL
 var _art_texture: Texture2D = null    ## null → draw fallback circle
-var _has_badge: bool        = false   ## CardEntry has no badge field yet; always false
+var _badge: String          = ""      ## empty → no badge bar drawn
 
 var _is_lifted: bool        = false   ## tracks whether shadow / scale are active
 var _authored_z_index: int  = AUTHORED_Z_INDEX
@@ -93,7 +111,7 @@ func reset(new_card_id: String) -> void:
 
 	_display_name = INVALID_CARD_LABEL
 	_art_texture  = null
-	_has_badge    = false
+	_badge        = ""
 
 	_read_card_data(new_card_id)
 	queue_redraw()
@@ -168,6 +186,7 @@ func _draw() -> void:
 		# Full-PNG mode: the artwork is the card. Stretch the source texture
 		# to fill CARD_SIZE. The PNG carries its own border + background.
 		draw_texture_rect(_art_texture, Rect2(-half, CARD_SIZE), false)
+		_draw_badge(half)
 		return
 
 	# Legacy fallback — missing or unloadable art. Render the code-drawn
@@ -178,6 +197,7 @@ func _draw() -> void:
 	_draw_art(art_center)
 	draw_arc(art_center, art_circle_radius, 0.0, TAU, 48, COLOR_CARD_BORDER, 1.0)
 	_draw_label(half)
+	_draw_badge(half)
 
 
 # ── Private helpers ────────────────────────────────────────────────────────────
@@ -207,7 +227,7 @@ func _read_card_data(card_id: String) -> void:
 		push_error("CardVisual: invalid card_id '%s' — rendering full placeholder" % card_id)
 		_display_name = INVALID_CARD_LABEL
 		_art_texture  = null
-		_has_badge    = false
+		_badge        = ""
 		return
 
 	# display_name — fall back to card_id if empty (matches existing behaviour).
@@ -226,9 +246,9 @@ func _read_card_data(card_id: String) -> void:
 	if _art_texture == null:
 		push_warning("CardVisual: missing art for card_id '%s'" % card_id)
 
-	# Badge — CardEntry does not yet have a badge field (GDD open question).
-	# Default to false until the schema is extended.
-	_has_badge = false
+	# Badge — optional top-bar text. Empty string is the common case and
+	# means "no bar drawn" (see _draw_badge()).
+	_badge = card_data.badge
 
 
 ## Applies scale, shadow, and z-order config for [param state] instantly (no tween).
@@ -297,6 +317,36 @@ func _draw_label(half: Vector2) -> void:
 	draw_string(
 		font, Vector2(label_x, label_y), _display_name,
 		HORIZONTAL_ALIGNMENT_LEFT, max_w, label_font_size, COLOR_LABEL
+	)
+
+
+## Draws the optional top-bar badge. No-op when [member _badge] is empty.
+## The bar sits inside the card's top edge with a 2px horizontal margin,
+## renders a solid [member badge_background_color] background, and draws
+## the badge text centred within the bar. Long text is clipped to the bar
+## width by [method CanvasItem.draw_string]'s max_width parameter — Godot
+## inserts its own ellipsis treatment.
+func _draw_badge(half: Vector2) -> void:
+	if _badge == "":
+		return
+
+	var margin_x := 2.0
+	var bar_top := -half.y + badge_y_offset
+	var bar_rect := Rect2(
+		Vector2(-half.x + margin_x, bar_top),
+		Vector2(CARD_SIZE.x - margin_x * 2.0, badge_bar_height)
+	)
+	draw_rect(bar_rect, badge_background_color)
+
+	var font := ThemeDB.fallback_font
+	# draw_string's y is the baseline; centre it vertically inside the bar.
+	var ascent := font.get_ascent(badge_font_size)
+	var text_y := bar_top + (badge_bar_height + ascent) * 0.5 - 1.0
+	var text_x := -half.x + margin_x + 2.0
+	var max_w  := bar_rect.size.x - 4.0
+	draw_string(
+		font, Vector2(text_x, text_y), _badge,
+		HORIZONTAL_ALIGNMENT_CENTER, max_w, badge_font_size, badge_text_color
 	)
 
 

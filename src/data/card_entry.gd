@@ -32,3 +32,6 @@ enum CardType {
 @export var scene_id: StringName
 ## Optional search/filter tags.
 @export var tags: PackedStringArray
+## Optional top-bar badge text (e.g. "OFFLINE"). Empty = no badge bar drawn.
+## Rendered by CardVisual as a small black bar at the top of the card face.
+@export var badge: String = ""

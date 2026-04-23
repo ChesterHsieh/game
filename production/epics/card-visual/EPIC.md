@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/card-visual.md
 > **Architecture Module**: CardVisual — per-card instance rendering
 > **Status**: Ready
-> **Stories**: 4 stories
+> **Stories**: 5 stories
 
 ## Stories
 
@@ -14,6 +14,7 @@
 | 002 | State-driven visual config | Visual/Feel | Ready | ADR-002, ADR-001 |
 | 003 | Merge tween animation | Visual/Feel | Ready | ADR-002 |
 | 004 | Error handling and fallbacks | Logic | Ready | ADR-001, ADR-002 |
+| 005 | Card badge system | Visual/Feel | Ready | ADR-001, ADR-002 |
 
 ## Overview
 

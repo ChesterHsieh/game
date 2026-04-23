@@ -18,6 +18,7 @@ art = ExtResource("7_chester")
 type = 0
 scene_id = &"scene-01"
 tags = PackedStringArray("person")
+badge = "chester"
 
 [sub_resource type="Resource" id="CardEntry_ju"]
 script = ExtResource("2_entry")
