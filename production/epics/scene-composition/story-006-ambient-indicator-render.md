@@ -1,7 +1,7 @@
 # Story 006: Ambient Indicator — per-scene parchment place cue
 
 > **Epic**: scene-composition
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Presentation
 > **Type**: Integration
 > **Manifest Version**: 2026-04-21
@@ -203,7 +203,7 @@ QA pass. Preferred: manual QA doc at
 `production/qa/evidence/ambient-indicator-render-evidence.md` with
 screenshots from coffee-intro once the PNG is commissioned.
 
-**Status**: [ ] Not yet created
+**Status**: [x] production/qa/evidence/ambient-indicator-render-evidence.md — PASS 2026-04-23 (AC-4 deferred until first ambient PNG)
 
 ---
 
