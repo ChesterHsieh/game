@@ -109,6 +109,10 @@ func _read_scene_json(scene_id: String) -> Dictionary:
 func _apply_anchor(anchor_name: String, ambient: Dictionary) -> void:
 	match anchor_name:
 		"full_viewport":
+			# Fit-not-fill: preserve the source aspect so ornate frames don't
+			# distort. Any aspect-mismatch gap on the sides is filled by the
+			# sibling PaperBackfill ColorRect (cream), so the player sees a
+			# seamless parchment background regardless of viewport size.
 			_texture_rect.anchor_left   = 0.0
 			_texture_rect.anchor_top    = 0.0
 			_texture_rect.anchor_right  = 1.0
@@ -118,7 +122,7 @@ func _apply_anchor(anchor_name: String, ambient: Dictionary) -> void:
 			_texture_rect.offset_right  = 0.0
 			_texture_rect.offset_bottom = 0.0
 			_texture_rect.expand_mode   = TextureRect.EXPAND_IGNORE_SIZE
-			_texture_rect.stretch_mode  = TextureRect.STRETCH_SCALE
+			_texture_rect.stretch_mode  = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			_texture_rect.custom_minimum_size = Vector2.ZERO
 		"bottom_right":
 			var size_block: Dictionary = ambient.get("size_px", {})
