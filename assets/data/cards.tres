@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardManifest" load_steps=29 format=3]
+[gd_resource type="Resource" script_class="CardManifest" load_steps=49 format=3]
 
 [ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
@@ -8,6 +8,15 @@
 [ext_resource type="Texture2D" path="res://assets/cards/coffee.png"         id="6_coffee"]
 [ext_resource type="Texture2D" path="res://assets/cards/chester.png"        id="7_chester"]
 [ext_resource type="Texture2D" path="res://assets/cards/ju.png"             id="8_ju"]
+[ext_resource type="Texture2D" path="res://assets/cards/drive_seat_9.png"        id="9_drive_seat_9"]
+[ext_resource type="Texture2D" path="res://assets/cards/shotgun_10.png"          id="10_shotgun_10"]
+[ext_resource type="Texture2D" path="res://assets/cards/kingdom_far_away.png"    id="11_kingdom_far_away"]
+[ext_resource type="Texture2D" path="res://assets/cards/nav_info.png"            id="12_nav_info"]
+[ext_resource type="Texture2D" path="res://assets/cards/better_nav_info.png"     id="13_better_nav_info"]
+[ext_resource type="Texture2D" path="res://assets/cards/restaurant_bbq.png"      id="14_restaurant_bbq"]
+[ext_resource type="Texture2D" path="res://assets/cards/restaurant_japanese.png" id="15_restaurant_japanese"]
+[ext_resource type="Texture2D" path="res://assets/cards/sure_either.png"         id="16_sure_either"]
+[ext_resource type="Texture2D" path="res://assets/cards/mcdonalds.png"           id="17_mcdonalds"]
 
 [sub_resource type="Resource" id="CardEntry_chester"]
 script = ExtResource("2_entry")
@@ -240,6 +249,116 @@ type = 3
 scene_id = &"coffee-intro"
 tags = PackedStringArray("object", "tutorial")
 
+[sub_resource type="Resource" id="CardEntry_drive_seat_9"]
+script = ExtResource("2_entry")
+id = &"drive_seat_9"
+display_name = "駕駛座"
+flavor_text = "方向盤在你手上。"
+art = ExtResource("9_drive_seat_9")
+type = 3
+scene_id = &"drive"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_shotgun_10"]
+script = ExtResource("2_entry")
+id = &"shotgun_10"
+display_name = "副駕駛座"
+flavor_text = "最佳觀測位置。"
+art = ExtResource("10_shotgun_10")
+type = 3
+scene_id = &"drive"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_kingdom_far_away"]
+script = ExtResource("2_entry")
+id = &"kingdom_far_away"
+display_name = "遠的要命王國"
+flavor_text = "導航說還有一個小時。"
+art = ExtResource("11_kingdom_far_away")
+type = 1
+scene_id = &"drive"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_ju_driving"]
+script = ExtResource("2_entry")
+id = &"ju_driving"
+display_name = "駕駛 Ju"
+flavor_text = "我來開。"
+art = ExtResource("8_ju")
+type = 0
+scene_id = &"drive"
+tags = PackedStringArray("person")
+
+[sub_resource type="Resource" id="CardEntry_chester_backseat"]
+script = ExtResource("2_entry")
+id = &"chester_backseat"
+display_name = "路怒症導師"
+flavor_text = "我只是說說而已。"
+art = ExtResource("7_chester")
+type = 0
+scene_id = &"drive"
+tags = PackedStringArray("person")
+
+[sub_resource type="Resource" id="CardEntry_nav_info"]
+script = ExtResource("2_entry")
+id = &"nav_info"
+display_name = "導航資訊"
+flavor_text = "前方 500 公尺右轉。"
+art = ExtResource("12_nav_info")
+type = 3
+scene_id = &"drive"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_better_nav_info"]
+script = ExtResource("2_entry")
+id = &"better_nav_info"
+display_name = "更合理的導航資訊"
+flavor_text = "這條路根本不用繞。"
+art = ExtResource("13_better_nav_info")
+type = 3
+scene_id = &"drive"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_restaurant_bbq"]
+script = ExtResource("2_entry")
+id = &"restaurant_bbq"
+display_name = "控窯雞"
+flavor_text = "聽起來不錯。"
+art = ExtResource("14_restaurant_bbq")
+type = 1
+scene_id = &"drive"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_restaurant_japanese"]
+script = ExtResource("2_entry")
+id = &"restaurant_japanese"
+display_name = "日式料理"
+flavor_text = "也可以。"
+art = ExtResource("15_restaurant_japanese")
+type = 1
+scene_id = &"drive"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_sure_either"]
+script = ExtResource("2_entry")
+id = &"sure_either"
+display_name = "都行"
+flavor_text = "都行。"
+art = ExtResource("16_sure_either")
+type = 2
+scene_id = &"drive"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_mcdonalds"]
+script = ExtResource("2_entry")
+id = &"mcdonalds"
+display_name = "麥當勞"
+flavor_text = "最後還是麥當勞。"
+art = ExtResource("17_mcdonalds")
+type = 1
+scene_id = &"drive"
+tags = PackedStringArray("place")
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee")]
+entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee"), SubResource("CardEntry_drive_seat_9"), SubResource("CardEntry_shotgun_10"), SubResource("CardEntry_kingdom_far_away"), SubResource("CardEntry_ju_driving"), SubResource("CardEntry_chester_backseat"), SubResource("CardEntry_nav_info"), SubResource("CardEntry_better_nav_info"), SubResource("CardEntry_restaurant_bbq"), SubResource("CardEntry_restaurant_japanese"), SubResource("CardEntry_sure_either"), SubResource("CardEntry_mcdonalds")]

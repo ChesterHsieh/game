@@ -1,0 +1,25 @@
+{
+  "scene_id": "drive",
+  "seed_cards": [
+    { "card_id": "ju" },
+    { "card_id": "chester" },
+    { "card_id": "drive_seat_9" },
+    { "card_id": "shotgun_10" },
+    { "card_id": "kingdom_far_away" }
+  ],
+  "goal": {
+    "type": "reach_value",
+    "bars": [
+      { "id": "journey_progress", "initial_value": 0, "decay_rate_per_sec": 0.0 }
+    ],
+    "max_value": 3,
+    "threshold": 3,
+    "duration_sec": 1.0
+  },
+  "next_scene": null,
+  "ambient": {
+    "path": "res://assets/ambient/drive.png",
+    "anchor": "full_viewport",
+    "alpha": 0.9
+  }
+}

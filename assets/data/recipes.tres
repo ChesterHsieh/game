@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RecipeManifest" load_steps=14 format=3]
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
@@ -129,6 +129,87 @@ template = &"merge"
 scene_id = &"coffee-intro"
 config = {"result_card": &"seed-together", "emote": &"heart"}
 
+[sub_resource type="Resource" id="RecipeEntry_seat_ju"]
+script = ExtResource("2_entry")
+id = &"seat-ju"
+card_a = &"ju"
+card_b = &"drive_seat_9"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"ju_driving"}
+
+[sub_resource type="Resource" id="RecipeEntry_seat_chester"]
+script = ExtResource("2_entry")
+id = &"seat-chester"
+card_a = &"chester"
+card_b = &"shotgun_10"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"chester_backseat"}
+
+[sub_resource type="Resource" id="RecipeEntry_kingdom_nav"]
+script = ExtResource("2_entry")
+id = &"kingdom-nav"
+card_a = &"kingdom_far_away"
+card_b = &"chester_backseat"
+template = &"generator"
+scene_id = &"drive"
+config = {"generates": &"nav_info", "interval_sec": 4.0, "max_count": 3, "generator_card": &"chester_backseat"}
+
+[sub_resource type="Resource" id="RecipeEntry_nav_upgrade"]
+script = ExtResource("2_entry")
+id = &"nav-upgrade"
+card_a = &"nav_info"
+card_b = &"chester_backseat"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"better_nav_info", "keeps": &"chester_backseat"}
+
+[sub_resource type="Resource" id="RecipeEntry_nav_advance"]
+script = ExtResource("2_entry")
+id = &"nav-advance"
+card_a = &"better_nav_info"
+card_b = &"ju_driving"
+template = &"additive"
+scene_id = &"drive"
+config = {"spawns": [&"restaurant_bbq", &"restaurant_japanese"], "keeps": &"ju_driving"}
+
+[sub_resource type="Resource" id="RecipeEntry_bbq_sure"]
+script = ExtResource("2_entry")
+id = &"bbq-sure"
+card_a = &"restaurant_bbq"
+card_b = &"ju_driving"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"sure_either", "keeps": &"ju_driving"}
+
+[sub_resource type="Resource" id="RecipeEntry_japanese_sure"]
+script = ExtResource("2_entry")
+id = &"japanese-sure"
+card_a = &"restaurant_japanese"
+card_b = &"ju_driving"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"sure_either", "keeps": &"ju_driving"}
+
+[sub_resource type="Resource" id="RecipeEntry_sure_merge"]
+script = ExtResource("2_entry")
+id = &"sure-merge"
+card_a = &"sure_either"
+card_b = &"sure_either"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"mcdonalds"}
+
+[sub_resource type="Resource" id="RecipeEntry_mcd_advance"]
+script = ExtResource("2_entry")
+id = &"mcd-advance"
+card_a = &"mcdonalds"
+card_b = &"ju_driving"
+template = &"additive"
+scene_id = &"drive"
+config = {"spawns": [], "keeps": &"ju_driving"}
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee")]
+entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee"), SubResource("RecipeEntry_seat_ju"), SubResource("RecipeEntry_seat_chester"), SubResource("RecipeEntry_kingdom_nav"), SubResource("RecipeEntry_nav_upgrade"), SubResource("RecipeEntry_nav_advance"), SubResource("RecipeEntry_bbq_sure"), SubResource("RecipeEntry_japanese_sure"), SubResource("RecipeEntry_sure_merge"), SubResource("RecipeEntry_mcd_advance")]
