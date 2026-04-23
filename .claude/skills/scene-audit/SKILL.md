@@ -101,6 +101,8 @@ Independent of spec-vs-data drift, run the same checks from
 4. Scene id appears in `scene-manifest.tres`
 5. Scene id is in `KNOWN_SCENE_IDS`
 6. Every recipe `template` is lowercase + valid
+7. If Section 10.2 `ambient_path` is not `none`, the PNG exists on disk
+   (soft warning if missing — scene still loads, just no vignette)
 
 Any violation here is a runtime bug waiting to happen. Report separately:
 

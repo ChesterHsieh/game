@@ -140,39 +140,6 @@ Every value key MUST match a `bar_id` in Section 6.
 - `table_tint`: default Paper Warm `#F4EEDE` or override hex
 - `bar_accent`: default or scene-specific hex
 
-### 10.2 Ambient Indicator (optional) — parchment-framed place cue
-
-A small decorative vignette pinned to the **bottom-right** of the viewport
-that signals *where* the scene takes place (e.g. "in the car", "at home",
-"at the park"). Reads as a parchment / journal sketch tucked into the
-corner of the page — follows the Art Bible §7.1 "paper on paper" rule.
-
-| Field | Value |
-|---|---|
-| `ambient_path` | `res://assets/ambient/[scene-id].png` (or `none` to skip) |
-| `ambient_anchor` | `bottom_right` (default) / `bottom_left` / `top_right` |
-| `ambient_size_px` | `{ w: 160, h: 120 }` logical (default — tune per scene) |
-| `ambient_alpha` | `0.85` default — should never dominate the table |
-
-**Art direction constraints** (follow Art Bible §5.5 + §7.1):
-- Parchment edge treatment: thin grey deckled frame, 2–3px; rounded corners
-  ≤12px to stay under the card radius
-- Interior illustration: same register as card portraits (Template B ink
-  line or Template A painterly, matching the scene's register)
-- No text baked in unless the name of the place is *part of* the image
-  (hand-lettered label on the parchment itself is acceptable)
-- Must not carry gameplay semantics — no pulsing, no blinking, no hint
-  arcs. Purely ambient set dressing.
-
-**How to wire it when implementing** (reference — not part of current code):
-1. Add a `CanvasLayer` (or reuse `HudLayer`) child `AmbientIndicator`
-   positioned bottom-right
-2. A TextureRect reads `ambient_path` from the scene JSON at
-   `scene_started` time; `modulate.a = ambient_alpha`
-3. Swap texture per scene; hide when `ambient_path == "none"`
-4. Track the rendering story in `production/epics/` under a new
-   "ambient-indicator" epic (or fold into a general set-dressing epic)
-
 ---
 
 ## 11. Epilogue Handoff

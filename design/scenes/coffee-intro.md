@@ -155,6 +155,20 @@ in the scene JSON (SceneGoal already reads this).
 - `table_tint`: default Paper Warm `#F4EEDE` (no override — baseline scene)
 - `bar_accent` for affection: warm amber (default `COLOR_BAR_FILL` in StatusBarUI)
 
+### 10.2 Ambient Indicator
+
+| Field | Value |
+|---|---|
+| `ambient_path` | `res://assets/ambient/coffee-intro.png` *(not yet commissioned — renders nothing until asset + rendering story land)* |
+| `ambient_anchor` | `bottom_right` |
+| `ambient_size_px` | `{ w: 160, h: 120 }` |
+| `ambient_alpha` | `0.85` |
+
+**Subject for commission**: a small parchment sketch of a kitchen morning —
+steam rising off a cup, a window with soft light. Template B register
+(ink line on cream paper), hand-lettered "morning kitchen" label optional.
+Tracked in asset backlog, not blocking Coffee Intro MVP.
+
 ---
 
 ## 11. Epilogue Handoff

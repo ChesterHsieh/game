@@ -57,6 +57,7 @@ Extract from the spec:
 - Section 7 → bar-effects mapping
 - Section 8 → hint override (optional)
 - Section 10 → palette override (optional)
+- Section 10.2 → ambient indicator (optional — bottom-right parchment cue)
 - Section 14 → STUI override (optional)
 - Section 15 → one-time code additions (e.g. KNOWN_SCENE_IDS)
 
@@ -89,6 +90,13 @@ Run every check from the spec's Section 17, plus:
 9. **Manifest order not duplicate** — Section 1's `manifest_order` is not
    already occupied by another scene (check the spec's order vs. actual
    manifest)
+
+   **Ambient indicator existence check** — if Section 10.2 declares
+   `ambient_path` and the value is not `none`, verify the PNG exists at
+   that path. If missing, emit a ⚠ warning ("ambient asset not yet
+   committed — scene will load but the ambient vignette will be blank
+   until the asset lands") rather than a blocking error. Ambient is
+   purely decorative; scene can still run without it.
 10. **art_style known** — if Section 3 lists `art_style: Template A` or
     `Template B`, confirm the Art Bible sections exist; if custom, warn
 11. **Epilogue coherence** — if Section 11 says `next_scene: none` AND
