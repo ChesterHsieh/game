@@ -73,7 +73,12 @@ Then per-recipe detail:
 | template | `merge` / `additive` / `animate` / `generator` (lowercase!) |
 | result_card | `card_id` (for merge / additive) |
 | keeps | `card_id` if one side stays (catalyst); omit for classic merge |
+| emote | `spark` / `heart` / `ok` / `sweat` / `anger` / `question` / `exclaim` / `zzz` — bubble to pop when the recipe fires; omit or `"none"` = no emote |
 | other config | spawns / motion / interval / max_count — template-specific |
+
+Emote values are the filename stem (without `.png`) of any file in
+`assets/emotes/`. See `.claude/rules/data-files.md` — emote is an
+enum-ish field, use lowercase.
 
 (repeat per recipe)
 

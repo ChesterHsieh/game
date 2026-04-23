@@ -118,7 +118,7 @@ card_a = &"coffee_machine"
 card_b = &"coffee_beans"
 template = &"merge"
 scene_id = &"coffee-intro"
-config = {"result_card": &"coffee", "keeps": &"coffee_machine"}
+config = {"result_card": &"coffee", "keeps": &"coffee_machine", "emote": &"spark"}
 
 [sub_resource type="Resource" id="RecipeEntry_deliver_coffee"]
 script = ExtResource("2_entry")
@@ -127,7 +127,7 @@ card_a = &"coffee"
 card_b = &"ju"
 template = &"merge"
 scene_id = &"coffee-intro"
-config = {"result_card": &"seed-together"}
+config = {"result_card": &"seed-together", "emote": &"heart"}
 
 [resource]
 script = ExtResource("1_manifest")

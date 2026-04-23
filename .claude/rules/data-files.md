@@ -29,6 +29,9 @@ slice wasted a debugging session on `template = "merge"` (data) vs
 
 How to apply:
 - Recipes: `template` field values — `additive`, `merge`, `animate`, `generator`
+- Recipes: `config.emote` field values — filename stems from `assets/emotes/`,
+  currently: `spark`, `heart`, `ok`, `sweat`, `anger`, `question`, `exclaim`,
+  `zzz`. Absent or `none` = no emote.
 - Scene goals: `type` field values — `sustain_above`, `reach_value`, `find_key`, `sequence`
 - Cards: `type` field values mirror the `CardType` enum — `person`, `place`, `feeling`, `object`, `moment`, `inside_joke`, `seed`
 - Any new enum-ish field added to a `.tres` or `.json` — follow the same convention

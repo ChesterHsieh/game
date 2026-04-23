@@ -81,6 +81,7 @@ deliver-coffee   : coffee + ju                  → seed-together  [WIN — fire
 | template | `merge` |
 | result_card | `coffee` |
 | keeps | `coffee_machine` *(catalyst — stays on the table, no merge animation)* |
+| emote | `spark` *(success / aha — coffee is ready)* |
 
 ### `deliver-coffee`
 | Field | Value |
@@ -91,6 +92,7 @@ deliver-coffee   : coffee + ju                  → seed-together  [WIN — fire
 | template | `merge` |
 | result_card | `seed-together` |
 | keeps | *(none — both consumed)* |
+| emote | `heart` *(affection delivered — Ju receives the coffee)* |
 
 ---
 
