@@ -15,6 +15,7 @@
 | 003 | [Tutorial scene JSON + manifest](story-003-tutorial-scene-and-manifest.md) | Config/Data | Ready | ADR-005 |
 | 004 | [Compose gameplay.tscn](story-004-gameplay-tscn-composition.md) | Integration | Ready | ADR-004 |
 | 005 | [Vertical Slice playtest](story-005-vertical-slice-playtest.md) | Integration | Ready | ADR-004 |
+| 006 | [Ambient Indicator render](story-006-ambient-indicator-render.md) | Integration | Ready | ADR-004 |
 
 ## Overview
 
