@@ -43,7 +43,7 @@ var _change_scene_override: Callable = Callable()
 
 # ── Node references ───────────────────────────────────────────────────────────
 
-@onready var _start_button: TextureButton = %StartButton
+@onready var _start_button: BaseButton = %StartButton
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────

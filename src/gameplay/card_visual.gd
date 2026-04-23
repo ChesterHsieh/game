@@ -145,34 +145,39 @@ func cancel_merge() -> void:
 
 # ── Rendering ─────────────────────────────────────────────────────────────────
 
-## Draws the card face: shadow (when lifted), background, border, art circle,
-## and label. Badge region is suppressed until CardEntry gains a badge field.
+## Draws the card face. When a full art texture is present (nano-banana /
+## commissioned PNGs include their own card border + paper background +
+## implicit framing per Art Bible §8), we draw the texture directly over the
+## entire CARD_SIZE rect — no code-drawn background, border, label, or art
+## circle. This avoids the "card-in-a-card" effect where the engine drew a
+## frame on top of the PNG's own frame.
+##
+## When no art texture is loaded (fallback / missing art path), we render
+## the legacy code-drawn placeholder: background rect, border, fallback
+## circle, and the display_name label.
 func _draw() -> void:
 	var half := CARD_SIZE * 0.5
 
-	# Drop shadow — drawn only while the card is lifted.
+	# Drop shadow — drawn only while the card is lifted. Independent of
+	# whether the art texture is present.
 	if _is_lifted:
 		var shadow_color := Color(0.0, 0.0, 0.0, shadow_opacity)
 		draw_rect(Rect2(-half + shadow_offset, CARD_SIZE), shadow_color)
 
-	# Card background.
+	if _art_texture != null:
+		# Full-PNG mode: the artwork is the card. Stretch the source texture
+		# to fill CARD_SIZE. The PNG carries its own border + background.
+		draw_texture_rect(_art_texture, Rect2(-half, CARD_SIZE), false)
+		return
+
+	# Legacy fallback — missing or unloadable art. Render the code-drawn
+	# placeholder card so the debug / error state is visible.
 	draw_rect(Rect2(-half, CARD_SIZE), COLOR_CARD_BG)
-
-	# Card border.
 	draw_rect(Rect2(-half, CARD_SIZE), COLOR_CARD_BORDER, false, 1.5)
-
-	# Art region: centered with a slight downward offset to leave room for label.
 	var art_center := Vector2(0.0, 8.0)
 	_draw_art(art_center)
-
-	# Art circle border (defines the circular boundary visually).
 	draw_arc(art_center, art_circle_radius, 0.0, TAU, 48, COLOR_CARD_BORDER, 1.0)
-
-	# Label — single line, clipped by card width via draw_string max_width.
 	_draw_label(half)
-
-	# Badge — hidden until CardEntry schema gains a badge field.
-	# _draw_badge(half)  # guarded — uncomment when badge field is available
 
 
 # ── Private helpers ────────────────────────────────────────────────────────────

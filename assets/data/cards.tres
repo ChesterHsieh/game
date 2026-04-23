@@ -1,15 +1,20 @@
-[gd_resource type="Resource" script_class="CardManifest" load_steps=24 format=3]
+[gd_resource type="Resource" script_class="CardManifest" load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
 [ext_resource type="Texture2D" path="res://assets/cards/home.png" id="3_placeholder_art"]
+[ext_resource type="Texture2D" path="res://assets/cards/coffee_machine.png" id="4_coffee_machine"]
+[ext_resource type="Texture2D" path="res://assets/cards/coffee_beans.png"   id="5_coffee_beans"]
+[ext_resource type="Texture2D" path="res://assets/cards/coffee.png"         id="6_coffee"]
+[ext_resource type="Texture2D" path="res://assets/cards/chester.png"        id="7_chester"]
+[ext_resource type="Texture2D" path="res://assets/cards/ju.png"             id="8_ju"]
 
 [sub_resource type="Resource" id="CardEntry_chester"]
 script = ExtResource("2_entry")
 id = &"chester"
 display_name = "Chester"
 flavor_text = "The one who made this for you."
-art = ExtResource("3_placeholder_art")
+art = ExtResource("7_chester")
 type = 0
 scene_id = &"scene-01"
 tags = PackedStringArray("person")
@@ -19,7 +24,7 @@ script = ExtResource("2_entry")
 id = &"ju"
 display_name = "Ju"
 flavor_text = ""
-art = ExtResource("3_placeholder_art")
+art = ExtResource("8_ju")
 type = 0
 scene_id = &"scene-01"
 tags = PackedStringArray("person")
@@ -204,6 +209,36 @@ type = 6
 scene_id = &"global"
 tags = PackedStringArray("seed")
 
+[sub_resource type="Resource" id="CardEntry_coffee_machine"]
+script = ExtResource("2_entry")
+id = &"coffee_machine"
+display_name = "Coffee Machine"
+flavor_text = "Hums before sunrise."
+art = ExtResource("4_coffee_machine")
+type = 3
+scene_id = &"coffee-intro"
+tags = PackedStringArray("object", "tutorial")
+
+[sub_resource type="Resource" id="CardEntry_coffee_beans"]
+script = ExtResource("2_entry")
+id = &"coffee_beans"
+display_name = "Coffee Beans"
+flavor_text = "Dark roast, fair trade."
+art = ExtResource("5_coffee_beans")
+type = 3
+scene_id = &"coffee-intro"
+tags = PackedStringArray("object", "tutorial")
+
+[sub_resource type="Resource" id="CardEntry_coffee"]
+script = ExtResource("2_entry")
+id = &"coffee"
+display_name = "Coffee"
+flavor_text = "Still steaming."
+art = ExtResource("6_coffee")
+type = 3
+scene_id = &"coffee-intro"
+tags = PackedStringArray("object", "tutorial")
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory")]
+entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee")]

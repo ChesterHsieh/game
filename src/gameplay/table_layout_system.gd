@@ -8,7 +8,7 @@ extends Node
 # ── Table Bounds ──────────────────────────────────────────────────────────────
 
 ## Inset from viewport edges — keeps cards fully visible and away from UI panels.
-const EDGE_INSET     := 120.0
+const EDGE_INSET     := 60.0
 ## Minimum distance between any two card centers.
 const MIN_SPACING    := 100.0
 ## Max scatter attempts before accepting the least-overlapping position.

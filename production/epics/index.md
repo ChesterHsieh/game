@@ -41,6 +41,7 @@ depends on CardDatabase. All three can begin once Foundation stories are Done.
 | 16 | [scene-transition-ui](scene-transition-ui/EPIC.md) | Presentation | SceneTransitionUI | `scene-transition-ui.md` | ADR-004, ADR-001, ADR-003, ADR-005 | 15 | 6 stories | Ready |
 | 17 | [main-menu](main-menu/EPIC.md) | Presentation | MainMenu | `main-menu.md` | ADR-001, ADR-003, ADR-004 | 12 | 4 stories | Ready |
 | 18 | [final-epilogue-screen](final-epilogue-screen/EPIC.md) | Presentation | FinalEpilogueScreen | `final-epilogue-screen.md` | ADR-004, ADR-001, ADR-003 | 14 | 5 stories | Ready |
+| 19 | [scene-composition](scene-composition/EPIC.md) | Presentation+Content | gameplay.tscn + Coffee Intro | (content) | ADR-004, ADR-005 | n/a | 5 stories | Ready |
 
 **Foundation subtotal**: 4 epics, 57 TRs, 0 untraced.
 **Core subtotal**: 3 epics, 55 TRs, 0 untraced.

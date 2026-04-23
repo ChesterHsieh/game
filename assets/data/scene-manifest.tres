@@ -4,4 +4,4 @@
 
 [resource]
 script = ExtResource("1_manifest")
-scene_ids = PackedStringArray("home")
+scene_ids = PackedStringArray("coffee-intro")

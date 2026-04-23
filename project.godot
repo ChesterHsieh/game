@@ -11,13 +11,25 @@ config_version=5
 [application]
 
 config/name="game"
-run/main_scene="res://src/scenes/game.tscn"
+run/main_scene="res://src/ui/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
 
 [audio]
 
 buses/default_bus_layout="res://assets/data/default_bus_layout.tres"
+
+[display]
+
+; Logical render resolution (the coordinate space all gameplay code works in).
+; Lower than window so canvas_items stretch scales cards and UI 2x larger.
+window/size/viewport_width=720
+window/size/viewport_height=450
+; Actual window size on screen (MacBook friendly, slightly under 1470×956).
+window/size/window_width_override=1440
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [autoload]
 

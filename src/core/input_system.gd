@@ -177,8 +177,15 @@ func _handle_left_release(screen_pos: Vector2) -> void:
 	if _state != State.DRAGGING:
 		return
 	var world_pos: Vector2 = _screen_to_world(screen_pos)
-	_flush_proximity_exits()
+	# Emit drag_released BEFORE flushing proximity exits so CardEngine's
+	# drag_released handler still sees the active attract_target and can
+	# transition to SNAPPING. If we flushed first, proximity_exited would
+	# reset state to DRAGGED and the release would be treated as "drop in
+	# open space" even when the player clearly released on top of a target.
+	# cancel_drag() keeps the opposite order (exits first) per GDD cancel
+	# semantics — that path is genuinely interrupting the drag.
 	EventBus.drag_released.emit(_dragged_card_id, world_pos)
+	_flush_proximity_exits()
 	_end_drag()
 
 

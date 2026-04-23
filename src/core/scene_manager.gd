@@ -203,9 +203,12 @@ func _check_duplicate_scene_ids() -> void:
 
 
 func _cancel_watchdog() -> void:
-	if _watchdog_timer != null and not _watchdog_timer.is_stopped():
-		# Disconnect all to prevent deferred fire after cancellation.
-		var conns: Array[Dictionary] = _watchdog_timer.timeout.get_connections()
-		for c: Dictionary in conns:
+	# SceneTreeTimer has no is_stopped() API in Godot 4.3 — it auto-frees when
+	# its timeout fires or when no references remain. We simply disconnect any
+	# pending listeners (defensive — prevents a deferred fire-after-cancel) and
+	# null out our reference so the timer becomes eligible for GC.
+	if _watchdog_timer != null:
+		var conns: Array = _watchdog_timer.timeout.get_connections()
+		for c in conns:
 			_watchdog_timer.timeout.disconnect(c["callable"])
 	_watchdog_timer = null

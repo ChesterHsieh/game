@@ -202,6 +202,28 @@ func lookup(card_a: StringName, card_b: StringName, scene_id: StringName) -> Rec
 	return null
 
 
+## Dictionary-returning wrapper around lookup() for ITF, which treats the
+## recipe as a Dictionary (`recipe["id"]`, `recipe["config"]`, etc.).
+## Returns null when no recipe matches the pair.
+##
+## Usage example:
+##   var recipe = RecipeDatabase.get_recipe("chester", "ju", "coffee-intro")
+##   if recipe != null:
+##       print(recipe["id"])
+func get_recipe(card_a: String, card_b: String, scene_id: String) -> Variant:
+	var entry: RecipeEntry = lookup(StringName(card_a), StringName(card_b), StringName(scene_id))
+	if entry == null:
+		return null
+	return {
+		"id":       String(entry.id),
+		"card_a":   String(entry.card_a),
+		"card_b":   String(entry.card_b),
+		"template": String(entry.template),
+		"scene_id": String(entry.scene_id),
+		"config":   entry.config,
+	}
+
+
 ## Returns the full populated entries array in stable (declaration) order.
 ## Callers must not mutate the returned array or its elements.
 ##

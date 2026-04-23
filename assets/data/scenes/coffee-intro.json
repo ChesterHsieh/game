@@ -1,0 +1,18 @@
+{
+  "scene_id": "coffee-intro",
+  "seed_cards": [
+    { "card_id": "chester" },
+    { "card_id": "ju" },
+    { "card_id": "coffee_machine" },
+    { "card_id": "coffee_beans" }
+  ],
+  "goal": {
+    "type": "reach_value",
+    "bars": [
+      { "id": "affection", "initial_value": 0, "decay_rate_per_sec": 0.0 }
+    ],
+    "max_value": 100,
+    "threshold": 100,
+    "duration_sec": 0.1
+  }
+}

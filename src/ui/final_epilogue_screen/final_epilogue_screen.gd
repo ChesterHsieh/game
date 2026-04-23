@@ -72,14 +72,12 @@ var _state: State = State.ARMED
 func _ready() -> void:
 	# ── Story 001: _ready() sequence (order is load-bearing per GDD Core Rule 5) ──
 
-	# Guard: FES must not exist unless the final memory has been earned.
-	# Ordering bug upstream → log and quit immediately (AC-FAIL-1, EC-16).
-	if not MysteryUnlockTree.is_final_memory_earned():
-		push_error(
-			"FES: is_final_memory_earned() returned false — ordering bug upstream; quitting"
-		)
-		get_tree().quit()
-		return
+	# FES is pre-instanced in gameplay.tscn per ADR-004 §2, so _ready() runs at
+	# boot — long before any memory is earned. The earned-guard belongs on the
+	# reveal path, not at _ready(). Here we simply enter Armed state (alpha=0)
+	# and wait for epilogue_cover_ready. The guard re-runs inside
+	# _on_epilogue_cover_ready so an ordering bug still can't produce a visible
+	# reveal.
 
 	# Set modulate alpha=0 BEFORE any Tween is created to prevent one-frame flash.
 	modulate = Color(1.0, 1.0, 1.0, 0.0)
@@ -89,10 +87,14 @@ func _ready() -> void:
 	EventBus.epilogue_cover_ready.connect(_on_epilogue_cover_ready, CONNECT_ONE_SHOT)
 
 	# ── Story 004: COVER_READY_TIMEOUT safety timer (GDD EC-4) ───────────────────
+	# Configure now but do NOT start — the timer arms only when the epilogue
+	# sequence is actually requested (via epilogue_started). Starting at _ready()
+	# triggers the fallback fade-in during normal gameplay and blacks out the
+	# screen after 5s. See `_on_epilogue_started`.
 	_cover_ready_timeout_timer.wait_time = COVER_READY_TIMEOUT / 1000.0
 	_cover_ready_timeout_timer.one_shot = true
 	_cover_ready_timeout_timer.timeout.connect(_on_cover_ready_timeout)
-	_cover_ready_timeout_timer.start()
+	EventBus.epilogue_started.connect(_on_epilogue_started)
 
 	# ── Story 002: configure blackout timer (not started here — see EC-13) ───────
 	_blackout_timer.wait_time = INPUT_BLACKOUT_DURATION / 1000.0
@@ -101,6 +103,14 @@ func _ready() -> void:
 
 
 # ── Story 004: cover-ready fallback timer callback ───────────────────────────
+
+## Arms the cover-ready watchdog when the epilogue handoff actually starts.
+## Outside of this signal FES sits dormant (modulate.a == 0) — no watchdog.
+func _on_epilogue_started() -> void:
+	if _state != State.ARMED:
+		return
+	_cover_ready_timeout_timer.start()
+
 
 ## Called if epilogue_cover_ready has not fired within COVER_READY_TIMEOUT.
 ## Guards against re-entry: if reveal already started the state is no longer

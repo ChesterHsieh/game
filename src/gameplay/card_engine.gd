@@ -189,7 +189,7 @@ func on_combination_succeeded(instance_id_a: String, instance_id_b: String,
 			if node_b != null: node_b.z_index = 0
 
 		"Merge":
-			_begin_merge(instance_id_a, instance_id_b)
+			_begin_merge(instance_id_a, instance_id_b, String(_config.get("keeps", "")))
 
 		_:
 			# Animate / Generator — return to Idle for now; ITF drives further
@@ -234,22 +234,57 @@ func _begin_push_away(instance_id: String, target_id: String) -> void:
 
 # ── Merge ─────────────────────────────────────────────────────────────────────
 
-func _begin_merge(instance_id_a: String, instance_id_b: String) -> void:
+func _begin_merge(instance_id_a: String, instance_id_b: String, keeps_card_id: String = "") -> void:
 	var node_a := _get_node(instance_id_a)
 	var node_b := _get_node(instance_id_b)
 	if node_a == null or node_b == null:
 		return
 
-	var midpoint := (node_a.position + node_b.position) * 0.5
-	var done      := [0]
+	# Catalyst mode: when `keeps_card_id` matches one side, that side skips
+	# the merge-animate entirely (no shrink, no fade, no move). The product
+	# is ejected from the consumed card's last position instead of a midpoint.
+	var card_id_a: String = _card_id_of(instance_id_a)
+	var card_id_b: String = _card_id_of(instance_id_b)
+	var a_is_kept: bool = keeps_card_id != "" and card_id_a == keeps_card_id
+	var b_is_kept: bool = keeps_card_id != "" and card_id_b == keeps_card_id
 
+	var midpoint: Vector2
+	if a_is_kept:
+		midpoint = node_b.position
+	elif b_is_kept:
+		midpoint = node_a.position
+	else:
+		midpoint = (node_a.position + node_b.position) * 0.5
+
+	var expected: int = (0 if a_is_kept else 1) + (0 if b_is_kept else 1)
+	if expected == 0:
+		# Degenerate: both cards are "keeps" — emit immediately next frame.
+		call_deferred("emit_signal", "merge_complete", instance_id_a, instance_id_b, midpoint)
+		return
+
+	var done := [0]
 	var finish := func() -> void:
 		done[0] += 1
-		if done[0] == 2:
+		if done[0] == expected:
 			merge_complete.emit(instance_id_a, instance_id_b, midpoint)
 
-	_animate_merge_card(node_a, midpoint, finish)
-	_animate_merge_card(node_b, midpoint, finish)
+	if not a_is_kept:
+		_animate_merge_card(node_a, midpoint, finish)
+	if not b_is_kept:
+		_animate_merge_card(node_b, midpoint, finish)
+
+
+## Helper: read the node's card_id field (set by CardSpawning at spawn time).
+## Falls back to parsing the instance_id "card_id_N" form if the node has no
+## field — only used when the node is already detached.
+func _card_id_of(instance_id: String) -> String:
+	var node: Node2D = _get_node(instance_id)
+	if node != null and "card_id" in node:
+		return String(node.card_id)
+	var idx: int = instance_id.rfind("_")
+	if idx == -1:
+		return instance_id
+	return instance_id.left(idx)
 
 
 func _animate_merge_card(node: Node2D, midpoint: Vector2, on_done: Callable) -> void:

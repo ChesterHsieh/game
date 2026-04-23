@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/scenes/gameplay_root.gd" id="1_root"]
+[ext_resource type="PackedScene" path="res://src/ui/status_bar_ui.tscn" id="2_status_bar"]
+[ext_resource type="PackedScene" path="res://src/ui/scene_transition_ui.tscn" id="3_transition"]
+[ext_resource type="PackedScene" path="res://src/ui/final_epilogue_screen/final_epilogue_screen.tscn" id="4_epilogue"]
+
+[node name="GameplayRoot" type="Node2D"]
+script = ExtResource("1_root")
+
+[node name="HudLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="StatusBarUI" parent="HudLayer" instance=ExtResource("2_status_bar")]
+
+[node name="TransitionLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="SceneTransitionUI" parent="TransitionLayer" instance=ExtResource("3_transition")]
+
+[node name="SettingsPanelHost" type="CanvasLayer" parent="."]
+layer = 15
+
+[node name="EpilogueLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="FinalEpilogueScreen" parent="EpilogueLayer" instance=ExtResource("4_epilogue")]

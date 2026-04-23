@@ -83,14 +83,18 @@ func _on_combination_attempted(instance_id_a: String, instance_id_b: String) -> 
 
 
 func _execute_template(recipe: Dictionary, instance_id_a: String, instance_id_b: String) -> void:
-	var template: String = recipe["template"]
+	var template: String = String(recipe["template"]).to_lower()
 	var config:   Dictionary = recipe.get("config", {})
 
 	match template:
-		"Additive":
+		"additive":
 			_execute_additive(recipe, instance_id_a, instance_id_b, config)
-		"Merge":
+		"merge":
 			_execute_merge(recipe, instance_id_a, instance_id_b, config)
+		"animate", "generator":
+			# These templates are documented but not yet wired end-to-end; treat
+			# as a no-op success so the tutorial path doesn't bounce.
+			CardEngine.on_combination_succeeded(instance_id_a, instance_id_b, template.capitalize(), config)
 		_:
 			push_warning("ITF: unsupported template '%s' — treating as failed" % template)
 			CardEngine.on_combination_failed(instance_id_a, instance_id_b)
@@ -124,6 +128,9 @@ func _execute_additive(recipe: Dictionary, instance_id_a: String, instance_id_b:
 
 func _execute_merge(recipe: Dictionary, instance_id_a: String, instance_id_b: String,
 		config: Dictionary) -> void:
+	# CardEngine's match is PascalCase — keep this call string consistent.
+	# `config` is passed through so CardEngine can read `keeps` and skip
+	# animating the catalyst card.
 	CardEngine.on_combination_succeeded(instance_id_a, instance_id_b, "Merge", config)
 	# Store pending merge — resolved when merge_complete fires from CardEngine
 	_pending_merges[instance_id_a] = {
@@ -142,15 +149,42 @@ func _on_merge_complete(instance_id_a: String, instance_id_b: String, midpoint: 
 	var recipe: Dictionary = pending["recipe"]
 	var config: Dictionary = recipe.get("config", {})
 
-	CardSpawning.remove_card(instance_id_a)
-	CardSpawning.remove_card(instance_id_b)
+	# Catalyst semantics: `keeps` (StringName card_id) names the card that
+	# stays on the table. The other is consumed. Default (no `keeps`) is the
+	# classic merge — both cards consumed. CardEngine's `_begin_merge` was
+	# already told about `keeps` and skipped the catalyst's merge-animate,
+	# so the kept node is untouched; we only need to remove the consumed side.
+	var keeps_card_id: String = String(config.get("keeps", ""))
+	var kept_node: Node2D = null
+	if keeps_card_id != "" and _base_card_id(instance_id_a) == keeps_card_id:
+		kept_node = CardSpawning.get_card_node(instance_id_a)
+		CardSpawning.remove_card(instance_id_b)
+	elif keeps_card_id != "" and _base_card_id(instance_id_b) == keeps_card_id:
+		kept_node = CardSpawning.get_card_node(instance_id_b)
+		CardSpawning.remove_card(instance_id_a)
+	else:
+		CardSpawning.remove_card(instance_id_a)
+		CardSpawning.remove_card(instance_id_b)
 
-	var result_card_id: String = config.get("result_card", "")
+	if kept_node != null:
+		kept_node.z_index = 0
+
+	var result_card_id: String = String(config.get("result_card", ""))
 	if result_card_id != "":
 		var occupied := CardSpawning.get_all_card_positions()
 		var layout   := _get_layout()
 		var pos: Vector2 = layout.get_spawn_position(midpoint, occupied, -1)
-		CardSpawning.spawn_card(result_card_id, pos)
+		var new_id := CardSpawning.spawn_card(result_card_id, pos)
+		# Eject effect: spawn slightly offset from kept-card, then tween to
+		# the final position so the product appears to pop out.
+		if new_id != "" and kept_node != null:
+			var new_node: Node2D = CardSpawning.get_card_node(new_id)
+			if new_node != null:
+				var launch_from: Vector2 = midpoint
+				new_node.position = launch_from
+				var eject_tween := new_node.create_tween()
+				eject_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				eject_tween.tween_property(new_node, "position", pos, 0.30)
 
 	_fire_executed(recipe["id"], "Merge", instance_id_a, instance_id_b)
 

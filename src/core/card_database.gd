@@ -16,7 +16,7 @@ const MANIFEST_PATH := "res://assets/data/cards.tres"
 ## defines the authoritative scene registry.
 ## Note: PackedStringArray literals are not compile-time constants in GDScript
 ## 4.3, so this is declared as a var rather than const.
-var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global", "scene-01"])
+var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global", "scene-01", "coffee-intro"])
 
 var _entries: Array[CardEntry] = []
 var _index: Dictionary = {}   # StringName → CardEntry
@@ -97,3 +97,13 @@ func get_card(id: StringName) -> CardEntry:
 ##       print(entry.display_name)
 func get_all() -> Array[CardEntry]:
 	return _entries
+
+
+## Returns true if an entry with [param id] exists. Cheaper than get_card()
+## when the caller only needs a presence check — does not log on miss.
+##
+## Usage example:
+##   if CardDatabase.has_card(&"coffee"):
+##       CardSpawning.spawn_card(&"coffee", pos)
+func has_card(id: StringName) -> bool:
+	return _index.has(id)

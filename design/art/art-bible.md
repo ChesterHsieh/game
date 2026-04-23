@@ -620,14 +620,340 @@ green, not a hue pair.
 
 ---
 
-## Sections 5–9 — Deferred to next pass
+## Section 5 — Character Design Direction
 
-- Section 5: Character Design Direction
-- Section 6: Environment Design Language
-- Section 7: UI/HUD Visual Direction
-- Section 8: Asset Standards
-- Section 9: Reference Direction (expanded)
+**Scope**: this game has two on-screen characters — **Chester** and **Ju** —
+plus an implied third-person "shared friend" card. There are no full-body
+character turnarounds, no combat stances, no expression sheets. Characters
+exist only as card portraits (≈200×300 px draw region) and, for Ju, as the
+single illustrated epilogue.
 
-These sections will be authored after Sections 1–4 are locked and initial Vertical Slice
-prototyping has surfaced concrete asset needs. Sections 5–9 are not required for the
-Technical Setup → Pre-Production gate (gate requires Sections 1–4 only).
+### 5.1 Portrait framing rule
+
+Every character card portrait obeys the same framing contract:
+
+- **Head-and-shoulders** composition; eye line at vertical 40% of the portrait
+  region (upper third, not geometric center)
+- Face fills ≈55% of the region's width
+- Background within the portrait is diegetic (a real place from a real memory)
+  not a flat color — this is a card *about* someone in a moment, not a profile
+  photo against paper
+- Subject's gaze direction: lean **toward** the table centre when the card is
+  placed on its authored seed-position (see scene layout). Faces do not stare
+  at the player — they stare toward the partner card
+
+### 5.2 Chester (the one who made this)
+
+- **Visual intent**: the hand that made the game. Recognisable *to Ju* in a
+  glance; impressionistic to anyone else.
+- Palette: warm — the Section 4 primary Ink Warm (#24201B) for outlines,
+  skin tones built from Paper Warm (#F4EEDE) warmed with a #C9A882 wash
+- Micro-expression cue: slight eyebrow tilt (asymmetric) rather than smile —
+  we are going for *attentive*, not *cheerful*
+- Props allowed only if emotionally specific: the coffee machine, a specific
+  mug, a specific hoodie. Never a generic suit or studio-photo polish.
+
+### 5.3 Ju (the reason)
+
+- **Visual intent**: centre of gravity. Every scene's composition subtly
+  pulls toward her card.
+- Palette: warm+slightly-cool blend — same Ink Warm outline, skin tones
+  slightly cooler than Chester's to create a recognisable pair contrast
+  (without tipping into gender stereotype — cool vs. warm, not pink vs. blue)
+- Special rule: Ju's card is the only one that uses a **light halo** — a
+  faint 2px inner glow in Paper Warm tint around the card border at 20% alpha.
+  Not a gameplay marker (status bars do that); a quiet compositional anchor.
+- Epilogue illustration: Ju *not looking at the camera* — receiving
+  something (the coffee, the moment). This is the only place the game leaves
+  the card grid and becomes a full illustration.
+
+### 5.4 Tertiary: "Shared Friend" / "Home" / scene figures
+
+Minor character cards (the `shared-friend` card, the `home` silhouette in
+later scenes) follow the same framing rule but get **30% desaturated** so
+they read as *background to the two*. They must not steal focus.
+
+### 5.5 What we do NOT draw
+
+- Full body poses, fashion illustrations, costume change sheets
+- Character emotion-variation sheets (angry / sad / surprised grid) — the
+  game shows the *same* portrait regardless of in-scene state
+- Background characters / crowds / extras
+- Stylised anime / chibi / super-deformed variants — one register only
+
+---
+
+## Section 6 — Environment Design Language
+
+**Scope**: there is one environment — **the table**. Cards sit on it, scenes
+differ only by the *tinting* of that table (see Section 4.2 Per-Scene Palette).
+There are no rooms, levels, or skyboxes to design.
+
+### 6.1 Table surface
+
+- Baseline texture: an aged-paper / desk-surface hybrid with ≤5% luminance
+  variance. Think "museum display card" — uniform enough to let the cards
+  dominate, textured enough to not feel like a CSS background.
+- The surface is a single full-viewport Sprite, drawn behind all cards
+  (z_index = -10). Changed per scene via a tint multiply.
+
+### 6.2 Edge vignette
+
+A soft vignette (radial falloff, 15% darker at the corners than the centre)
+keeps the eye on the card cluster. Constant across scenes; do not animate.
+
+### 6.3 Implied-space rule
+
+If a scene needs to *feel* like a place (e.g., "morning kitchen" for
+coffee-intro), the feeling comes from:
+
+1. Tint of the table (Section 4.2)
+2. The chosen cards' own portrait backgrounds (Section 5.1 — backgrounds
+   within portraits)
+3. Optional single ambient card (e.g., a `home` card) acting as set dressing
+
+Never from a new background image, never from a parallax layer, never from
+3D geometry. Scenes are composed from *cards*, not from environments.
+
+### 6.4 Off-limits
+
+- Weather, time-of-day simulation, day/night cycles
+- Camera movement, parallax, environmental VFX (rain, dust motes)
+- Multiple rooms or a map view between scenes
+- Architecture / furniture drawn outside of card portraits
+
+---
+
+## Section 7 — UI/HUD Visual Direction
+
+**Scope**: anything *on top of* the table surface that is not a card. Status
+bars, hint arc, transitions, menus.
+
+### 7.1 Core rule — "paper on paper"
+
+Every UI element reads as a **paper overlay** on the table. Same stock as
+the cards, slightly offset tone, pressed rather than drawn. This preserves
+the handmade-diary feel and lets the eye rank UI below card content by
+default.
+
+Concretely:
+- All UI panels use Paper Warm (#F4EEDE) at 94% opacity over whatever is
+  below
+- Borders: 1px Ink Warm at 35% opacity (not a sharp line — feels deckled)
+- Text: Ink Warm, hand-lettered for titles, neutral sans for small text
+  (≥14 px). No TrueType "display" faces.
+
+### 7.2 Status bars (two vertical bars in a left panel)
+
+- Geometry finalised in Section 3.3 — stays there
+- Fill colour: **scene-specific accent**, not a fixed UI color, so the bar
+  feels part of the memory (coffee-intro = warm brown; home = warmer red)
+- Below-threshold state: bar fill desaturates to 60%; above-threshold: full
+  saturation. No outline change (see Section 3.6 hierarchy rule).
+- Label below each bar: card's `display_name` in sentence case. Not
+  "Chester: 60" — just "Chester". Numbers are engineering, this is a memory.
+
+### 7.3 Hint arc
+
+- Geometry in Section 3.4
+- Only visible element that uses **motion** as a communication channel
+- Color: same scene accent as the status bar it sweeps above
+- Never flashes; only rotates at low opacity
+
+### 7.4 Transition overlay (page-turn)
+
+- Cream paper (#F4EEDE) with a single curl-shadow gradient along the leading
+  edge
+- No text, no spinner, no "loading…" — the transition IS the message
+- Epilogue variant uses amber tint (#E8B888 multiply over cream) and
+  ≈1.5× the standard timing (per Section 4.2)
+
+### 7.5 Main menu
+
+- **Hand-lettered title PNG** (logo-style, not a typed font). If art isn't
+  ready, a Label with the typeface below stands in — but the shipping build
+  uses the PNG.
+- Single Start button: hand-lettered word "Start" on a slightly-darker paper
+  rectangle. No dropshadow, no glow, no hover animation beyond 5% brightness
+  rise.
+- Background: same table surface from Section 6.1, 15% darker than gameplay
+
+### 7.6 Settings / pause (future)
+
+`SettingsPanelHost` CanvasLayer is declared in ADR-004 but empty in MVP.
+When filled: paper-on-paper modal, dismissable by Esc, does not fade the
+underlying table (the memory is always visible). Entries: audio volume,
+reduced-motion toggle, quit.
+
+### 7.7 Forbidden UI moves
+
+- Neumorphism, glassmorphism, holographic, neon — the game is paper
+- Drop-shadows longer than 2px
+- Border-radius above 12px (cards are 8px; UI must not out-round cards)
+- Icon-only buttons without a label — accessibility rule
+- Toast / popup notifications
+
+---
+
+## Section 8 — Asset Standards
+
+**Scope**: concrete production rules. Everything on disk must conform.
+
+### 8.1 File format & colour space
+
+- All raster art: **PNG** (RGBA8), sRGB colour space, no ICC profile embedded
+- No JPG, no WebP, no .psd in `assets/` (keep working files elsewhere)
+- Godot import: `import/compress_mode = Lossless` for card art; `VRAM Compressed`
+  only for backgrounds larger than 512×512
+
+### 8.2 Resolution tiers
+
+| Asset type | Canvas | Draw region | Export size | DPI-scaled? |
+|---|---|---|---|---|
+| Card portrait | 200×300 | 200×300 | 400×600 @2x | Yes |
+| Card badge (optional) | 48×48 | 48×48 | 96×96 @2x | Yes |
+| Main menu title | 960×240 | 800×180 | 1920×480 @2x | Yes |
+| Main menu button | 360×120 | 280×80 | 720×240 @2x | Yes |
+| Epilogue illustration | 1920×1080 | content-dependent | 3840×2160 @2x | Yes |
+| Table surface | 1920×1080 | full | 1920×1080 @1x (tiled if needed) | No |
+| Status ring | code-drawn | — | — | — |
+
+All `@2x` assets also ship a `@1x` downscale for low-spec hardware. Godot's
+`hdpi/allow_hidpi` setting is on — let the engine pick.
+
+### 8.3 Naming & paths
+
+- All filenames lowercase, underscore-separated: `coffee_machine.png`, not
+  `CoffeeMachine.png` or `coffee-machine.png` (matches card `id` in cards.tres,
+  see `.claude/rules/data-files.md` enum-ish rule)
+- Paths by asset type:
+  - Card art: `res://assets/cards/[card_id].png`
+  - UI art: `res://assets/ui/[purpose]_[variant].png`
+  - Menu art: `res://assets/main-menu/[purpose].png`
+  - Epilogue: `res://assets/epilogue/illustration.png`
+  - Table surface: `res://assets/table/surface_[scene_id].png`
+
+### 8.4 Texture budget
+
+- Total on-disk art budget for the MVP: **≤ 80 MB**
+- VRAM ceiling: ≤ 256 MB (per `.claude/docs/technical-preferences.md`)
+- Card art per file: ≤ 400 KB
+- Epilogue illustration: ≤ 2 MB
+- If a file exceeds budget, reduce canvas before compressing — never drop to
+  JPG to save KB.
+
+### 8.5 Transparency rule
+
+- Card portraits: **solid rectangular** PNG with the card border baked in.
+  The card node does its own border/drop-shadow in code (see CardVisual) —
+  the portrait stays opaque.
+- UI icons with transparency: PNG alpha, premultiplied disabled (Godot
+  handles straight alpha natively)
+- Never mix 8-bit and premultiplied alpha in the same scene.
+
+### 8.6 Delivery checklist (per asset)
+
+Before a PNG can land in `assets/`:
+
+1. [ ] Canvas size matches the tier in §8.2
+2. [ ] Filename lowercase + underscore
+3. [ ] Filename matches the `id` in the referencing `.tres` (card / recipe)
+4. [ ] Palette uses only Section 4 primaries + scene-specific accent (no
+       rogue colours)
+5. [ ] Subject framing passes Section 5.1 portrait rule
+6. [ ] Opens in Godot editor without reimport errors
+7. [ ] `tres` file updated so the `@export var art` points at the real path
+       (not `3_placeholder_art`)
+8. [ ] File size within §8.4 budget
+
+### 8.7 What NOT to ship
+
+- "Final" versions with watermarks or visible signature overlays
+- Files with layer comps / working paths embedded (flatten before export)
+- Assets that depend on fonts not in `assets/fonts/`
+- Source `.psd` / `.procreate` / `.clip` files in `assets/` (keep in a
+  separate `art-source/` tree — add to `.gitignore` if large)
+
+---
+
+## Section 9 — Reference Direction (expanded)
+
+**Scope**: the specific external visual anchors that Chester / the art
+producer will lean on. Kept deliberately short — three strong anchors beat
+a mood wall of forty weak ones.
+
+### 9.1 Primary anchors (lean heavily here)
+
+1. **Saul Steinberg — The New Yorker covers (1950s–60s)**
+   Why: deckled edges, hand-lettered signage, architecture as personality.
+   Borrow: ink line weight, negative space, single-subject composition.
+2. **Kitty Crowther — picture book illustration**
+   Why: warm portraiture, domestic intimacy, characters in their own space.
+   Borrow: palette limits (≤5 colours per scene), how she handles faces at
+   small scale.
+3. **Vanillaware — 13 Sentinels / Odin Sphere (UI and 2D frames only)**
+   Why: rich paper-texture UI, hand-illustrated card frames, painterly
+   without being sluggish.
+   Borrow: how gameplay UI coexists with illustrated characters without
+   either one feeling cheap.
+
+Save three representative images per anchor in `design/art/references/`
+before Production begins. Each image captioned with *exactly which element
+we are referencing* — don't just post mood dumps.
+
+### 9.2 Secondary anchors (cameo roles)
+
+- **Wes Anderson — Moonrise Kingdom / Grand Budapest**: symmetry, off-centre
+  framing, label typography. *Apply to*: transition cards, "scene 1 of 3"
+  interstitials (future).
+- **Studio Ghibli — still backgrounds (Kiki, Totoro)**: how they paint
+  warmth without saturating. *Apply to*: table surface tint variants.
+- **The Artful Escape (game)**: how it handles a single illustrated
+  centrepiece with no other geometry. *Apply to*: epilogue illustration
+  composition.
+
+### 9.3 Explicit rejections
+
+The following styles are **off-limits** for this project. Including them so
+future decisions have a clear line to point at:
+
+- Pixel art (any resolution) — not this project's register
+- Flat vector / Corporate Memphis / "Alegria" style — too impersonal
+- Photorealism / photobashing — breaks the handmade vow
+- Anime / manga — wrong emotional register
+- Cyberpunk / synthwave / y2k — wrong temperature
+- AI-generated imagery **without human repainting** — allowed as base layer
+  only if overpainted ≥50% by the final artist (Chester or commissioned)
+
+### 9.4 Reference delivery
+
+One-file moodboard at `design/art/references/moodboard.md`:
+- 3 images per Section 9.1 anchor (9 total)
+- 1 image per Section 9.2 anchor (3 total)
+- 1 "what we are NOT" image per Section 9.3 rejection (6 total)
+
+Total: 18 images. Chester or the commissioned artist reads the moodboard
+once before producing any asset in Section 8.
+
+---
+
+## Sign-off
+
+### AD-ART-BIBLE verdict
+
+**Status**: READY (self-signed, Solo mode)
+**Signed by**: Chester (solo author)
+**Date**: 2026-04-23
+**Scope**: Sections 1–9 complete. Sections 1–4 locked during Technical Setup;
+Sections 5–9 authored after Vertical Slice prototyping surfaced concrete
+asset needs (coffee-intro tutorial: 5 card portraits + 1 main-menu title +
+1 epilogue illustration are the MVP commissioning list).
+
+**Open items tracked separately (not blockers)**:
+- Shape-language open questions in Section 3 (prototype validation)
+- Per-scene palette open questions in Section 4.7
+- Reference moodboard files — to be delivered under `design/art/references/`
+  before the first production asset is commissioned
+
+This Art Bible unblocks the Pre-Production → Production gate's "Art bible
+complete (all 9 sections) and AD-ART-BIBLE sign-off recorded" requirement.

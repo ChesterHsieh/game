@@ -26,11 +26,12 @@ extends Node2D
 
 # ── Tuning (exported for in-editor tuning without code changes) ───────────────
 
-## Pixel height of each bar at 100% fill. GDD default: 120px.
-@export var bar_height_px: float = 120.0
+## Pixel height of each bar at 100% fill. GDD default: 120px (halved for
+## 720x450 logical viewport to keep the left panel from dominating the screen).
+@export var bar_height_px: float = 60.0
 
 ## Pixel width of each bar. GDD default: 24px.
-@export var bar_width_px: float = 24.0
+@export var bar_width_px: float = 12.0
 
 ## Duration of the bar fill animation in seconds. GDD default: 0.15s.
 @export var bar_tween_sec: float = 0.15
@@ -41,8 +42,9 @@ extends Node2D
 ## Duration of the arc fade tween in seconds. GDD default: 1.5s.
 @export var arc_fade_sec: float = 1.5
 
-## Width of the left-side panel in pixels. GDD default: 180px.
-@export var panel_width_px: float = 180.0
+## Width of the left-side panel in pixels. GDD default: 180px (halved for
+## the 720x450 viewport — see bar_height_px note).
+@export var panel_width_px: float = 90.0
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 

@@ -111,6 +111,24 @@ template = &"merge"
 scene_id = &"global"
 config = {"result_card": &"seed-memory"}
 
+[sub_resource type="Resource" id="RecipeEntry_brew_coffee"]
+script = ExtResource("2_entry")
+id = &"brew-coffee"
+card_a = &"coffee_machine"
+card_b = &"coffee_beans"
+template = &"merge"
+scene_id = &"coffee-intro"
+config = {"result_card": &"coffee", "keeps": &"coffee_machine"}
+
+[sub_resource type="Resource" id="RecipeEntry_deliver_coffee"]
+script = ExtResource("2_entry")
+id = &"deliver-coffee"
+card_a = &"coffee"
+card_b = &"ju"
+template = &"merge"
+scene_id = &"coffee-intro"
+config = {"result_card": &"seed-together"}
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together")]
+entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee")]

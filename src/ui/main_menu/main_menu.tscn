@@ -27,10 +27,26 @@ grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 alignment = 1
+custom_minimum_size = Vector2(480, 320)
 
-[node name="Title" type="TextureRect" parent="CenterContainer/VBoxContainer"]
-stretch_mode = 5
+[node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
+text = "Moments"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 64
+theme_override_colors/font_color = Color(0.26, 0.22, 0.18, 1)
+custom_minimum_size = Vector2(0, 160)
 
-[node name="StartButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
+[node name="Subtitle" type="Label" parent="CenterContainer/VBoxContainer"]
+text = "A small game made for Ju"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.44, 0.38, 0.3, 1)
+custom_minimum_size = Vector2(0, 48)
+
+[node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer"]
 unique_name_in_owner = true
-stretch_mode = 5
+text = "Start"
+theme_override_font_sizes/font_size = 28
+custom_minimum_size = Vector2(240, 72)
