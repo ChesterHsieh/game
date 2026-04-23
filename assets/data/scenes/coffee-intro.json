@@ -17,8 +17,7 @@
   },
   "ambient": {
     "path": "res://assets/ambient/coffee-intro.png",
-    "anchor": "bottom_right",
-    "size_px": { "w": 160, "h": 160 },
+    "anchor": "full_viewport",
     "alpha": 0.9
   }
 }

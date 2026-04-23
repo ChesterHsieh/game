@@ -9,13 +9,8 @@
 [node name="GameplayRoot" type="Node2D"]
 script = ExtResource("1_root")
 
-[node name="HudLayer" type="CanvasLayer" parent="."]
-layer = 5
-
-[node name="StatusBarUI" parent="HudLayer" instance=ExtResource("2_status_bar")]
-
 [node name="AmbientLayer" type="CanvasLayer" parent="."]
-layer = 6
+layer = -1
 
 [node name="AmbientIndicator" type="Control" parent="AmbientLayer"]
 layout_mode = 3
@@ -26,17 +21,15 @@ script = ExtResource("5_ambient")
 
 [node name="TextureRect" type="TextureRect" parent="AmbientLayer/AmbientIndicator"]
 layout_mode = 1
-anchor_left = 1.0
-anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -176.0
-offset_top = -136.0
-offset_right = -16.0
-offset_bottom = -16.0
 mouse_filter = 2
-expand_mode = 3
-stretch_mode = 6
+expand_mode = 1
+
+[node name="HudLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="StatusBarUI" parent="HudLayer" instance=ExtResource("2_status_bar")]
 
 [node name="TransitionLayer" type="CanvasLayer" parent="."]
 layer = 10

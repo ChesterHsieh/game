@@ -155,20 +155,31 @@ in the scene JSON (SceneGoal already reads this).
 - `table_tint`: default Paper Warm `#F4EEDE` (no override — baseline scene)
 - `bar_accent` for affection: warm amber (default `COLOR_BAR_FILL` in StatusBarUI)
 
-### 10.2 Ambient Indicator
+### 10.2 Ambient Background Plate
 
 | Field | Value |
 |---|---|
-| `ambient_path` | `res://assets/ambient/coffee-intro.png` ✅ committed 2026-04-23 |
-| `ambient_anchor` | `bottom_right` |
-| `ambient_size_px` | `{ w: 160, h: 160 }` (1:1 — the vignette ended up square-ish) |
-| `ambient_alpha` | `0.9` |
+| `ambient.path` | `res://assets/ambient/coffee-intro.png` ✅ committed 2026-04-23 (regen) |
+| `ambient.anchor` | `full_viewport` |
+| `ambient.alpha` | `0.9` |
 
-**Subject**: morning kitchen vignette — coffee cup + saucer + window
-frame + steam curl + hand-lettered "morning" label at the bottom.
-Template B register (ink line on cream paper with thin grey deckle frame
-baked in). Generated via nano-banana, downscaled to 320px longest side
-(~135 KB on disk).
+**Subject**: ornate warm-cream parchment plate with filigree frame.
+Four corner motifs (all integrated into the scrollwork, not placed as
+objects): mortar-and-pestle (top-left), whisk (top-right), wheat stalk
+(bottom-left), coffee cup with steam (bottom-right). Centre is empty
+parchment where cards sit. Warm brown ink only — no text, no centre
+illustration, no strong contrast.
+
+Generated via nano-banana using the reusable prompt template
+(`_TEMPLATE.md` §10.2). Filled with `{SCENE_CONCEPT}` =
+"kitchen-morning" and the four motifs above. Downscaled via
+`sips -Z 720` (~770 KB on disk).
+
+**Supersedes**: the earlier corner-vignette concept (coffee cup + window
++ "morning" label in a 160×160 parchment frame at bottom-right). That
+direction read as too on-the-nose — it showed the scene instead of
+*suggesting* it. The new background plate keeps the hint subtle and
+lets cards remain the focal point.
 
 ---
 

@@ -140,38 +140,83 @@ Every value key MUST match a `bar_id` in Section 6.
 - `table_tint`: default Paper Warm `#F4EEDE` or override hex
 - `bar_accent`: default or scene-specific hex
 
-### 10.2 Ambient Indicator (optional) — parchment-framed place cue
+### 10.2 Ambient Background Plate (optional) — full-viewport parchment
 
-A small decorative vignette pinned to the **bottom-right** of the viewport
-that signals *where* the scene takes place (e.g. "in the car", "at home",
-"at the park"). Reads as a parchment / journal sketch tucked into the
-corner of the page — follows the Art Bible §7.1 "paper on paper" rule.
+A **full-viewport parchment background** whose ornamental filigree border
+subtly weaves in motifs that *hint* at the scene's theme (e.g. kitchen
+scene → mortar-and-pestle, whisk, wheat, coffee cup embedded in the
+corner scrollwork). The centre 70% stays blank parchment so cards
+dominate the main visual. Follows Art Bible §6 (scenes are composed
+from cards, not from backgrounds — but a decorative plate is the one
+exception that signals *place*).
 
 | Field | Value |
 |---|---|
-| `ambient_path` | `res://assets/ambient/[scene-id].png` (or `none` to skip) |
-| `ambient_anchor` | `bottom_right` (default) / `bottom_left` / `top_right` |
-| `ambient_size_px` | `{ w: 160, h: 120 }` logical (default — tune per scene) |
-| `ambient_alpha` | `0.85` default — should never dominate the table |
+| `ambient.path` | `res://assets/ambient/[scene-id].png` (or `"none"` to skip) |
+| `ambient.anchor` | `"full_viewport"` (default — covers the whole logical viewport) |
+| `ambient.alpha` | `0.9` default |
 
-**Art direction constraints** (follow Art Bible §5.5 + §7.1):
-- Parchment edge treatment: thin grey deckled frame, 2–3px; rounded corners
-  ≤12px to stay under the card radius
-- Interior illustration: same register as card portraits (Template B ink
-  line or Template A painterly, matching the scene's register)
-- No text baked in unless the name of the place is *part of* the image
-  (hand-lettered label on the parchment itself is acceptable)
-- Must not carry gameplay semantics — no pulsing, no blinking, no hint
-  arcs. Purely ambient set dressing.
+Legacy corner mode (`"bottom_right"` etc.) is still supported by the
+runtime for cases where a scene prefers a smaller vignette instead of a
+full background, but new scenes should default to `"full_viewport"`.
 
-**How to wire it when implementing** (reference — not part of current code):
-1. Add a `CanvasLayer` (or reuse `HudLayer`) child `AmbientIndicator`
-   positioned bottom-right
-2. A TextureRect reads `ambient_path` from the scene JSON at
-   `scene_started` time; `modulate.a = ambient_alpha`
-3. Swap texture per scene; hide when `ambient_path == "none"`
-4. Track the rendering story in `production/epics/` under a new
-   "ambient-indicator" epic (or fold into a general set-dressing epic)
+**Art direction constraints**:
+- Base: aged warm-cream parchment texture (`#F4EEDE`), no gradients,
+  no strong colour blocks
+- Frame: thin warm-brown-ink filigree (scrollwork, vines, leaves) along
+  all four edges — never pure black
+- Corner motifs: abstract scene hints woven *into* the ornamental line
+  work, never placed as standalone objects
+- Centre: empty parchment with subtle paper texture only
+- **Forbidden**: text, letters, numbers, watermarks, centre focal
+  subjects, literal scene depictions in the middle, perspective,
+  shadows, gradient fills in the centre
+- **Forbidden**: motifs that steal attention from cards (heavy ink,
+  high contrast, saturated colour, animation)
+
+**Reusable nano-banana prompt template** (fill in `{SCENE_CONCEPT}` +
+`{CORNER_MOTIFS}` and run):
+
+```
+Ornamental parchment background plate for a card game — wide landscape
+aspect ratio. Aged warm cream parchment paper texture as the base
+(#F4EEDE with very subtle tonal variation, no gradients, no strong
+color blocks). Fine-line ornamental filigree border frames the full
+rectangle in thin warm brown ink — scrollwork, vine curls, leaves.
+Decorative corner flourishes SUBTLY weave in abstracted {SCENE_CONCEPT}
+concepts as stylized line-art hints only: {CORNER_MOTIFS}, all rendered
+as if they are PART of the ornamental filigree itself, NOT placed as
+separate objects. The center 70% of the image is completely empty cream
+parchment with very subtle paper texture only — this is the gameplay
+surface where cards will sit. Overall feeling: vintage recipe book title
+plate, ornate but understated, like a tarot card back or medieval herbal
+manuscript frontispiece. Ink is soft warm brown, never black, never
+harsh.
+
+NEGATIVE: text, letters, numbers, words, names, signatures, watermarks,
+any center focal subject, literal objects placed in the middle, strong
+color blocks, photographic realism, 3D render, perspective, deep shadows,
+human figures, modern UI elements, busy loud patterns, gradient fills
+in the center, heavy dark ink, anime, cyberpunk, neon, pixel art. The
+center MUST remain empty parchment — if it is not empty the image fails.
+```
+
+Example fill — coffee-intro:
+- `{SCENE_CONCEPT}`: *kitchen-morning*
+- `{CORNER_MOTIFS}`: *a tiny mortar-and-pestle silhouette in one corner,
+  a small whisk curl in another, a sheaf of coffee beans / wheat stalk
+  as a curving line in a third corner, a minimalist steam curl or coffee
+  cup edge suggestion in the fourth*
+
+**Code wiring** (live in `src/ui/ambient_indicator.gd` — see
+`production/epics/scene-composition/story-006`):
+- `AmbientLayer` CanvasLayer at `layer = -1` so the plate sits behind
+  `CardTable` (default layer 0)
+- `ambient_indicator.gd` listens on `EventBus.scene_started`, reads
+  this block from the scene JSON, sets `TextureRect.texture`, applies
+  `modulate.a`, stretches to viewport (`STRETCH_SCALE`)
+- `mouse_filter = MOUSE_FILTER_IGNORE` on all nodes so card drags pass
+  through to the cards above
 
 ---
 
