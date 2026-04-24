@@ -8,6 +8,9 @@
 ##   "fold_duration_scale" : float  — multiplier on rise/hold/fade nominals (0.6–1.5)
 ##   "paper_tint"          : Color  — overrides overlay_color_cream for this scene
 ##   "sfx_variant_id"      : String — selects a specific rustle SFX variant by name
+##   "interstitial"        : Dictionary { "illustration": Texture2D, "caption": String, "hold_ms": float }
+##                          — interstitial illustration panel shown during HOLDING state (Story 007).
+##                            Omit this key entirely for scenes with no interstitial.
 ##
 ## Any unrecognised keys are silently ignored at lookup time.
 ## A "default" key provides the fallback when a scene_id is not found.

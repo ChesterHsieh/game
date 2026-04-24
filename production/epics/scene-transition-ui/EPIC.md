@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/scene-transition-ui.md
 > **Architecture Module**: SceneTransitionUI — CanvasLayer instance (layer=10) in gameplay.tscn
 > **Status**: Ready
-> **Stories**: 6 stories
+> **Stories**: 7 stories
 
 ## Stories
 
@@ -16,6 +16,7 @@
 | 004 | Transition timing formulas | Logic | Ready | ADR-004 |
 | 005 | Epilogue variant and FIRST_REVEAL | Visual/Feel | Ready | ADR-004, ADR-003 |
 | 006 | Config data and reduced-motion path | Logic | Ready | ADR-005, ADR-004 |
+| 007 | Interstitial illustration during HOLDING state | Integration | Ready | ADR-004, ADR-005 |
 
 ## Overview
 

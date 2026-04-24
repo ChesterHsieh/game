@@ -96,6 +96,11 @@ enum State {
 ## Fade-out duration in reduced-motion path, milliseconds.
 @export var reduced_motion_fade_ms: float = 400.0
 
+## Interstitial fade-in duration in milliseconds (Story 007).
+@export var interstitial_fade_in_ms: float = 400.0
+## Interstitial fade-out duration in milliseconds (Story 007).
+@export var interstitial_fade_out_ms: float = 400.0
+
 ## When true, renders current state name in a corner (debug builds only).
 @export var debug_draw_state: bool = false
 
@@ -105,6 +110,9 @@ enum State {
 var input_blocker: ColorRect
 var overlay: Polygon2D
 var rustle_audio: AudioStreamPlayer
+var interstitial_panel: Control
+var illustration_rect: TextureRect
+var caption_label: Label
 
 ## Debug label — only created in debug builds when debug_draw_state is true.
 var _debug_label: Label
@@ -133,6 +141,13 @@ var _variants_resource: TransitionVariants
 ## Pre-allocated polygon array (26 points). Reused each transition (no hot-path alloc).
 var _polygon_points: PackedVector2Array
 
+## Current scene_id passed to _begin_fading_out — used to look up interstitial config.
+var _current_scene_id: String = ""
+## Independent Tween for interstitial fade-in/hold/fade-out sequence.
+var _interstitial_tween: Tween
+## Guard used by the reduced-motion SceneTreeTimer callback (no cancel() in Godot 4.3).
+var _interstitial_active: bool = false
+
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -154,6 +169,12 @@ func _ready() -> void:
 	input_blocker = $InputBlocker
 	overlay = $Overlay
 	rustle_audio = $RustleAudio
+	interstitial_panel = $InterstitialPanel
+	illustration_rect = $InterstitialPanel/IllustrationRect
+	caption_label = $InterstitialPanel/CaptionLabel
+	interstitial_panel.visible = false
+	interstitial_panel.modulate.a = 0.0
+	interstitial_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	# Pre-allocate polygon array — 26 points for 12-segment strip.
 	_polygon_points.resize(26)
@@ -202,6 +223,8 @@ func _on_scene_started(_scene_id: String) -> void:
 		State.FIRST_REVEAL:
 			_begin_first_reveal_fade()
 		State.HOLDING:
+			if _interstitial_active:
+				_cancel_interstitial()
 			_begin_fading_in()
 		State.FADING_OUT:
 			# Buffer — will skip HOLDING when FADING_OUT Tween completes (E-5, AC-008).
@@ -223,6 +246,7 @@ func _on_epilogue_started() -> void:
 
 ## Enter FADING_OUT: rise Tween + input block (GDD Core Rule 5).
 func _begin_fading_out(scene_id: String) -> void:
+	_current_scene_id = scene_id
 	var reduced_motion: bool = ProjectSettings.get_setting("stui/reduced_motion_default", false)
 	var durations := _resolve_phase_durations(reduced_motion, false)
 
@@ -286,6 +310,7 @@ func _enter_holding() -> void:
 	var r_a: float = randf_range(-1.0, 1.0)
 	_breathe_amplitude = clampf(breathe_amplitude_nominal + r_a * breathe_amplitude_variation, 0.0, 1.0)
 	# _process drives the alpha oscillation each frame.
+	_try_begin_interstitial()
 
 
 ## Enter FADING_IN: overlay alpha 1→0 reveals new scene (GDD Core Rule 5).
@@ -334,6 +359,7 @@ func _on_first_reveal_complete() -> void:
 
 ## Enter EPILOGUE state with amber tint and scaled timings (GDD Core Rule 9, AC-006).
 func _begin_epilogue() -> void:
+	_cancel_interstitial()
 	var reduced_motion: bool = ProjectSettings.get_setting("stui/reduced_motion_default", false)
 	var durations := _resolve_phase_durations(reduced_motion, true)
 	var rise_sec: float = durations[0] / 1000.0
@@ -524,6 +550,79 @@ func _validate_joint_knob_constraint() -> void:
 		push_warning("STUI: joint knob constraint violated — Σ(D_nom - V) = %.0f < T_MIN = %.0f" % [sigma_min, total_min_ms])
 	if sigma_max > total_max_ms + 100.0:
 		push_warning("STUI: joint knob constraint violated — Σ(D_nom + V) = %.0f > T_MAX + 100 = %.0f" % [sigma_max, total_max_ms + 100.0])
+
+
+# ── Interstitial illustration (Story 007) ────────────────────────────────────
+
+## If the current scene has an interstitial config, show it and drive the fade/hold sequence.
+## No-op when config is missing or malformed (AC-3).
+func _try_begin_interstitial() -> void:
+	var cfg_variant: Variant = _get_variant_knob(_current_scene_id, "interstitial", null)
+	if cfg_variant == null or not cfg_variant is Dictionary:
+		return
+	var cfg: Dictionary = cfg_variant as Dictionary
+	if not (cfg.get("illustration") is Texture2D) \
+			or not (cfg.get("caption") is String) \
+			or not (cfg.get("hold_ms") is float or cfg.get("hold_ms") is int):
+		push_warning("STUI: interstitial config for '%s' has invalid types — skipping" % _current_scene_id)
+		return
+
+	illustration_rect.texture = cfg["illustration"] as Texture2D
+	caption_label.text = cfg["caption"] as String
+	var hold_ms: float = float(cfg["hold_ms"])
+
+	interstitial_panel.visible = true
+	interstitial_panel.modulate.a = 0.0
+	_interstitial_active = true
+
+	var reduced_motion: bool = ProjectSettings.get_setting("stui/reduced_motion_default", false)
+	_kill_interstitial_tween()
+
+	if reduced_motion:
+		interstitial_panel.modulate.a = 1.0
+		var timer: SceneTreeTimer = get_tree().create_timer(hold_ms / 1000.0)
+		timer.timeout.connect(_on_interstitial_reduced_motion_hold_done)
+	else:
+		_interstitial_tween = create_tween()
+		_interstitial_tween.tween_property(interstitial_panel, "modulate:a", 1.0, interstitial_fade_in_ms / 1000.0) \
+			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		_interstitial_tween.tween_interval(hold_ms / 1000.0)
+		_interstitial_tween.tween_property(interstitial_panel, "modulate:a", 0.0, interstitial_fade_out_ms / 1000.0) \
+			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		_interstitial_tween.tween_callback(_on_interstitial_done)
+
+
+## Called after the reduced-motion hold timer fires. No-op if already cancelled (AC-6).
+func _on_interstitial_reduced_motion_hold_done() -> void:
+	if not _interstitial_active:
+		return
+	_on_interstitial_done()
+
+
+## Completes the interstitial sequence and transitions to FADING_IN (AC-2).
+func _on_interstitial_done() -> void:
+	_interstitial_active = false
+	interstitial_panel.visible = false
+	interstitial_panel.modulate.a = 0.0
+	if _current_state == State.HOLDING:
+		_begin_fading_in()
+
+
+## Cancel the interstitial immediately (AC-6 / AC-7 safety).
+func _cancel_interstitial() -> void:
+	if not _interstitial_active:
+		return
+	_interstitial_active = false
+	_kill_interstitial_tween()
+	interstitial_panel.visible = false
+	interstitial_panel.modulate.a = 0.0
+
+
+## Kill and null the interstitial Tween to prevent orphaned callbacks.
+func _kill_interstitial_tween() -> void:
+	if _interstitial_tween:
+		_interstitial_tween.kill()
+		_interstitial_tween = null
 
 
 # ── Tween lifecycle helper ────────────────────────────────────────────────────
