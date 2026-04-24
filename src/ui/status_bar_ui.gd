@@ -31,7 +31,13 @@ extends Node2D
 @export var bar_height_px: float = 60.0
 
 ## Pixel width of each bar. GDD default: 24px.
-@export var bar_width_px: float = 12.0
+@export var bar_width_px: float = 20.0
+
+## Font size for the bar label text (drawn below the bar).
+@export var bar_label_font_size: int = 12
+
+## Vertical gap between the bar and its label text in pixels.
+@export var bar_label_gap_px: float = 8.0
 
 ## Duration of the bar fill animation in seconds. GDD default: 0.15s.
 @export var bar_tween_sec: float = 0.15
@@ -47,11 +53,16 @@ extends Node2D
 @export var panel_width_px: float = 90.0
 
 # ── Colors ────────────────────────────────────────────────────────────────────
+# Parchment aesthetic (Art Bible §4): cream translucent panel, warm ink-brown
+# outline, warm amber fill. Replaces the previous dark-wood style so the bar
+# blends with the scene's parchment ambient plate instead of fighting it.
 
-const COLOR_PANEL_BG  := Color(0.18, 0.16, 0.14, 0.85)
-const COLOR_BAR_BG    := Color(0.30, 0.27, 0.24, 1.0)
-const COLOR_BAR_FILL  := Color(0.82, 0.68, 0.42, 1.0)  ## warm amber
-const COLOR_ARC       := Color(0.95, 0.88, 0.60, 1.0)  ## soft gold
+const COLOR_PANEL_BG  := Color(0.96, 0.93, 0.87, 0.55)  ## warm cream parchment, semi-transparent
+const COLOR_BAR_BG    := Color(0.40, 0.28, 0.20, 1.0)   ## warm ink-brown outline
+const COLOR_BAR_FILL  := Color(0.82, 0.68, 0.42, 1.0)   ## warm amber
+const COLOR_BAR_LABEL := Color(0.25, 0.18, 0.12, 1.0)   ## dark ink for label text
+const COLOR_TICK      := Color(0.45, 0.33, 0.25, 0.75)  ## muted ink for integer tick marks
+const COLOR_ARC       := Color(0.95, 0.88, 0.60, 1.0)   ## soft gold
 
 ## Full opacity constant used for Level 2 arc.
 const ARC_OPACITY_FULL: float = 1.0
@@ -69,6 +80,14 @@ var _state: UIState = UIState.DORMANT
 
 ## Ordered list of bar IDs (determines layout order).
 var _bar_ids: Array[String] = []
+
+## bar_id → display label (String). Falls back to the bar_id itself if the
+## scene JSON does not supply a "label" field.
+var _bar_labels: Dictionary = {}
+
+## Cached CJK-capable SystemFont for label rendering — ThemeDB.fallback_font
+## is Latin-only and cannot draw Chinese labels. Lazy-initialized in _ready().
+var _label_font: SystemFont = null
 
 ## bar_id → float (0.0–max_value). Current displayed fill level (tweened).
 var _fill_values: Dictionary = {}
@@ -101,6 +120,33 @@ func _ready() -> void:
 	EventBus.scene_loading.connect(_on_scene_loading)
 	EventBus.win_condition_met.connect(_on_win_condition_met)
 
+	_label_font = _make_cjk_font()
+
+	## Self-wire scene configuration — SceneGoal emits seed_cards_ready after
+	## load_scene() is complete, at which point the goal config is readable
+	## and StatusBarUI can build its bar layout. This removes the previous
+	## dependency on an external caller (legacy game.gd pattern).
+	SceneGoal.seed_cards_ready.connect(_on_seed_cards_ready)
+
+
+## Builds a SystemFont with a CJK-capable fallback chain (PingFang TC, Microsoft
+## JhengHei, Noto Sans CJK TC). Mirrors CardVisual._make_cjk_font() so both
+## label surfaces render Chinese identically. See card_visual.gd for rationale.
+func _make_cjk_font() -> SystemFont:
+	var f := SystemFont.new()
+	f.font_names = PackedStringArray([
+		"PingFang TC",
+		"Heiti TC",
+		"Microsoft JhengHei",
+		"Noto Sans CJK TC",
+		"Noto Sans TC",
+	])
+	return f
+
+
+func _on_seed_cards_ready(_seed_cards: Array) -> void:
+	configure_for_scene()
+
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
@@ -127,6 +173,7 @@ func configure_for_scene() -> void:
 
 	_kill_all_fill_tweens()
 	_bar_ids.clear()
+	_bar_labels.clear()
 	_fill_values.clear()
 	_fill_tweens.clear()
 
@@ -143,6 +190,10 @@ func configure_for_scene() -> void:
 		_bar_ids.append(bar_id)
 		var initial: float = float(bar.get("initial_value", 0.0))
 		_fill_values[bar_id] = initial
+		## Optional "label" field supplies a human-readable bar name.
+		## Falls back to the bar_id itself if missing (legacy scenes).
+		var label: String = String(bar.get("label", ""))
+		_bar_labels[bar_id] = label if label != "" else bar_id
 
 	_state = UIState.ACTIVE
 
@@ -291,13 +342,13 @@ func _draw() -> void:
 
 
 func _draw_bar(bar_x: float, bar_top: float, bar_id: String) -> void:
-	## Bar background track.
-	draw_rect(
-		Rect2(bar_x, bar_top, bar_width_px, bar_height_px),
-		COLOR_BAR_BG
-	)
+	## Parchment-style rendering: empty ink-brown outlined track (fill behind
+	## is the translucent cream panel), amber fill from bottom, integer tick
+	## marks across the track for small-max bars, label text below.
 
-	## Fill — bottom to top (Story 002).
+	var track_rect := Rect2(bar_x, bar_top, bar_width_px, bar_height_px)
+
+	## Fill — bottom to top (Story 002). Drawn FIRST so the outline sits on top.
 	## fill_height = (current_value / max_value) * bar_height_px
 	var current: float = float(_fill_values.get(bar_id, 0.0))
 	var fill_h: float  = (current / _max_value) * bar_height_px
@@ -308,13 +359,61 @@ func _draw_bar(bar_x: float, bar_top: float, bar_id: String) -> void:
 			COLOR_BAR_FILL
 		)
 
-	## Track border outline.
-	draw_rect(Rect2(bar_x, bar_top, bar_width_px, bar_height_px), COLOR_BAR_BG, false, 1.0)
+	## Integer tick marks — only meaningful for small-max bars (e.g. max=3 for
+	## drive's journey_progress). Skip when max_value is large (e.g. 100 for
+	## affection) to avoid a haystack of lines.
+	if _max_value > 0.0 and _max_value <= 10.0:
+		var max_int := int(_max_value)
+		for n in range(1, max_int):
+			var tick_y := bar_top + bar_height_px - (float(n) / _max_value) * bar_height_px
+			draw_line(
+				Vector2(bar_x, tick_y),
+				Vector2(bar_x + bar_width_px, tick_y),
+				COLOR_TICK,
+				1.0
+			)
+
+	## Track border outline — drawn last so it stays crisp over fill + ticks.
+	draw_rect(track_rect, COLOR_BAR_BG, false, 1.5)
+
+	## Label text below the bar (e.g. "旅程進度 0/3"). Uses the CJK-capable
+	## SystemFont so Chinese labels render on all platforms.
+	_draw_bar_label(bar_x, bar_top, bar_id, current)
 
 	## Hint arc — counterclockwise around bar border, starting from top (Story 003).
 	if _arc_opacity > 0.001:
 		var arc_color := Color(COLOR_ARC.r, COLOR_ARC.g, COLOR_ARC.b, _arc_opacity)
 		_draw_bar_arc(bar_x, bar_top, arc_color)
+
+
+## Draws the bar label plus current/max count below the bar. For scenes with
+## small max_value (≤10) the count is shown as an integer ("N/3"); for larger
+## ranges (affection 0–100) it's a percentage-style int ("42/100").
+func _draw_bar_label(bar_x: float, bar_top: float, bar_id: String, current: float) -> void:
+	if _label_font == null:
+		return
+
+	var label: String = _bar_labels.get(bar_id, bar_id)
+	var count_text: String = "%d/%d" % [int(round(current)), int(round(_max_value))]
+	var text := "%s %s" % [label, count_text]
+
+	## Horizontally centre the text under the bar within the panel column.
+	var text_size: Vector2 = _label_font.get_string_size(
+		text, HORIZONTAL_ALIGNMENT_LEFT, -1, bar_label_font_size
+	)
+	var col_center := bar_x + bar_width_px * 0.5
+	var text_x := col_center - text_size.x * 0.5
+	var text_y := bar_top + bar_height_px + bar_label_gap_px + float(bar_label_font_size)
+
+	draw_string(
+		_label_font,
+		Vector2(text_x, text_y),
+		text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		bar_label_font_size,
+		COLOR_BAR_LABEL
+	)
 
 
 func _draw_bar_arc(bar_x: float, bar_top: float, arc_color: Color) -> void:

@@ -10,7 +10,7 @@
   "goal": {
     "type": "reach_value",
     "bars": [
-      { "id": "journey_progress", "initial_value": 0, "decay_rate_per_sec": 0.0 }
+      { "id": "journey_progress", "label": "旅程進度", "initial_value": 0, "decay_rate_per_sec": 0.0 }
     ],
     "max_value": 3,
     "threshold": 3,

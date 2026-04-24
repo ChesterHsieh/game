@@ -9,7 +9,7 @@
   "goal": {
     "type": "reach_value",
     "bars": [
-      { "id": "affection", "initial_value": 0, "decay_rate_per_sec": 0.0 }
+      { "id": "affection", "label": "感情", "initial_value": 0, "decay_rate_per_sec": 0.0 }
     ],
     "max_value": 100,
     "threshold": 100,
