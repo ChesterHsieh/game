@@ -203,9 +203,18 @@ func on_combination_failed(instance_id_a: String, _instance_id_b: String) -> voi
 	_begin_push_away(instance_id_a, _instance_id_b)
 
 
+## Called by ITF for the Reject template.
+## Pushes both cards away from each other, scaled by push_multiplier.
+func on_combination_rejected(instance_id_a: String, instance_id_b: String,
+		push_multiplier: float = 1.0) -> void:
+	_combination_in_flight = false
+	_begin_push_away(instance_id_a, instance_id_b, push_multiplier)
+	_begin_push_away(instance_id_b, instance_id_a, push_multiplier)
+
+
 # ── Push-Away ─────────────────────────────────────────────────────────────────
 
-func _begin_push_away(instance_id: String, target_id: String) -> void:
+func _begin_push_away(instance_id: String, target_id: String, push_multiplier: float = 1.0) -> void:
 	var node        := _get_node(instance_id)
 	var target_node := _get_node(target_id)
 	if node == null:
@@ -215,12 +224,13 @@ func _begin_push_away(instance_id: String, target_id: String) -> void:
 
 	var push_dir: Vector2
 	if target_node != null:
-		push_dir = (node.position - target_node.position).normalized()
+		var delta := node.position - target_node.position
+		push_dir = delta.normalized() if delta.length_squared() > 0.01 else Vector2.RIGHT
 	else:
 		push_dir = Vector2.RIGHT
 
 	var bounds     := _get_table_bounds()
-	var push_target := (node.position + push_dir * PUSH_DISTANCE).clamp(
+	var push_target := (node.position + push_dir * PUSH_DISTANCE * push_multiplier).clamp(
 		bounds.position, bounds.position + bounds.size)
 
 	var tween := node.create_tween()

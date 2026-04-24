@@ -91,6 +91,8 @@ func _execute_template(recipe: Dictionary, instance_id_a: String, instance_id_b:
 			_execute_additive(recipe, instance_id_a, instance_id_b, config)
 		"merge":
 			_execute_merge(recipe, instance_id_a, instance_id_b, config)
+		"reject":
+			_execute_reject(recipe, instance_id_a, instance_id_b, config)
 		"animate", "generator":
 			# These templates are documented but not yet wired end-to-end; treat
 			# as a no-op success so the tutorial path doesn't bounce.
@@ -188,11 +190,32 @@ func _on_merge_complete(instance_id_a: String, instance_id_b: String, midpoint: 
 
 	# Emote reaction — RO-style thought bubble at the merge midpoint.
 	# EmoteHandler (gameplay.tscn) listens and spawns the bubble.
-	var emote_name: String = String(config.get("emote", ""))
+	var emote_name: String = String(config.get("emote", "")).to_lower()
 	if emote_name != "" and emote_name != "none":
 		EventBus.emote_requested.emit(emote_name, midpoint)
 
 	_fire_executed(recipe["id"], "Merge", instance_id_a, instance_id_b)
+
+
+# ── Reject ────────────────────────────────────────────────────────────────────
+
+func _execute_reject(recipe: Dictionary, instance_id_a: String, instance_id_b: String,
+		config: Dictionary) -> void:
+	var multiplier: float = float(config.get("repulsion_multiplier", 1.0))
+
+	var node_a := CardSpawning.get_card_node(instance_id_a)
+	var node_b := CardSpawning.get_card_node(instance_id_b)
+
+	CardEngine.on_combination_rejected(instance_id_a, instance_id_b, multiplier)
+
+	var emote_name: String = String(config.get("emote", "")).to_lower()
+	if emote_name != "" and emote_name != "none" and node_a != null and node_b != null:
+		var midpoint: Vector2 = (node_a.position + node_b.position) * 0.5
+		EventBus.emote_requested.emit(emote_name, midpoint)
+
+	# Reject is intentionally not scored — skips combination_executed so
+	# StatusBarSystem and HintSystem are not notified.
+	_last_fired[recipe["id"]] = Time.get_ticks_msec() / 1000.0
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

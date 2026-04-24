@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/interaction-template-framework.md
 > **Architecture Module**: Feature Layer — InteractionTemplateFramework (autoload singleton)
 > **Status**: Ready
-> **Stories**: 7 stories created
+> **Stories**: 8 stories created
 
 ## Stories
 
@@ -17,6 +17,7 @@
 | 005 | Animate template (passthrough + fire-and-forget) | Logic | Ready | ADR-003 |
 | 006 | Generator template (Timer nodes + max_count + cancel) | Logic | Ready | ADR-003 |
 | 007 | Suspend/Resume + system-level state | Logic | Ready | ADR-003, ADR-004 |
+| 008 | Reject template (repulsion ×N + emote, no consumption) | Logic | Complete | ADR-003 |
 
 ## Overview
 
