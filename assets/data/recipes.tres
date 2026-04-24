@@ -152,9 +152,9 @@ script = ExtResource("2_entry")
 id = &"kingdom-nav"
 card_a = &"kingdom_far_away"
 card_b = &"chester_backseat"
-template = &"generator"
+template = &"merge"
 scene_id = &"drive"
-config = {"generates": &"nav_info", "interval_sec": 4.0, "max_count": 3, "generator_card": &"chester_backseat"}
+config = {"result_card": &"nav_info", "keeps": [&"kingdom_far_away", &"chester_backseat"]}
 
 [sub_resource type="Resource" id="RecipeEntry_nav_upgrade"]
 script = ExtResource("2_entry")
@@ -164,6 +164,15 @@ card_b = &"chester_backseat"
 template = &"merge"
 scene_id = &"drive"
 config = {"result_card": &"better_nav_info", "keeps": &"chester_backseat"}
+
+[sub_resource type="Resource" id="RecipeEntry_nav_reject"]
+script = ExtResource("2_entry")
+id = &"nav-reject"
+card_a = &"nav_info"
+card_b = &"ju_driving"
+template = &"reject"
+scene_id = &"drive"
+config = {"repulsion_multiplier": 2.0, "emote": &"anger"}
 
 [sub_resource type="Resource" id="RecipeEntry_nav_advance"]
 script = ExtResource("2_entry")
@@ -208,8 +217,35 @@ card_a = &"mcdonalds"
 card_b = &"ju_driving"
 template = &"additive"
 scene_id = &"drive"
-config = {"spawns": [], "keeps": &"ju_driving"}
+config = {"spawns": [&"five_more_min"], "keeps": &"ju_driving"}
+
+[sub_resource type="Resource" id="RecipeEntry_five_more_scenic"]
+script = ExtResource("2_entry")
+id = &"five-more-scenic"
+card_a = &"five_more_min"
+card_b = &"kingdom_far_away"
+template = &"merge"
+scene_id = &"drive"
+config = {"result_card": &"scenic_view"}
+
+[sub_resource type="Resource" id="RecipeEntry_scenic_advance_ju"]
+script = ExtResource("2_entry")
+id = &"scenic-advance-ju"
+card_a = &"scenic_view"
+card_b = &"ju_driving"
+template = &"merge"
+scene_id = &"drive"
+config = {"keeps": &"ju_driving", "emote": &"heart"}
+
+[sub_resource type="Resource" id="RecipeEntry_scenic_advance_chester"]
+script = ExtResource("2_entry")
+id = &"scenic-advance-chester"
+card_a = &"scenic_view"
+card_b = &"chester_backseat"
+template = &"merge"
+scene_id = &"drive"
+config = {"keeps": &"chester_backseat", "emote": &"heart"}
 
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee"), SubResource("RecipeEntry_seat_ju"), SubResource("RecipeEntry_seat_chester"), SubResource("RecipeEntry_kingdom_nav"), SubResource("RecipeEntry_nav_upgrade"), SubResource("RecipeEntry_nav_advance"), SubResource("RecipeEntry_bbq_sure"), SubResource("RecipeEntry_japanese_sure"), SubResource("RecipeEntry_sure_merge"), SubResource("RecipeEntry_mcd_advance")]
+entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee"), SubResource("RecipeEntry_seat_ju"), SubResource("RecipeEntry_seat_chester"), SubResource("RecipeEntry_kingdom_nav"), SubResource("RecipeEntry_nav_upgrade"), SubResource("RecipeEntry_nav_reject"), SubResource("RecipeEntry_nav_advance"), SubResource("RecipeEntry_bbq_sure"), SubResource("RecipeEntry_japanese_sure"), SubResource("RecipeEntry_sure_merge"), SubResource("RecipeEntry_mcd_advance"), SubResource("RecipeEntry_five_more_scenic"), SubResource("RecipeEntry_scenic_advance_ju"), SubResource("RecipeEntry_scenic_advance_chester")]

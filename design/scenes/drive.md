@@ -140,6 +140,24 @@ in Section 3 below.
 | scene_id | `drive` |
 | art_path | `res://assets/cards/mcdonalds.png` |
 
+### `five_more_min`
+| Field | Value |
+|---|---|
+| type | FEELING |
+| display_name | 再開五分鐘 |
+| flavor_text | 再撐一下就到了。 |
+| scene_id | `drive` |
+| art_path | `res://assets/cards/five_more_min.png` (placeholder — uses `home.png` until art generated) |
+
+### `scenic_view`
+| Field | Value |
+|---|---|
+| type | PLACE |
+| display_name | 好山好水 |
+| flavor_text | 天地山水 與妳。 |
+| scene_id | `drive` |
+| art_path | `res://assets/cards/scenic_view.png` (placeholder — uses `home.png` until art generated) |
+
 > Cards referenced but already defined elsewhere — do NOT re-define:
 > `ju`, `chester`
 
@@ -148,31 +166,41 @@ in Section 3 below.
 ## 4. Puzzle Graph (recipes — added to recipes.tres, scene-scoped)
 
 ```
-seat-ju          : ju + drive_seat_9 → ju_driving                          [merge, consumes both]
-seat-chester     : chester + shotgun_10 → chester_backseat                  [merge, consumes both]
-kingdom-nav      : kingdom_far_away + chester_backseat → nav_info           [generator, interval 4s, max 3; both inputs stay on table]
-nav-upgrade      : nav_info + chester_backseat → better_nav_info            [keeps: chester_backseat]
-nav-advance      : better_nav_info + ju_driving → progress +1               [keeps: ju_driving, consumes: better_nav_info; spawns: restaurant_bbq, restaurant_japanese]
-nav-reject       : nav_info + ju_driving → (排斥×2 + emote: angry)         [keeps: nav_info, ju_driving — 非 recipe，屬於 interaction override]
-bbq-sure         : restaurant_bbq + ju_driving → sure_either                [keeps: ju_driving, consumes: restaurant_bbq]
-japanese-sure    : restaurant_japanese + ju_driving → sure_either           [keeps: ju_driving, consumes: restaurant_japanese]
-sure-merge       : sure_either + sure_either → mcdonalds                    [consumes: both sure_either + restaurant_bbq + restaurant_japanese]
-mcd-advance      : mcdonalds + ju_driving → progress +1                     [keeps: ju_driving, consumes: mcdonalds]
+seat-ju                  : ju + drive_seat_9 → ju_driving                            [merge, consumes both]
+seat-chester             : chester + shotgun_10 → chester_backseat                    [merge, consumes both]
+kingdom-nav              : kingdom_far_away + chester_backseat → nav_info             [merge, keeps BOTH — dual-catalyst]
+nav-upgrade              : nav_info + chester_backseat → better_nav_info              [merge, keeps: chester_backseat]
+nav-advance              : better_nav_info + ju_driving → progress +1                 [additive, keeps: ju_driving (consumes better_nav_info); spawns: restaurant_bbq, restaurant_japanese]
+nav-reject               : nav_info + ju_driving → (排斥×2 + emote: anger)           [reject template, 兩張都不消費]
+bbq-sure                 : restaurant_bbq + ju_driving → sure_either                  [merge, keeps: ju_driving]
+japanese-sure            : restaurant_japanese + ju_driving → sure_either             [merge, keeps: ju_driving]
+sure-merge               : sure_either + sure_either → mcdonalds                      [merge, consumes both]
+mcd-advance              : mcdonalds + ju_driving → progress +1                       [additive, keeps: ju_driving (consumes mcdonalds); spawns: five_more_min]
+five-more-scenic         : five_more_min + kingdom_far_away → scenic_view             [merge, 消費兩張 — 到此王國退場]
+scenic-advance-ju        : scenic_view + ju_driving → progress +1                     [merge, keeps: ju_driving; consumes scenic_view]
+scenic-advance-chester   : scenic_view + chester_backseat → progress +1               [merge, keeps: chester_backseat; consumes scenic_view]
 ```
 
-主要路徑（每輪）：
+主路徑（+1 推進第 1 次）：
 ```
-kingdom_far_away + chester_backseat → nav_info
-nav_info + chester_backseat → better_nav_info
-better_nav_info + ju_driving → +1 progress  ＋ spawn: restaurant_bbq, restaurant_japanese
+kingdom_far_away + chester_backseat → nav_info             (dual-catalyst; 兩張都留)
+nav_info + chester_backseat → better_nav_info              (keeps chester_backseat)
+better_nav_info + ju_driving → +1 progress                 (spawn: restaurant_bbq, restaurant_japanese)
 ```
 
-餐廳支線（每輪最多 +1，不可重複）：
+餐廳支線（+1 推進第 2 次，spawn 下一個卡）：
 ```
 restaurant_bbq + ju_driving → sure_either
 restaurant_japanese + ju_driving → sure_either
 sure_either + sure_either → mcdonalds
-mcdonalds + ju_driving → +1 progress
+mcdonalds + ju_driving → +1 progress                       (spawn: five_more_min)
+```
+
+好山好水支線（+1 推進第 3 次 — 結局感）：
+```
+five_more_min + kingdom_far_away → scenic_view             (keeps kingdom_far_away)
+scenic_view + ju_driving         → +1 progress             (或)
+scenic_view + chester_backseat   → +1 progress
 ```
 
 排斥互動（非 recipe）：
@@ -204,17 +232,15 @@ nav_info + ju_driving → emote: angry + 排斥力 ×2  [兩張卡都不消費]
 | id | `kingdom-nav` |
 | card_a | `kingdom_far_away` |
 | card_b | `chester_backseat` |
-| template | `generator` |
-| generates | `nav_info` |
-| generator_card | `chester_backseat` |
-| interval_sec | `4.0` |
-| max_count | `3` |
+| template | `merge` |
+| result_card | `nav_info` |
+| keeps | `[kingdom_far_away, chester_backseat]` (dual-catalyst) |
 
-> **2026-04-24 template change**: Originally specced as `merge` keeping both
-> inputs, but the interaction framework only supports single-card `keeps`.
-> Switched to `generator` so both catalysts persist while `nav_info` is
-> periodically emitted. Semantically equivalent to the original design intent
-> (chester_backseat re-generates nav advice while you drive toward the kingdom).
+> **2026-04-24 design change**: Originally specced as `merge` keeping both
+> inputs, then switched to `generator` because the framework only supported
+> single-card `keeps`. The framework was extended to accept an Array of
+> card_ids, and this recipe is now the intended one-shot dual-catalyst merge.
+> 30s cooldown prevents spam; nav_info can be re-produced each cycle.
 
 ### `nav-upgrade`
 | Field | Value |
@@ -237,14 +263,16 @@ nav_info + ju_driving → emote: angry + 排斥力 ×2  [兩張卡都不消費]
 | bar_delta | `journey_progress` +1 |
 | spawns | `restaurant_bbq`, `restaurant_japanese` |
 
-### `nav-reject` *(interaction override — not a recipe)*
+### `nav-reject`
 | Field | Value |
 |---|---|
+| id | `nav-reject` |
 | card_a | `nav_info` |
 | card_b | `ju_driving` |
-| behavior | 排斥力 ×2（磁力排斥正常值的兩倍） |
-| emote | `angry`（透過 `EmoteBubble.spawn` 在 `ju_driving` 位置觸發） |
-| result | 無；兩張卡都不消費 |
+| template | `reject` |
+| repulsion_multiplier | `2.0` |
+| emote | `anger` |
+| result | 無；兩張卡都不消費（reject template 自動處理）|
 
 ### `bbq-sure`
 | Field | Value |
@@ -283,6 +311,39 @@ nav_info + ju_driving → emote: angry + 排斥力 ×2  [兩張卡都不消費]
 | card_b | `ju_driving` |
 | template | `additive` |
 | keeps | `ju_driving` |
+| spawns | `five_more_min` |
+| bar_delta | `journey_progress` +1 |
+
+### `five-more-scenic`
+| Field | Value |
+|---|---|
+| id | `five-more-scenic` |
+| card_a | `five_more_min` |
+| card_b | `kingdom_far_away` |
+| template | `merge` |
+| result_card | `scenic_view` |
+| keeps | —（兩張都消費）|
+
+### `scenic-advance-ju`
+| Field | Value |
+|---|---|
+| id | `scenic-advance-ju` |
+| card_a | `scenic_view` |
+| card_b | `ju_driving` |
+| template | `merge` |
+| keeps | `ju_driving` |
+| emote | `heart` |
+| bar_delta | `journey_progress` +1 |
+
+### `scenic-advance-chester`
+| Field | Value |
+|---|---|
+| id | `scenic-advance-chester` |
+| card_a | `scenic_view` |
+| card_b | `chester_backseat` |
+| template | `merge` |
+| keeps | `chester_backseat` |
+| emote | `heart` |
 | bar_delta | `journey_progress` +1 |
 
 ---
@@ -313,8 +374,10 @@ Trigger `nav-advance` three times to fill the bar and complete the scene.
 ## 7. Bar Effects (`assets/data/bar-effects.json` — recipe_id → bar deltas)
 
 ```json
-"nav-advance":  { "journey_progress": 1 },
-"mcd-advance":  { "journey_progress": 1 }
+"nav-advance":             { "journey_progress": 1 },
+"mcd-advance":             { "journey_progress": 1 },
+"scenic-advance-ju":       { "journey_progress": 1 },
+"scenic-advance-chester":  { "journey_progress": 1 }
 ```
 
 Every key MUST match a recipe in Section 4.

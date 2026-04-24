@@ -4,5 +4,7 @@
   "ju-home": { "chester": 8, "ju": 18 },
   "deliver-coffee": { "affection": 100 },
   "nav-advance": { "journey_progress": 1 },
-  "mcd-advance": { "journey_progress": 1 }
+  "mcd-advance": { "journey_progress": 1 },
+  "scenic-advance-ju": { "journey_progress": 1 },
+  "scenic-advance-chester": { "journey_progress": 1 }
 }

@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="CardManifest" load_steps=49 format=3]
+[gd_resource type="Resource" script_class="CardManifest" load_steps=53 format=3]
 
 [ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
 [ext_resource type="Texture2D" path="res://assets/cards/home.png" id="3_placeholder_art"]
+[ext_resource type="Texture2D" path="res://assets/cards/five_more_min.png" id="18_five_more_min"]
+[ext_resource type="Texture2D" path="res://assets/cards/scenic_view.png"   id="19_scenic_view"]
 [ext_resource type="Texture2D" path="res://assets/cards/coffee_machine.png" id="4_coffee_machine"]
 [ext_resource type="Texture2D" path="res://assets/cards/coffee_beans.png"   id="5_coffee_beans"]
 [ext_resource type="Texture2D" path="res://assets/cards/coffee.png"         id="6_coffee"]
@@ -392,6 +394,28 @@ type = 1
 scene_id = &"drive"
 tags = PackedStringArray("place")
 
+[sub_resource type="Resource" id="CardEntry_five_more_min"]
+script = ExtResource("2_entry")
+id = &"five_more_min"
+display_name = "再開五分鐘"
+badge = "再開五分鐘"
+flavor_text = "再撐一下就到了。"
+art = ExtResource("18_five_more_min")
+type = 2
+scene_id = &"drive"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_scenic_view"]
+script = ExtResource("2_entry")
+id = &"scenic_view"
+display_name = "好山好水"
+badge = "好山好水"
+flavor_text = "天地山水 與妳。"
+art = ExtResource("19_scenic_view")
+type = 1
+scene_id = &"drive"
+tags = PackedStringArray("place")
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee"), SubResource("CardEntry_drive_seat_9"), SubResource("CardEntry_shotgun_10"), SubResource("CardEntry_kingdom_far_away"), SubResource("CardEntry_ju_driving"), SubResource("CardEntry_chester_backseat"), SubResource("CardEntry_nav_info"), SubResource("CardEntry_better_nav_info"), SubResource("CardEntry_restaurant_bbq"), SubResource("CardEntry_restaurant_japanese"), SubResource("CardEntry_sure_either"), SubResource("CardEntry_mcdonalds")]
+entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee"), SubResource("CardEntry_drive_seat_9"), SubResource("CardEntry_shotgun_10"), SubResource("CardEntry_kingdom_far_away"), SubResource("CardEntry_ju_driving"), SubResource("CardEntry_chester_backseat"), SubResource("CardEntry_nav_info"), SubResource("CardEntry_better_nav_info"), SubResource("CardEntry_restaurant_bbq"), SubResource("CardEntry_restaurant_japanese"), SubResource("CardEntry_sure_either"), SubResource("CardEntry_mcdonalds"), SubResource("CardEntry_five_more_min"), SubResource("CardEntry_scenic_view")]
