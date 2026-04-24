@@ -43,8 +43,10 @@ in Section 3 below.
 | type | person / place / feeling / object / moment / inside_joke / seed |
 | display_name | Title shown on the card |
 | flavor_text | (optional) short diary-style line |
-| art_style | Template A (person) / Template B (object) / custom |
 | art_path | `res://assets/cards/[card_id].png` |
+
+Art is generated via `/img-card <concept>` after the spec lands — do
+not embed prompts here. Placeholder art is acceptable at spec time.
 
 (repeat per new card)
 
@@ -59,7 +61,7 @@ in Section 3 below.
 Readable summary first:
 
 ```
-recipe_id  : card_a + card_b → result_card  [keeps: X | notes]
+recipe_id  : card_a + card_b → result_card  [template, keeps: X | notes]
 ```
 
 Then per-recipe detail:
@@ -70,15 +72,49 @@ Then per-recipe detail:
 | id | `recipe-id-kebab-case` |
 | card_a | `card_id` |
 | card_b | `card_id` |
-| template | `merge` / `additive` / `animate` / `generator` (lowercase!) |
-| result_card | `card_id` (for merge / additive) |
-| keeps | `card_id` if one side stays (catalyst); omit for classic merge |
+| template | `merge` / `additive` / `reject` / `animate` / `generator` (lowercase!) |
+| result_card | `card_id` (for merge / additive) — **optional for merge** (see below) |
+| keeps | `card_id` (single catalyst) OR `[card_id, card_id]` (dual catalyst) — see template-specific semantics below |
 | emote | `spark` / `heart` / `ok` / `sweat` / `anger` / `question` / `exclaim` / `zzz` — bubble to pop when the recipe fires; omit or `"none"` = no emote |
-| other config | spawns / motion / interval / max_count — template-specific |
+| other config | spawns / motion / interval / max_count / repulsion_multiplier — template-specific |
 
 Emote values are the filename stem (without `.png`) of any file in
 `assets/emotes/`. See `.claude/rules/data-files.md` — emote is an
 enum-ish field, use lowercase.
+
+### Template-specific semantics
+
+**`merge`** — two cards combine into `result_card`.
+- No `keeps` → both inputs consumed, product spawns at midpoint.
+- `keeps: "card_id"` → that card stays, the other is consumed.
+- `keeps: ["id_a", "id_b"]` → **dual catalyst** (both stay), product still spawns.
+- `result_card` is OPTIONAL. Omitting it → pure "consume + fire bar-delta" pattern
+  (e.g. `scenic-advance-ju`: consumes scenic_view, keeps ju_driving, no new card —
+  bar effect alone from `bar-effects.json`).
+
+**`additive`** — spawns new cards next to the pair.
+- No `keeps` → both inputs stay on the table (classic spawn-and-keep).
+- `keeps: "card_id"` → that card stays, the other is **consumed**. Other non-`keeps` sides consumed.
+- `spawns: [card_id, ...]` — required. Can be empty `[]` if the recipe's purpose is
+  only firing a bar-delta.
+
+**`reject`** — two cards refuse to combine, bounce apart.
+- `repulsion_multiplier: float` — e.g. `2.0` (required, default 1.0 if absent).
+- `emote: "anger"` / etc (optional). Bubble pops on one card mid-bounce.
+- **No** `result_card`, **no** `spawns`, **no** `keeps` — both cards always stay.
+- **Never enters cooldown** — reject fires every time the player retries the pair.
+- Also **never emits `combination_executed`** — bar-effects will NOT run. HintSystem
+  / MUT / StatusBarSystem stay blind to reject fires by design.
+
+**`generator`** — one card periodically emits another while the pair sits together.
+- `generates: card_id` — what to spawn per tick (required).
+- `interval_sec: float` — seconds between spawns (required).
+- `max_count: int | null` — cap before auto-stop; `null` = unlimited.
+- `generator_card: "card_a" | "card_b"` — which slot is the "producer" (stays put;
+  both cards stay on table).
+
+**`animate`** — visual flourish only, no state change (motion/speed/target/duration).
+Currently a no-op success path per ITF implementation notes.
 
 (repeat per recipe)
 
@@ -89,10 +125,16 @@ enum-ish field, use lowercase.
 | Field | Value |
 |---|---|
 | type | `reach_value` / `sustain_above` |
-| bars | `[{ id: "bar_id", initial_value: N, decay_rate_per_sec: N }]` |
+| bars | `[{ id, label, initial_value, decay_rate_per_sec }]` (see §6) |
 | max_value | N |
 | threshold | N |
-| duration_sec | N (for sustain_above); small for reach_value |
+| duration_sec | N — see clarification below |
+
+**`duration_sec` semantics**:
+- For `sustain_above`: every bar must sit ≥ threshold continuously for this long.
+- For `reach_value`: bar must stay **at or above** threshold for this many seconds
+  after first reaching it before `win_condition_met` fires. Values 0.5–1.0s feel
+  instant to the player; values >2.0 only make sense if decay can pull you back down.
 
 > Goal types currently supported: `sustain_above`, `reach_value`.
 > `find_key` and `sequence` are defined in GDD but not wired in SceneGoal code.
@@ -101,7 +143,19 @@ enum-ish field, use lowercase.
 
 ## 6. Left Panel Content (status bars visible during the scene)
 
-- **`bar_id`** — starts at N, decays at N/sec, max N, narrative meaning
+Each bar entry (lives in scene JSON `goal.bars[]` AND drives StatusBarUI):
+
+| Field | Value | Purpose |
+|---|---|---|
+| id | `snake_case_id` | Internal key — must match all `bar-effects.json` value keys |
+| label | `"中文 or English"` | String shown under the bar in StatusBarUI (CJK-safe) |
+| initial_value | `N` | Bar starting value |
+| decay_rate_per_sec | `N` | Per-second drain; `0` = no decay |
+
+Example:
+```json
+{ "id": "journey_progress", "label": "旅程進度", "initial_value": 0, "decay_rate_per_sec": 0 }
+```
 
 List every bar shown during this scene. If the StatusBarUI panel layout
 needs overriding (e.g. >2 bars), note the required tuning-knob overrides here.
@@ -148,12 +202,9 @@ Every value key MUST match a `bar_id` in Section 6.
 ### 10.2 Ambient Background Plate (optional) — full-viewport parchment
 
 A **full-viewport parchment background** whose ornamental filigree border
-subtly weaves in motifs that *hint* at the scene's theme (e.g. kitchen
-scene → mortar-and-pestle, whisk, wheat, coffee cup embedded in the
-corner scrollwork). The centre 70% stays blank parchment so cards
-dominate the main visual. Follows Art Bible §6 (scenes are composed
-from cards, not from backgrounds — but a decorative plate is the one
-exception that signals *place*).
+subtly weaves in motifs that *hint* at the scene's theme. The centre
+70% stays blank parchment so cards dominate the main visual. Follows
+Art Bible §6.
 
 | Field | Value |
 |---|---|
@@ -165,74 +216,9 @@ Legacy corner mode (`"bottom_right"` etc.) is still supported by the
 runtime for cases where a scene prefers a smaller vignette instead of a
 full background, but new scenes should default to `"full_viewport"`.
 
-**Art direction constraints**:
-- Base: aged warm-cream parchment texture (`#F4EEDE`), no gradients,
-  no strong colour blocks
-- Frame: thin warm-brown-ink filigree (scrollwork, vines, leaves) along
-  all four edges — never pure black
-- Corner motifs: abstract scene hints woven *into* the ornamental line
-  work, never placed as standalone objects
-- Centre: empty parchment with subtle paper texture only
-- **Forbidden**: text, letters, numbers, watermarks, centre focal
-  subjects, literal scene depictions in the middle, perspective,
-  shadows, gradient fills in the centre
-- **Forbidden**: motifs that steal attention from cards (heavy ink,
-  high contrast, saturated colour, animation)
-
-**Reusable nano-banana prompt — proven to converge on directly-usable
-output in 1–2 generations.** Fill in `{SCENE_CONCEPT}` +
-`{CORNER_MOTIFS}` and run:
-
-```
-Wide landscape 1440×900 (16:10) ornamental parchment game background
-plate. Aged warm cream parchment paper (#F4EEDE base) with subtle
-texture. Thin refined warm-brown ink filigree frame along all four
-edges — the frame occupies LESS THAN 10% of the total image area
-(thin and elegant, not heavy). The four corner flourishes subtly
-integrate {SCENE_CONCEPT} concepts INTO the line work itself — the
-motifs ARE the ornament, not placed beside it: {CORNER_MOTIFS}.
-Center 80%+ of the image is completely empty warm parchment with
-subtle paper grain only — no focal subject, no objects, no gradient.
-This is the gameplay surface.
-
-NEGATIVE: text, letters, numbers, words, names, signatures, watermarks,
-logo marks, any center focal subject, literal objects placed in the
-middle, heavy ornament covering more than 10% of image area, strong
-color blocks, gradient fills in center, photographic realism, 3D
-render, perspective, deep shadows, human figures, modern UI elements,
-busy loud patterns, heavy dark ink, anime, cyberpunk, neon, pixel art,
-square aspect, portrait orientation.
-```
-
-### Prompt rules (why this works)
-
-- **Pattern**: 場景概念融入 filigree 線條 → the kitchen tools ARE the
-  ornament, not placed beside it
-- **Pattern**: 編筐 < 10% 畫面比例 → thin, elegant, doesn't compete
-  with cards
-- **Anti-pattern**: 出現文字 / 浮水印 → explicitly in NEGATIVE
-- **Anti-pattern**: 中央干擾主視覺 → 80%+ empty cream is non-negotiable
-- **Anti-pattern**: 直接按照場景把東西擺在編筐 → phrased "INTO the line
-  work itself" + "NOT placed beside"
-
-### Known limitation
-
-Gemini 2.5 Flash Image (via nano-banana) **does not reliably honour
-aspect-ratio directives** — expect a ~square output even when 16:10 is
-stated multiple times. This is handled at runtime by rendering through
-`NinePatchRect` with `patch_margin_* = 180`: the four ornamental
-corners stay pixel-perfect and the centre + edges stretch to whatever
-aspect the viewport actually is. So the image doesn't need to match
-the viewport aspect — just keep the filigree corners reasonably compact
-within the source PNG.
-
-### Example fill — coffee-intro
-
-- `{SCENE_CONCEPT}`: kitchen-morning
-- `{CORNER_MOTIFS}`: top-left = mortar-and-pestle woven into the
-  scrollwork, top-right = whisk blending with vine curl, bottom-left =
-  wheat stalk and rolling pin emerging from filigree, bottom-right =
-  coffee cup with a steam curl integrated into the flourish
+Generate the background via `/img-background <scene-id> "<theme>"
+"<corner-motifs>"` — the skill owns the prompt. Do not duplicate prompt
+text here.
 
 **Code wiring** (live in `src/ui/ambient_indicator.gd` — see
 `production/epics/scene-composition/story-006`):
@@ -251,8 +237,30 @@ within the source PNG.
 | Field | Value |
 |---|---|
 | `next_scene` | `[scene-id]` or `none` (epilogue triggers after) |
-| On completion | what SceneManager emits (`scene_completed` always; `epilogue_started` if last) |
-| Epilogue content | illustration slot + descriptive text (only if `next_scene == none` AND this is final memory) |
+| On completion | `scene_completed` always emits; `epilogue_started` fires if `next_scene == none` |
+
+### Interstitial Slides [optional — lives in `transition-variants.tres`]
+
+Between `scene_completed` and `FADING_IN`, STUI plays any slides declared
+here. Each slide fades in, holds, fades out, then the next one starts.
+When the queue empties, STUI returns to IDLE (and if deferred, enters
+EPILOGUE state). Caption supports CJK — STUI preloads a CJK SystemFont.
+
+```
+interstitial:
+  slides:
+    - illustration: res://assets/epilogue/<scene-id>-1.png
+      caption: "中文句子 OK"
+      hold_ms: 3000
+    - illustration: res://assets/epilogue/<scene-id>-photo.jpg
+      caption: ""
+      hold_ms: 8000
+```
+
+Single-slide legacy form (still accepted):
+```
+interstitial: { illustration, caption, hold_ms }
+```
 
 ---
 
@@ -281,6 +289,7 @@ Entry in `assets/data/ui/transition-variants.tres` under this scene's key:
 | fold_duration_scale | 1.0 (default) |
 | paper_tint | hex or default |
 | sfx_variant_id | name or default |
+| interstitial | see §11 Interstitial Slides (sub-key of the same variants entry) |
 
 ---
 
@@ -311,15 +320,30 @@ eyeball the blast radius.
 
 ## 17. Validation Checklist (what `/scene-audit [id]` checks)
 
+**Referential integrity**
 - [ ] Every `seed_cards[*].card_id` exists in cards.tres
-- [ ] Every recipe's `card_a` / `card_b` / `result_card` / `keeps` exists
+- [ ] Every recipe's `card_a` / `card_b` / `result_card` (if present) / `spawns` exists
+- [ ] Every entry in a recipe's `keeps` array refers to `card_a` or `card_b` of that recipe
 - [ ] Every bar-effects key matches a recipe id
 - [ ] Every bar_id in bar-effects is declared in the scene goal's `bars`
+
+**Template well-formedness**
+- [ ] `reject` recipes have `repulsion_multiplier` (float); no `result_card`, no `spawns`
+- [ ] `merge` recipes without `result_card` must have a non-empty `keeps` (consume-via-catalyst mode)
+- [ ] `additive` recipes have `spawns` (may be empty array)
+- [ ] `generator` recipes have `generates`, `interval_sec`, `generator_card`
+- [ ] All `template` values are lowercase (`.claude/rules/data-files.md`)
+
+**UI + presentation**
+- [ ] Every bar in `goal.bars` has a `label` string (CJK OK)
+- [ ] Interstitial slide illustrations (`res://assets/epilogue/...`) exist on disk if declared
+- [ ] Ambient path exists on disk if declared
+
+**Manifest + constants**
 - [ ] Scene id is listed in `scene-manifest.tres`
 - [ ] Scene id is in `KNOWN_SCENE_IDS`
 - [ ] New card art files exist in `assets/cards/` OR deferred with placeholder
 - [ ] Scene JSON passes `python3 -m json.tool`
-- [ ] Recipe templates are lowercase (`.claude/rules/data-files.md`)
 - [ ] Section 11 epilogue handoff is consistent with Section 12 MUT flags
 
 ---

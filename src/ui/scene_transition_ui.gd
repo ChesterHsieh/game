@@ -148,6 +148,12 @@ var _interstitial_tween: Tween
 ## Guard used by the reduced-motion SceneTreeTimer callback (no cancel() in Godot 4.3).
 var _interstitial_active: bool = false
 
+## SceneManager emits `epilogue_started` ~1 frame after `scene_completed`, which
+## would cancel the final scene's interstitial before it plays. When that
+## happens mid-transition we set this flag and run `_begin_epilogue()` after
+## the fade+interstitial+fade-in sequence reaches IDLE.
+var _deferred_epilogue: bool = false
+
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -172,6 +178,17 @@ func _ready() -> void:
 	interstitial_panel = $InterstitialPanel
 	illustration_rect = $InterstitialPanel/IllustrationRect
 	caption_label = $InterstitialPanel/CaptionLabel
+	# CaptionLabel's default font is Latin-only — apply CJK-capable SystemFont
+	# so the drive interstitial "予天地山水 與妳" (and any future CJK caption)
+	# renders instead of tofu. Font size is preserved from the scene file.
+	var cjk_font := SystemFont.new()
+	cjk_font.font_names = PackedStringArray([
+		"PingFang TC", "Heiti TC", "Microsoft JhengHei",
+		"Noto Sans CJK TC", "Noto Sans TC",
+	])
+	caption_label.add_theme_font_override("font", cjk_font)
+	caption_label.add_theme_font_size_override("font_size", 48)
+	caption_label.add_theme_color_override("font_color", Color(0.20, 0.14, 0.09, 1.0))
 	interstitial_panel.visible = false
 	interstitial_panel.modulate.a = 0.0
 	interstitial_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -238,6 +255,12 @@ func _on_scene_started(_scene_id: String) -> void:
 ## Epilogue variant trigger (GDD Core Rule 9, GDD Edge Case E-7).
 func _on_epilogue_started() -> void:
 	if _current_state == State.EPILOGUE:
+		return
+	# Mid-transition of the previous scene: let the page-turn and interstitial
+	# finish, then run epilogue when we drop back to IDLE. Without this guard
+	# SceneManager's same-frame epilogue emit cancels the final interstitial.
+	if _current_state in [State.FADING_OUT, State.HOLDING, State.FADING_IN] or _interstitial_active:
+		_deferred_epilogue = true
 		return
 	_begin_epilogue()
 
@@ -336,6 +359,9 @@ func _begin_fading_in() -> void:
 func _on_fading_in_complete() -> void:
 	overlay.modulate.a = 0.0
 	_set_state(State.IDLE)
+	if _deferred_epilogue:
+		_deferred_epilogue = false
+		_begin_epilogue()
 
 
 ## Fade out the initial opaque overlay on game boot (GDD Core Rule 8, AC-015).
@@ -554,26 +580,77 @@ func _validate_joint_knob_constraint() -> void:
 
 # ── Interstitial illustration (Story 007) ────────────────────────────────────
 
-## If the current scene has an interstitial config, show it and drive the fade/hold sequence.
-## No-op when config is missing or malformed (AC-3).
+## Queued slides for a multi-slide interstitial sequence. Each entry is a
+## Dictionary with keys `illustration` (Texture2D), `caption` (String),
+## `hold_ms` (float). Consumed one-by-one by `_play_next_slide()`.
+var _interstitial_queue: Array[Dictionary] = []
+
+
+## If the current scene has an interstitial config, show it and drive the
+## fade/hold sequence. No-op when config is missing or malformed (AC-3).
+## Accepts two config shapes:
+##   (a) Single-slide (legacy):
+##       { illustration: Texture2D, caption: String, hold_ms: float }
+##   (b) Multi-slide:
+##       { slides: [ { illustration, caption, hold_ms }, ... ] }
+##   Slides play back-to-back; each fades in, holds, and fades out using the
+##   same `interstitial_fade_in_ms` / `_fade_out_ms` knobs.
 func _try_begin_interstitial() -> void:
 	var cfg_variant: Variant = _get_variant_knob(_current_scene_id, "interstitial", null)
 	if cfg_variant == null or not cfg_variant is Dictionary:
 		return
 	var cfg: Dictionary = cfg_variant as Dictionary
-	if not (cfg.get("illustration") is Texture2D) \
-			or not (cfg.get("caption") is String) \
-			or not (cfg.get("hold_ms") is float or cfg.get("hold_ms") is int):
-		push_warning("STUI: interstitial config for '%s' has invalid types — skipping" % _current_scene_id)
-		return
 
-	illustration_rect.texture = cfg["illustration"] as Texture2D
-	caption_label.text = cfg["caption"] as String
-	var hold_ms: float = float(cfg["hold_ms"])
+	_interstitial_queue = _build_interstitial_queue(cfg)
+	if _interstitial_queue.is_empty():
+		push_warning("STUI: interstitial config for '%s' has no playable slides — skipping" % _current_scene_id)
+		return
 
 	interstitial_panel.visible = true
 	interstitial_panel.modulate.a = 0.0
 	_interstitial_active = true
+
+	_play_next_slide()
+
+
+## Normalize the scene's interstitial config into a flat list of slides.
+## Single-slide configs (legacy `illustration`/`caption`/`hold_ms` keys at
+## top level) are promoted to a one-element list. Malformed slide entries
+## are skipped with a warning.
+func _build_interstitial_queue(cfg: Dictionary) -> Array[Dictionary]:
+	var queue: Array[Dictionary] = []
+	var raw_slides: Variant = cfg.get("slides", null)
+	if raw_slides is Array:
+		for entry_variant: Variant in raw_slides:
+			if entry_variant is Dictionary and _is_valid_slide(entry_variant):
+				queue.append(entry_variant)
+			else:
+				push_warning("STUI: invalid slide in interstitial for '%s' — skipped" % _current_scene_id)
+	elif _is_valid_slide(cfg):
+		queue.append(cfg)
+	else:
+		push_warning("STUI: interstitial config for '%s' has invalid types — skipping" % _current_scene_id)
+	return queue
+
+
+static func _is_valid_slide(slide: Dictionary) -> bool:
+	return slide.get("illustration") is Texture2D \
+		and slide.get("caption") is String \
+		and (slide.get("hold_ms") is float or slide.get("hold_ms") is int)
+
+
+## Pop the next slide off the queue and play its fade-in / hold / fade-out
+## sequence. When the queue is empty, hand control to `_on_interstitial_done`
+## which completes the overall sequence.
+func _play_next_slide() -> void:
+	if _interstitial_queue.is_empty():
+		_on_interstitial_done()
+		return
+
+	var slide: Dictionary = _interstitial_queue.pop_front()
+	illustration_rect.texture = slide["illustration"] as Texture2D
+	caption_label.text = slide["caption"] as String
+	var hold_ms: float = float(slide["hold_ms"])
 
 	var reduced_motion: bool = ProjectSettings.get_setting("stui/reduced_motion_default", false)
 	_kill_interstitial_tween()
@@ -581,7 +658,7 @@ func _try_begin_interstitial() -> void:
 	if reduced_motion:
 		interstitial_panel.modulate.a = 1.0
 		var timer: SceneTreeTimer = get_tree().create_timer(hold_ms / 1000.0)
-		timer.timeout.connect(_on_interstitial_reduced_motion_hold_done)
+		timer.timeout.connect(_on_interstitial_slide_reduced_motion_done)
 	else:
 		_interstitial_tween = create_tween()
 		_interstitial_tween.tween_property(interstitial_panel, "modulate:a", 1.0, interstitial_fade_in_ms / 1000.0) \
@@ -589,19 +666,22 @@ func _try_begin_interstitial() -> void:
 		_interstitial_tween.tween_interval(hold_ms / 1000.0)
 		_interstitial_tween.tween_property(interstitial_panel, "modulate:a", 0.0, interstitial_fade_out_ms / 1000.0) \
 			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-		_interstitial_tween.tween_callback(_on_interstitial_done)
+		_interstitial_tween.tween_callback(_play_next_slide)
 
 
-## Called after the reduced-motion hold timer fires. No-op if already cancelled (AC-6).
-func _on_interstitial_reduced_motion_hold_done() -> void:
+## Reduced-motion path: after the hold timer for one slide, advance queue.
+func _on_interstitial_slide_reduced_motion_done() -> void:
 	if not _interstitial_active:
 		return
-	_on_interstitial_done()
+	interstitial_panel.modulate.a = 0.0
+	_play_next_slide()
 
 
 ## Completes the interstitial sequence and transitions to FADING_IN (AC-2).
+## Called by `_play_next_slide()` once the queue is empty.
 func _on_interstitial_done() -> void:
 	_interstitial_active = false
+	_interstitial_queue.clear()
 	interstitial_panel.visible = false
 	interstitial_panel.modulate.a = 0.0
 	if _current_state == State.HOLDING:
@@ -613,6 +693,7 @@ func _cancel_interstitial() -> void:
 	if not _interstitial_active:
 		return
 	_interstitial_active = false
+	_interstitial_queue.clear()
 	_kill_interstitial_tween()
 	interstitial_panel.visible = false
 	interstitial_panel.modulate.a = 0.0
