@@ -59,7 +59,16 @@ was just waiting.
      steps complete.
    - **`reach_value`** (stub, Vertical Slice): Configured via Status Bar System same as
      `sustain_above` but with `duration_sec: 0` — bar hits threshold once, no hold required.
-5. On goal met: emit `scene_completed(scene_id)`. Enter `Complete` state. Stop all goal
+5. **Bar Milestones** (bar-type goals only): A scene JSON may declare a `milestones` array
+   inside the `goal` block. Each milestone entry has a `bar_id`, an integer `value`, and a
+   `spawns: PackedStringArray` of card IDs to emit. While `Active`, Scene Goal System
+   monitors the current bar values (by subscribing to `EventBus.bar_values_changed`). When a
+   bar reaches a milestone value for the first time, SGS emits
+   `EventBus.milestone_cards_spawn(card_ids: PackedStringArray)` and marks that milestone as
+   fired. A milestone fires at most once per scene load (re-entering the same value does not
+   re-fire). Milestones with no matching `bar_id` or an unreachable `value` are logged as
+   warnings and ignored.
+6. On goal met: emit `scene_completed(scene_id)`. Enter `Complete` state. Stop all goal
    monitoring.
 6. Scene Goal System resets to `Idle` when Scene Manager calls `reset()` after transition
    completes.
@@ -78,6 +87,26 @@ was just waiting.
     "max_value": 100,
     "threshold": 60,
     "duration_sec": 30
+  }
+}
+```
+
+**Scene JSON format with milestones (`reach_value` example — drive-2):**
+```json
+{
+  "scene_id": "drive-2",
+  "seed_cards": ["drive_seat_9", "shotgun_10", "kingdom_far_away"],
+  "goal": {
+    "type": "reach_value",
+    "bars": [
+      { "id": "journey_progress", "initial_value": 0, "decay_rate_per_sec": 0 }
+    ],
+    "max_value": 3,
+    "threshold": 3,
+    "duration_sec": 1,
+    "milestones": [
+      { "bar_id": "journey_progress", "value": 2, "spawns": ["good_scenery"] }
+    ]
   }
 }
 ```
@@ -225,6 +254,10 @@ to help Chester author scene JSON files with confident defaults.
 - [ ] A new scene JSON file added to `assets/data/scenes/` is loadable without code changes
 - [ ] `get_goal_config()` returns the current scene's goal data while `Active`; returns null
       while `Idle`
+- [ ] When a bar reaches a milestone `value` for the first time: `EventBus.milestone_cards_spawn(card_ids)` fires with the correct `spawns` array
+- [ ] A milestone fires at most once per `load_scene()` — reaching the same value again does not re-fire
+- [ ] A scene with no `milestones` key in its JSON loads and runs without error
+- [ ] A milestone referencing a non-existent `bar_id` logs a warning and is skipped — does not crash
 
 ## Open Questions
 

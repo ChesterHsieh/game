@@ -1434,6 +1434,24 @@ requirements:
   revised: ""
   status: active
 
+- id: TR-scene-goal-system-013
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Bar milestone: when bar reaches milestone value for first time, emit EventBus.milestone_cards_spawn(card_ids); fires at most once per load_scene()"
+  domain: Logic
+  created: 2026-04-23
+  revised: ""
+  status: active
+
+- id: TR-scene-goal-system-014
+  system: scene-goal-system
+  gdd: design/gdd/scene-goal-system.md
+  requirement: "Scene JSON with no `milestones` key loads without error; milestone with unknown bar_id logs warning and is skipped"
+  domain: EdgeCase
+  created: 2026-04-23
+  revised: ""
+  status: active
+
 # --- hint-system -------------------------------------------------------------
 
 - id: TR-hint-system-001
@@ -2248,6 +2266,33 @@ requirements:
   requirement: "FIRST_REVEAL: begin opaque, fade out over first_reveal_fade_ms (1200ms) on scene_started"
   domain: Timing
   created: 2026-04-21
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-016
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "transition-variants.tres entries may include interstitial config (illustration: Texture2D, caption: String, hold_ms: float) per scene_id"
+  domain: Config
+  created: 2026-04-24
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-017
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "On HOLDING entry, if interstitial config is present for the current scene, fade in illustration+caption above overlay, hold, fade out, then begin FADING_IN; scenes without config skip silently"
+  domain: State
+  created: 2026-04-24
+  revised: ""
+  status: active
+
+- id: TR-scene-transition-ui-018
+  system: scene-transition-ui
+  gdd: design/gdd/scene-transition-ui.md
+  requirement: "Reduced-motion path: interstitial still shows and holds for hold_ms but fade-in and fade-out animations are skipped (immediate show/hide)"
+  domain: Accessibility
+  created: 2026-04-24
   revised: ""
   status: active
 

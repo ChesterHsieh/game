@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/scene-goal-system.md
 > **Architecture Module**: Feature Layer — SceneGoalSystem (autoload singleton + SceneData Resource loader)
 > **Status**: Ready
-> **Stories**: 3 stories created
+> **Stories**: 4 stories created
 
 ## Stories
 
@@ -13,6 +13,7 @@
 | 001 | SceneData load + get_goal_config API | Logic | Ready | ADR-005 |
 | 002 | SBS integration + seed_cards_ready | Integration | Ready | ADR-003, ADR-004 |
 | 003 | Win condition handling + scene_completed | Integration | Ready | ADR-003 |
+| 004 | Bar milestone spawn | Logic | Ready | ADR-005, ADR-003 |
 
 ## Overview
 

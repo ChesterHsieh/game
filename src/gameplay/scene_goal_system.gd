@@ -21,6 +21,11 @@ var _state: GoalState = GoalState.IDLE
 var _scene_id:    String     = ""
 var _goal_config: Dictionary = {}
 
+## Mutable copy of the scene's milestone list. Entries are removed as they fire
+## so each milestone fires at most once per load_scene() per TR-scene-goal-system-014.
+## Shape per entry: { "bar_id": String, "value": float, "spawns": PackedStringArray }
+var _pending_milestones: Array[Dictionary] = []
+
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
@@ -66,6 +71,10 @@ func load_scene(scene_id: String) -> void:
 		# Non-bar goals — StatusBarSystem stays Dormant
 		pass
 
+	_build_pending_milestones()
+	if not EventBus.bar_values_changed.is_connected(_on_bar_values_changed):
+		EventBus.bar_values_changed.connect(_on_bar_values_changed)
+
 	_state = GoalState.ACTIVE
 
 	var seed_cards: Array = data.get("seed_cards", [])
@@ -82,6 +91,9 @@ func reset() -> void:
 	_state       = GoalState.IDLE
 	_scene_id    = ""
 	_goal_config = {}
+	_pending_milestones.clear()
+	if EventBus.bar_values_changed.is_connected(_on_bar_values_changed):
+		EventBus.bar_values_changed.disconnect(_on_bar_values_changed)
 	StatusBarSystem.reset()
 
 
@@ -104,6 +116,72 @@ func _build_bar_config() -> Dictionary:
 			"duration_sec": _goal_config.get("duration_sec", 30.0),
 		}
 	}
+
+
+## Parses `goal.milestones` from the loaded scene and populates
+## [member _pending_milestones]. Entries with missing keys or referencing a
+## `bar_id` that is not declared in `goal.bars` are skipped with a warning
+## (per AC-4). Absent `milestones` key is a valid, common case — no warning.
+func _build_pending_milestones() -> void:
+	_pending_milestones.clear()
+
+	var raw: Array = _goal_config.get("milestones", [])
+	if raw.is_empty():
+		return
+
+	# Build set of valid bar_ids from the scene's bar list.
+	var valid_bar_ids: Dictionary = {}
+	for bar_variant in _goal_config.get("bars", []):
+		if bar_variant is Dictionary and bar_variant.has("id"):
+			valid_bar_ids[String(bar_variant["id"])] = true
+
+	for entry_variant in raw:
+		if not (entry_variant is Dictionary):
+			push_warning("SceneGoal: milestone entry is not a Dictionary — skipped")
+			continue
+		var entry: Dictionary = entry_variant
+		if not (entry.has("bar_id") and entry.has("value") and entry.has("spawns")):
+			push_warning("SceneGoal: milestone entry missing required keys (bar_id/value/spawns) — skipped")
+			continue
+
+		var bar_id: String = String(entry["bar_id"])
+		if not valid_bar_ids.has(bar_id):
+			push_warning("SceneGoal: milestone references unknown bar_id '%s' — skipped" % bar_id)
+			continue
+
+		_pending_milestones.append({
+			"bar_id": bar_id,
+			"value":  float(entry["value"]),
+			"spawns": PackedStringArray(entry["spawns"]),
+		})
+
+
+## Fires on every [signal EventBus.bar_values_changed]. For each pending
+## milestone whose bar has reached its threshold, emits
+## [signal EventBus.milestone_cards_spawn] with the milestone's spawn list
+## and removes the entry from [member _pending_milestones] so it cannot
+## fire again in the same scene.
+func _on_bar_values_changed(values: Dictionary) -> void:
+	if _state != GoalState.ACTIVE:
+		return
+	if _pending_milestones.is_empty():
+		return
+
+	# Collect indices that fire this tick; remove them in reverse order after
+	# the loop so indices stay valid.
+	var fired_indices: Array[int] = []
+	for i in range(_pending_milestones.size()):
+		var m: Dictionary = _pending_milestones[i]
+		var bar_id: String = m["bar_id"]
+		if not values.has(bar_id):
+			continue
+		var current: float = float(values[bar_id])
+		if current >= float(m["value"]):
+			EventBus.milestone_cards_spawn.emit(m["spawns"])
+			fired_indices.append(i)
+
+	for i in range(fired_indices.size() - 1, -1, -1):
+		_pending_milestones.remove_at(fired_indices[i])
 
 
 func _validate_scene_data(data: Dictionary, source: String) -> bool:

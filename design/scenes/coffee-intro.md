@@ -189,7 +189,7 @@ lets cards remain the focal point.
 
 | Field | Value |
 |---|---|
-| `next_scene` | *(none — this is the only MVP scene)* |
+| `next_scene` | `drive` |
 | On completion | SceneManager triggers `_enter_epilogue()` → emits `epilogue_started` |
 | FES behaviour | arms `cover_ready_timeout` watchdog; after 5s fades in (no illustration yet → background-color fallback) |
 | Epilogue content | **DEFERRED** — see backlog: "結局黑幕可以新增照片或是一些描述" |
