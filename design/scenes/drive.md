@@ -383,39 +383,11 @@ full background, but new scenes should default to `"full_viewport"`.
 - **Forbidden**: motifs that steal attention from cards (heavy ink,
   high contrast, saturated colour, animation)
 
-**Reusable nano-banana prompt template** (fill in `{SCENE_CONCEPT}` +
-`{CORNER_MOTIFS}` and run):
-
+To generate this background, run:
 ```
-Ornamental parchment background plate for a card game — wide landscape
-aspect ratio. Aged warm cream parchment paper texture as the base
-(#F4EEDE with very subtle tonal variation, no gradients, no strong
-color blocks). Fine-line ornamental filigree border frames the full
-rectangle in thin warm brown ink — scrollwork, vine curls, leaves.
-Decorative corner flourishes SUBTLY weave in abstracted {SCENE_CONCEPT}
-concepts as stylized line-art hints only: {CORNER_MOTIFS}, all rendered
-as if they are PART of the ornamental filigree itself, NOT placed as
-separate objects. The center 70% of the image is completely empty cream
-parchment with very subtle paper texture only — this is the gameplay
-surface where cards will sit. Overall feeling: vintage recipe book title
-plate, ornate but understated, like a tarot card back or medieval herbal
-manuscript frontispiece. Ink is soft warm brown, never black, never
-harsh.
-
-NEGATIVE: text, letters, numbers, words, names, signatures, watermarks,
-any center focal subject, literal objects placed in the middle, strong
-color blocks, photographic realism, 3D render, perspective, deep shadows,
-human figures, modern UI elements, busy loud patterns, gradient fills
-in the center, heavy dark ink, anime, cyberpunk, neon, pixel art. The
-center MUST remain empty parchment — if it is not empty the image fails.
+/img-background drive "car-road-trip" "steering wheel curl (top-left), map fold line (top-right), road sign silhouette (bottom-left), destination flag (bottom-right)"
 ```
-
-Example fill — coffee-intro:
-- `{SCENE_CONCEPT}`: *kitchen-morning*
-- `{CORNER_MOTIFS}`: *a tiny mortar-and-pestle silhouette in one corner,
-  a small whisk curl in another, a sheaf of coffee beans / wheat stalk
-  as a curving line in a third corner, a minimalist steam curl or coffee
-  cup edge suggestion in the fourth*
+Prompt template and all scene examples: see `img_generate.md` § 概念產生背景圖.
 
 **Code wiring** (live in `src/ui/ambient_indicator.gd` — see
 `production/epics/scene-composition/story-006`):
