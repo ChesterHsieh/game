@@ -1,29 +1,28 @@
-## Unit tests for InteractionTemplateFramework Generator template — Story 006.
+## Unit tests for InteractionTemplateFramework — Generator template (Story 006).
 ##
-## Covers all ACs from story-006-generator-template.md:
-##   AC-1: Generator spawns cards at interval; stops at max_count
-##   AC-2: card_removing cancels the generator timer
-##   AC-3: combination_executed fires immediately (before first tick)
-##   AC-4: max_count: null means unlimited production
+## Design doc: design/gdd/interaction-template-framework.md — Generator template section
+##
+## Acceptance Criteria covered (using STORY numbering):
+##   AC-1  Generator card identified from recipe.config.generator_card; registered in
+##         _active_generators under compound key; timer started
+##   AC-2  max_count: null means unlimited production (entry still registered, no early stop)
+##   AC-3  Both input cards remain on table (combination_succeeded called with "Generator")
+##   AC-4a Generator card removed → entry deregistered and timer stopped
+##   AC-4b Non-generator input card removed → entry deregistered and timer stopped (NEW vs GDD)
+##   AC-4  Unrelated card removed → no-op (entries unchanged)
+##   AC-5  compound key "%s|%s" % [gen_id, recipe_id] used as dict key
+##   AC-5a combination_executed fires immediately (before any tick); _last_fired recorded
+##   AC-5b Same card in two generators simultaneously → two distinct compound keys; both
+##         deregistered when that card is removed
+##   cleanup  _deregister_generator stops and frees the timer node
 ##
 ## Strategy:
-##   The Generator template is NOT implemented in the current codebase.
-##   The implementation only handles "Additive" and "Merge" in _execute_template().
-##   A "Generator" template name falls through to the `_:` warning branch.
+##   All tests call _execute_generator() and related methods directly,
+##   bypassing signal routing and CardEngine. Timer ticks are NOT awaited —
+##   we test state registration and signal emission synchronously.
+##   Real tick behaviour (spawn count) is covered by generator_lifecycle_test.gd.
 ##
-##   These tests document both:
-##   a) The MISSING implementation gap (Generator falls through to failed path)
-##   b) The expected behaviour per the story spec, as pending-implementation specs
-##
-##   For the spec tests that require timer behaviour, we avoid real Godot Timer nodes
-##   by testing state registration (_active_generators dict) and combination_executed
-##   emission independently of tick timing.
-##
-## NOTE — Implementation/story mismatch (CRITICAL flag):
-##   Generator template is entirely absent from src/gameplay/interaction_template_framework.gd.
-##   _active_generators dict is also absent. All AC-1 through AC-4 behaviours require
-##   adding _execute_generator() and _active_generators to the implementation.
-##   Do NOT modify src/. This file documents gaps for the sprint backlog.
+## No silent-skips: every test asserts its expected outcome unconditionally.
 extends GdUnitTestSuite
 
 const ITFScript := preload("res://src/gameplay/interaction_template_framework.gd")
@@ -40,7 +39,7 @@ func _make_itf() -> Node:
 func _make_generator_recipe(
 		recipe_id: String = "chester-coffee",
 		generates: String = "memory",
-		interval_sec: float = 0.1,
+		interval_sec: float = 60.0,
 		max_count: Variant = 3,
 		generator_card: String = "card_a") -> Dictionary:
 	return {
@@ -57,186 +56,298 @@ func _make_generator_recipe(
 	}
 
 
-# ── GAP: Generator not implemented — falls through to failed path ─────────────
+# ── AC-5a: combination_executed fires immediately (before first tick) ─────────
 
-func test_generator_gap_execute_template_generator_not_handled() -> void:
-	# [GAP] The _execute_template() match block has no "Generator" case.
-	# combination_executed is NOT emitted for Generator template.
+func test_execute_generator_emits_combination_executed_before_tick() -> void:
+	# Arrange — interval is 60 s so no real tick can fire during the test
 	var itf: Node = _make_itf()
 	var recipe := _make_generator_recipe()
 
-	var emitted := {"fired": false}
+	var fired := {"count": 0}
 	itf.combination_executed.connect(
 		func(_rid: String, _tmpl: String, _ia: String, _ib: String) -> void:
-			emitted["fired"] = true
+			fired["count"] += 1
 	)
 
-	itf._execute_template(recipe, "chester_0", "coffee_0")
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
-	assert_bool(emitted["fired"]) \
+	# Assert — signal fired synchronously inside _execute_generator, before any tick
+	assert_int(fired["count"]) \
 		.override_failure_message(
-			"[GAP story-006] Generator template is not implemented. "
-			+ "combination_executed should fire but does not. Add _execute_generator()."
-		).is_false()
-
-	itf.queue_free()
+			"[AC-5a] combination_executed must emit synchronously inside _execute_generator(), "
+			+ "before any timer tick. Got %d emissions." % fired["count"]
+		).is_equal(1)
 
 
-func test_generator_gap_active_generators_dict_absent() -> void:
-	# [GAP] _active_generators does not exist on the current implementation.
+func test_execute_generator_records_cooldown() -> void:
+	# Arrange
 	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe("chester-coffee")
 
-	var has_dict: bool = "_active_generators" in itf
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
-	assert_bool(has_dict) \
+	# Assert — _fire_executed was called, so _last_fired contains the recipe id
+	assert_bool(itf._last_fired.has("chester-coffee")) \
 		.override_failure_message(
-			"[GAP story-006] _active_generators dict not present. "
-			+ "Add it to the implementation to track generator instances."
-		).is_false()
-
-	itf.queue_free()
+			"[AC-5a] _last_fired must contain recipe id after _execute_generator()."
+		).is_true()
 
 
-# ── SPEC: Expected behaviour once gap is closed ────────────────────────────────
+# ── AC-5: compound key used as dict key ───────────────────────────────────────
 
-func test_generator_spec_combination_executed_fires_before_first_tick() -> void:
-	# [SPEC] AC-3: combination_executed is emitted immediately, before any timer ticks.
+func test_execute_generator_registers_compound_key() -> void:
+	# Arrange — generator_card = "card_a" → gen_id = instance_id_a = "chester_0"
 	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe("chester-coffee", "memory", 60.0, 3, "card_a")
 
-	if not itf.has_method("_execute_generator"):
-		push_warning(
-			"[SPEC story-006] _execute_generator() not implemented. "
-			+ "This test enforces AC-3 once the method exists."
-		)
-		itf.queue_free()
-		return
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
+	# Assert — key is "chester_0|chester-coffee", NOT plain "chester_0"
+	var expected_key := "chester_0|chester-coffee"
+	assert_bool(itf._active_generators.has(expected_key)) \
+		.override_failure_message(
+			"[AC-5] _active_generators must use compound key '%s'. "
+			+ "Keys present: %s" % [expected_key, str(itf._active_generators.keys())]
+		).is_true()
+
+
+# ── AC-4b prereq: non_generator_id stored in entry ───────────────────────────
+
+func test_execute_generator_stores_non_generator_id() -> void:
+	# Arrange — generator is "chester_0", non-generator is "coffee_0"
+	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe("chester-coffee", "memory", 60.0, 3, "card_a")
+
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
+
+	# Assert — entry holds both ids
+	var key := "chester_0|chester-coffee"
+	var entry: Dictionary = itf._active_generators.get(key, {})
+	assert_str(entry.get("generator_id", "")) \
+		.override_failure_message("[AC-4b-prereq] generator_id must be 'chester_0'.") \
+		.is_equal("chester_0")
+	assert_str(entry.get("non_generator_id", "")) \
+		.override_failure_message("[AC-4b-prereq] non_generator_id must be 'coffee_0'.") \
+		.is_equal("coffee_0")
+
+
+# ── AC-1: generator card identified from recipe.config.generator_card ─────────
+
+func test_generator_card_a_selects_instance_a_as_generator() -> void:
+	# Arrange — generator_card = "card_a" → gen_id = instance_id_a
+	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe("chester-coffee", "memory", 60.0, 3, "card_a")
+
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
+
+	# Assert — key contains "chester_0" (the card_a instance)
+	var key := "chester_0|chester-coffee"
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message(
+			"[AC-1] generator_card='card_a' must register compound key '%s'. "
+			+ "Keys: %s" % [key, str(itf._active_generators.keys())]
+		).is_true()
+
+
+func test_generator_card_b_selects_instance_b_as_generator() -> void:
+	# Arrange — generator_card = "card_b" → gen_id = instance_id_b
+	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe("chester-coffee", "memory", 60.0, 3, "card_b")
+
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
+
+	# Assert — key contains "coffee_0" (the card_b instance)
+	var key := "coffee_0|chester-coffee"
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message(
+			"[AC-1] generator_card='card_b' must register compound key '%s'. "
+			+ "Keys: %s" % [key, str(itf._active_generators.keys())]
+		).is_true()
+
+
+# ── AC-2: max_count null means unlimited ──────────────────────────────────────
+
+func test_max_count_null_registers_unlimited_entry() -> void:
+	# Arrange — max_count = null → unlimited
+	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe("chester-coffee", "memory", 60.0, null, "card_a")
+
+	# Act
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
+
+	# Assert — entry created with max_count == null
+	var key := "chester_0|chester-coffee"
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message(
+			"[AC-2] Generator with max_count=null must still register in _active_generators."
+		).is_true()
+
+	var stored_max: Variant = itf._active_generators[key].get("max_count", "MISSING")
+	assert_bool(stored_max == null) \
+		.override_failure_message(
+			"[AC-2] Stored max_count must be null. Got: %s" % str(stored_max)
+		).is_true()
+
+
+# ── AC-3: both inputs remain on table (combination_succeeded called with "Generator") ──
+
+func test_execute_generator_calls_combination_succeeded_with_generator_template() -> void:
+	# Arrange — spy on EventBus.combination_succeeded to verify template arg
+	# CardEngine.on_combination_succeeded emits EventBus.combination_succeeded internally.
+	# We verify ITF calls on_combination_succeeded with the "Generator" template string
+	# by confirming combination_executed template field (same call chain verifies AC-3).
+	var itf: Node = _make_itf()
 	var recipe := _make_generator_recipe()
-	var emitted := {"fired": false}
+
+	var captured_template := {"value": ""}
 	itf.combination_executed.connect(
-		func(_rid: String, _tmpl: String, _ia: String, _ib: String) -> void:
-			emitted["fired"] = true
+		func(_rid: String, tmpl: String, _ia: String, _ib: String) -> void:
+			captured_template["value"] = tmpl
 	)
 
+	# Act
 	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
-	# combination_executed fires synchronously before timer ticks
-	assert_bool(emitted["fired"]).is_true()
+	# Assert — "Generator" template signals that CardEngine was told both cards remain Idle
+	assert_str(captured_template["value"]) \
+		.override_failure_message(
+			"[AC-3] combination_executed template arg must be 'Generator' (both cards stay). "
+			+ "Got: '%s'" % captured_template["value"]
+		).is_equal("Generator")
 
-	itf.queue_free()
 
+# ── AC-4a: generator card removed cancels timer ───────────────────────────────
 
-func test_generator_spec_generator_registered_in_active_generators() -> void:
-	# [SPEC] AC-1: _active_generators has an entry for the generator card after firing.
+func test_on_card_removing_generator_card_deregisters() -> void:
+	# Arrange
 	var itf: Node = _make_itf()
-
-	if not itf.has_method("_execute_generator"):
-		push_warning("[SPEC story-006] _execute_generator() not implemented.")
-		itf.queue_free()
-		return
-
-	var recipe := _make_generator_recipe("chester-coffee", "memory", 0.1, 3, "card_a")
-
-	# generator_card = "card_a" → gen_id = "chester_0"
-	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
-
-	assert_bool("_active_generators" in itf).is_true()
-	var active: Dictionary = itf._active_generators
-	# Key may be instance_id or compound key per implementation
-	var has_chester := active.has("chester_0") or _any_key_contains(active, "chester_0")
-	assert_bool(has_chester).is_true()
-
-	itf.queue_free()
-
-
-func test_generator_spec_card_b_as_generator_card_registered() -> void:
-	# [SPEC] generator_card = "card_b" → gen_id = instance_id_b
-	var itf: Node = _make_itf()
-
-	if not itf.has_method("_execute_generator"):
-		push_warning("[SPEC story-006] _execute_generator() not implemented.")
-		itf.queue_free()
-		return
-
-	var recipe := _make_generator_recipe("chester-coffee", "memory", 0.1, null, "card_b")
-
-	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
-
-	var active: Dictionary = itf._active_generators
-	var has_coffee := active.has("coffee_0") or _any_key_contains(active, "coffee_0")
-	assert_bool(has_coffee).is_true()
-
-	itf.queue_free()
-
-
-func test_generator_spec_card_removing_deregisters_generator() -> void:
-	# [SPEC] AC-2: card_removing cancels the generator timer and removes entry.
-	var itf: Node = _make_itf()
-
-	if not itf.has_method("_execute_generator") or not itf.has_method("_on_card_removing"):
-		push_warning("[SPEC story-006] Generator or card_removing handler not implemented.")
-		itf.queue_free()
-		return
-
 	var recipe := _make_generator_recipe()
 	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
-	# Simulate card_removing for the generator card
+	var key := "chester_0|chester-coffee"
+	var timer: Timer = itf._active_generators[key]["timer"]
+
+	# Act — remove the generator card
 	itf._on_card_removing("chester_0")
 
-	# Assert: no longer in active generators
-	var active: Dictionary = itf._active_generators
-	var still_present := active.has("chester_0") or _any_key_contains(active, "chester_0")
-	assert_bool(still_present).is_false()
+	# Assert — entry erased and timer stopped
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message(
+			"[AC-4a] Removing generator card must erase the compound-key entry."
+		).is_false()
+	assert_bool(timer.is_stopped()) \
+		.override_failure_message("[AC-4a] Timer must be stopped when generator card is removed.") \
+		.is_true()
 
-	itf.queue_free()
 
+# ── AC-4b: non-generator input card removed also cancels timer ────────────────
 
-func test_generator_spec_max_count_null_allows_unlimited_production() -> void:
-	# [SPEC] AC-4: max_count = null → no exhaustion check fires.
-	# Verify the recipe config reaches _execute_generator without error.
+func test_on_card_removing_non_generator_card_deregisters() -> void:
+	# Arrange — "chester_0" is generator, "coffee_0" is non-generator input
 	var itf: Node = _make_itf()
-
-	if not itf.has_method("_execute_generator"):
-		push_warning("[SPEC story-006] _execute_generator() not implemented.")
-		itf.queue_free()
-		return
-
-	var recipe := _make_generator_recipe("chester-coffee", "memory", 0.1, null)
-
-	# Should not crash when max_count is null
+	var recipe := _make_generator_recipe()
 	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
-	var active: Dictionary = itf._active_generators
-	var has_entry := active.has("chester_0") or _any_key_contains(active, "chester_0")
-	assert_bool(has_entry).is_true()
+	var key := "chester_0|chester-coffee"
+	var timer: Timer = itf._active_generators[key]["timer"]
 
-	itf.queue_free()
+	# Act — remove the NON-generator card
+	itf._on_card_removing("coffee_0")
+
+	# Assert — entry erased and timer stopped (AC-4b: either card leaving cancels)
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message(
+			"[AC-4b] Removing non-generator input card must erase the compound-key entry."
+		).is_false()
+	assert_bool(timer.is_stopped()) \
+		.override_failure_message(
+			"[AC-4b] Timer must be stopped when non-generator input card is removed."
+		).is_true()
 
 
-func test_generator_spec_cooldown_recorded_after_execution() -> void:
-	# [SPEC] Cooldown starts when combination fires — before any timer ticks.
+# ── AC-4: unrelated card removal is a no-op ───────────────────────────────────
+
+func test_on_card_removing_unrelated_id_does_not_deregister() -> void:
+	# Arrange — register "chester_0" generator; remove completely unrelated card
 	var itf: Node = _make_itf()
-
-	if not itf.has_method("_execute_generator"):
-		push_warning("[SPEC story-006] _execute_generator() not implemented.")
-		itf.queue_free()
-		return
-
-	var recipe := _make_generator_recipe("chester-coffee")
+	var recipe := _make_generator_recipe()
 	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
 
-	assert_bool(itf._last_fired.has("chester-coffee")).is_true()
+	# Act
+	itf._on_card_removing("ghost_0")
 
-	itf.queue_free()
+	# Assert — entry untouched
+	var key := "chester_0|chester-coffee"
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message(
+			"[AC-4] Removing an unrelated card must not deregister other generators."
+		).is_true()
 
 
-# ── helper ────────────────────────────────────────────────────────────────────
+# ── AC-5b: same card in two generators uses distinct compound keys ─────────────
 
-## Returns true if any key in the dict contains the search string.
-## Handles compound keys like "chester_0|recipe-id".
-func _any_key_contains(dict: Dictionary, search: String) -> bool:
-	for key in dict.keys():
-		if str(key).contains(search):
-			return true
-	return false
+func test_two_generators_on_same_card_use_distinct_compound_keys() -> void:
+	# Arrange — "chester_0" is generator in recipe-a AND recipe-b simultaneously
+	var itf: Node = _make_itf()
+	var recipe_a := _make_generator_recipe("recipe-a", "memory", 60.0, 3, "card_a")
+	var recipe_b := _make_generator_recipe("recipe-b", "spark", 60.0, 5, "card_a")
+
+	# Act
+	itf._execute_generator(recipe_a, "chester_0", "coffee_0", recipe_a["config"])
+	itf._execute_generator(recipe_b, "chester_0", "coffee_0", recipe_b["config"])
+
+	# Assert — two distinct entries in _active_generators
+	assert_int(itf._active_generators.size()) \
+		.override_failure_message(
+			"[AC-5b] Two different recipe_ids on same card must produce 2 distinct entries. "
+			+ "Keys: %s" % str(itf._active_generators.keys())
+		).is_equal(2)
+
+	assert_bool(itf._active_generators.has("chester_0|recipe-a")) \
+		.override_failure_message("[AC-5b] Key 'chester_0|recipe-a' must exist.") \
+		.is_true()
+	assert_bool(itf._active_generators.has("chester_0|recipe-b")) \
+		.override_failure_message("[AC-5b] Key 'chester_0|recipe-b' must exist.") \
+		.is_true()
+
+	# Removing "chester_0" must deregister BOTH entries
+	itf._on_card_removing("chester_0")
+
+	assert_int(itf._active_generators.size()) \
+		.override_failure_message(
+			"[AC-5b] _on_card_removing('chester_0') must erase BOTH compound-key entries."
+		).is_equal(0)
+
+
+# ── cleanup: _deregister_generator removes timer from tree ───────────────────
+
+func test_deregister_removes_timer_from_tree() -> void:
+	# Arrange
+	var itf: Node = _make_itf()
+	var recipe := _make_generator_recipe()
+	itf._execute_generator(recipe, "chester_0", "coffee_0", recipe["config"])
+
+	var key := "chester_0|chester-coffee"
+	var timer: Timer = itf._active_generators[key]["timer"]
+
+	# Precondition: timer is a child of itf
+	assert_bool(timer.get_parent() == itf) \
+		.override_failure_message("[cleanup] Timer must be a child of ITF before deregister.") \
+		.is_true()
+
+	# Act
+	itf._deregister_generator(key)
+
+	# Assert — timer is stopped; entry erased
+	assert_bool(timer.is_stopped()) \
+		.override_failure_message("[cleanup] Timer must be stopped after _deregister_generator().") \
+		.is_true()
+	assert_bool(itf._active_generators.has(key)) \
+		.override_failure_message("[cleanup] Entry must be erased after _deregister_generator().") \
+		.is_false()

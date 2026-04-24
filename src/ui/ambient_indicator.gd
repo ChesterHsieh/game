@@ -37,16 +37,19 @@ const CORNER_MARGIN := 16.0
 
 
 @onready var _nine_patch: NinePatchRect = $NinePatchRect
+@onready var _cover_rect: TextureRect   = $CoverRect
 
 
 func _ready() -> void:
 	# Hidden at boot so there's no flash of stale texture before the
 	# first scene_started fires (AC-6).
 	_nine_patch.hide()
+	_cover_rect.hide()
 	# Input pass-through — even as a full-viewport background, the plate
-	# must not swallow card drags (AC-4). Both Control and NinePatchRect
-	# get MOUSE_FILTER_IGNORE (set in .tscn too, belt-and-braces).
+	# must not swallow card drags (AC-4). All three Controls get
+	# MOUSE_FILTER_IGNORE (set in .tscn too, belt-and-braces).
 	_nine_patch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cover_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	EventBus.scene_started.connect(_on_scene_started)
@@ -56,12 +59,14 @@ func _on_scene_started(scene_id: String) -> void:
 	var data: Dictionary = _read_scene_json(scene_id)
 	if data.is_empty():
 		_nine_patch.hide()
+		_cover_rect.hide()
 		return
 
 	var ambient: Dictionary = data.get("ambient", {})
 	var ambient_path: String = String(ambient.get("path", "none"))
 	if ambient_path == "" or ambient_path == "none":
 		_nine_patch.hide()
+		_cover_rect.hide()
 		return
 
 	var tex: Texture2D = load(ambient_path) as Texture2D
@@ -70,15 +75,28 @@ func _on_scene_started(scene_id: String) -> void:
 			"AmbientIndicator: could not load '%s' for scene '%s' — hiding plate"
 			% [ambient_path, scene_id])
 		_nine_patch.hide()
+		_cover_rect.hide()
 		return
 
-	_nine_patch.texture    = tex
-	_nine_patch.modulate.a = clampf(float(ambient.get("alpha", DEFAULT_ALPHA)), 0.0, 1.0)
+	var alpha: float = clampf(float(ambient.get("alpha", DEFAULT_ALPHA)), 0.0, 1.0)
+	var fit: String = String(ambient.get("fit", "nine_patch"))
 
-	var anchor_name: String = String(ambient.get("anchor", DEFAULT_ANCHOR))
-	_apply_anchor(anchor_name, ambient)
-
-	_nine_patch.show()
+	if fit == "cover":
+		# Full-viewport composed artwork — use TextureRect with
+		# STRETCH_KEEP_ASPECT_COVERED so the image fills the viewport
+		# without distortion (cropping the overflow axis, like CSS
+		# background-size: cover). Ignores `anchor` — always full_viewport.
+		_cover_rect.texture    = tex
+		_cover_rect.modulate.a = alpha
+		_nine_patch.hide()
+		_cover_rect.show()
+	else:
+		_nine_patch.texture    = tex
+		_nine_patch.modulate.a = alpha
+		var anchor_name: String = String(ambient.get("anchor", DEFAULT_ANCHOR))
+		_apply_anchor(anchor_name, ambient)
+		_cover_rect.hide()
+		_nine_patch.show()
 
 
 ## Loads + parses `assets/data/scenes/[scene_id].json`. Returns {} on any

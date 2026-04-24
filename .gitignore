@@ -26,6 +26,12 @@ expansions/
 # Created on first use by /consistency-check and /architecture-review
 docs/consistency-failures.md
 
+# === Nano-banana image generation scratch output ===
+# Images saved by mcp__nano-banana__generate_image land here. Final assets
+# get copied into assets/cards/ or assets/epilogue/ — the raw outputs are
+# throwaway.
+generated_imgs/
+
 # === Build Output ===
 build/
 builds/

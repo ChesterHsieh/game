@@ -175,7 +175,7 @@ func test_next_instance_id_counter_not_reused_across_multiple_removals() -> void
 	# Arrange — generate 3 IDs, erase all from registry, verify counter continues
 	var sys: Node = _make_system()
 	for _i: int in range(3):
-		var _ = sys._next_instance_id("that-photo")
+		var _unused := sys._next_instance_id("that-photo")
 	sys._live_cards.clear()  # Simulate removing all
 
 	# Act

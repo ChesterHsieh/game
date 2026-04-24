@@ -18,7 +18,7 @@
   "next_scene": "drive",
   "ambient": {
     "path": "res://assets/ambient/coffee-intro.png",
-    "anchor": "full_viewport",
+    "fit": "cover",
     "alpha": 0.9
   }
 }
