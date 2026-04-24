@@ -88,6 +88,11 @@ var _authored_z_index: int  = AUTHORED_Z_INDEX
 ## Active merge tween reference — kept so it can be killed on interruption.
 var _merge_tween: Tween     = null
 
+## Cached SystemFont with CJK fallback chain — Godot's ThemeDB.fallback_font is
+## Latin-only and cannot render Chinese/Japanese glyphs. Created once per
+## CardVisual and reused for both label and badge drawing.
+var _cjk_font: SystemFont   = null
+
 
 # ── Initialisation ────────────────────────────────────────────────────────────
 
@@ -95,7 +100,23 @@ var _merge_tween: Tween     = null
 ## Reads the parent CardNode's card_id and populates display data from CardDatabase.
 func _ready() -> void:
 	_authored_z_index = z_index
+	_cjk_font = _make_cjk_font()
 	_populate_from_parent()
+
+
+## Builds a SystemFont with a CJK-capable fallback chain so Chinese display
+## names render correctly on macOS, Windows, and Linux. Godot resolves the
+## first installed font_name on the current platform.
+func _make_cjk_font() -> SystemFont:
+	var f := SystemFont.new()
+	f.font_names = PackedStringArray([
+		"PingFang TC",          # macOS default TC
+		"Heiti TC",             # macOS fallback
+		"Microsoft JhengHei",   # Windows TC
+		"Noto Sans CJK TC",     # Linux / cross-platform
+		"Noto Sans TC",
+	])
+	return f
 
 
 ## Re-populates display data from CardDatabase for the given card_id.
@@ -310,7 +331,7 @@ func _draw_art(art_center: Vector2) -> void:
 ## Draws the card label using draw_string with max_width clamping so long names
 ## are clipped by Godot rather than overflowing into the art region.
 func _draw_label(half: Vector2) -> void:
-	var font    := ThemeDB.fallback_font
+	var font: Font = _cjk_font if _cjk_font != null else ThemeDB.fallback_font
 	var label_y := -half.y + float(label_font_size) + 4.0
 	var label_x := -half.x + 6.0
 	var max_w   := CARD_SIZE.x - 12.0
@@ -338,7 +359,7 @@ func _draw_badge(half: Vector2) -> void:
 	)
 	draw_rect(bar_rect, badge_background_color)
 
-	var font := ThemeDB.fallback_font
+	var font: Font = _cjk_font if _cjk_font != null else ThemeDB.fallback_font
 	# draw_string's y is the baseline; centre it vertically inside the bar.
 	var ascent := font.get_ascent(badge_font_size)
 	var text_y := bar_top + (badge_bar_height + ascent) * 0.5 - 1.0
