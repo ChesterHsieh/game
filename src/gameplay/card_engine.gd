@@ -189,7 +189,7 @@ func on_combination_succeeded(instance_id_a: String, instance_id_b: String,
 			if node_b != null: node_b.z_index = 0
 
 		"Merge":
-			_begin_merge(instance_id_a, instance_id_b, String(_config.get("keeps", "")))
+			_begin_merge(instance_id_a, instance_id_b, _parse_keeps(_config))
 
 		_:
 			# Animate / Generator — return to Idle for now; ITF drives further
@@ -244,19 +244,22 @@ func _begin_push_away(instance_id: String, target_id: String, push_multiplier: f
 
 # ── Merge ─────────────────────────────────────────────────────────────────────
 
-func _begin_merge(instance_id_a: String, instance_id_b: String, keeps_card_id: String = "") -> void:
+func _begin_merge(instance_id_a: String, instance_id_b: String,
+		keeps_card_ids: Array[String] = []) -> void:
 	var node_a := _get_node(instance_id_a)
 	var node_b := _get_node(instance_id_b)
 	if node_a == null or node_b == null:
 		return
 
-	# Catalyst mode: when `keeps_card_id` matches one side, that side skips
-	# the merge-animate entirely (no shrink, no fade, no move). The product
-	# is ejected from the consumed card's last position instead of a midpoint.
+	# Catalyst mode: cards whose card_id is in `keeps_card_ids` skip the
+	# merge-animate entirely (no shrink, no fade, no move). When exactly one
+	# side is kept, the product ejects from the consumed card's last position;
+	# when both are kept (dual-catalyst), we fall through to the degenerate
+	# path below and emit merge_complete immediately.
 	var card_id_a: String = _card_id_of(instance_id_a)
 	var card_id_b: String = _card_id_of(instance_id_b)
-	var a_is_kept: bool = keeps_card_id != "" and card_id_a == keeps_card_id
-	var b_is_kept: bool = keeps_card_id != "" and card_id_b == keeps_card_id
+	var a_is_kept: bool = card_id_a in keeps_card_ids
+	var b_is_kept: bool = card_id_b in keeps_card_ids
 
 	var midpoint: Vector2
 	if a_is_kept:
@@ -282,6 +285,25 @@ func _begin_merge(instance_id_a: String, instance_id_b: String, keeps_card_id: S
 		_animate_merge_card(node_a, midpoint, finish)
 	if not b_is_kept:
 		_animate_merge_card(node_b, midpoint, finish)
+
+
+## Normalize the recipe `keeps` config value into a list of card_ids.
+## Accepts String, StringName, or Array of either. Absent → empty list.
+static func _parse_keeps(config: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	var raw: Variant = config.get("keeps", null)
+	if raw == null:
+		return out
+	if raw is Array:
+		for item: Variant in raw:
+			var s: String = String(item)
+			if s != "":
+				out.append(s)
+	else:
+		var s: String = String(raw)
+		if s != "":
+			out.append(s)
+	return out
 
 
 ## Helper: read the node's card_id field (set by CardSpawning at spawn time).

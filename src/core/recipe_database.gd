@@ -71,10 +71,13 @@ func _validate_card_refs() -> void:
 				for spawn_id: StringName in spawns:
 					_assert_card_exists(StringName(spawn_id), r.id, "additive.spawn")
 			&"merge":
+				# result_card is optional — a merge with no result_card is a
+				# consume-via-catalyst pattern (e.g. scenic-advance-ju: keeps
+				# ju_driving, consumes scenic_view, fires bar_delta via
+				# bar-effects.json with no new card produced).
 				var result_id: StringName = r.config.get("result_card", &"")
-				assert(result_id != &"",
-					"RecipeDatabase: recipe %s (merge) missing 'result_card'" % r.id)
-				_assert_card_exists(result_id, r.id, "merge.result_card")
+				if result_id != &"":
+					_assert_card_exists(result_id, r.id, "merge.result_card")
 			&"generator":
 				var gen_id: StringName = r.config.get("generates", &"")
 				assert(gen_id != &"",
@@ -82,9 +85,11 @@ func _validate_card_refs() -> void:
 				_assert_card_exists(gen_id, r.id, "generator.generates")
 			&"animate":
 				pass  # no card refs in animate config
+			&"reject":
+				pass  # no card refs in reject config (repulsion_multiplier + emote only)
 			_:
 				assert(false,
-					"RecipeDatabase: recipe %s has unknown template '%s' (valid: additive, merge, animate, generator)"
+					"RecipeDatabase: recipe %s has unknown template '%s' (valid: additive, merge, animate, generator, reject)"
 						% [r.id, r.template])
 
 
