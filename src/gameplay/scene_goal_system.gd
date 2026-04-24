@@ -103,7 +103,11 @@ func _on_win_condition_met() -> void:
 	if _state != GoalState.ACTIVE:
 		return
 	_state = GoalState.COMPLETE
+	# Local signal is kept for direct per-instance subscription (tests +
+	# SceneManager which connects directly). EventBus fan-out feeds STUI /
+	# MUT / AudioManager which all subscribe through the bus (ADR-003).
 	scene_completed.emit(_scene_id)
+	EventBus.scene_completed.emit(_scene_id)
 
 
 func _build_bar_config() -> Dictionary:

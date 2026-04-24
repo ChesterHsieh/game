@@ -9,6 +9,9 @@ const BAR_EFFECTS_PATH := "res://assets/data/bar-effects.json"
 # ── Signals ───────────────────────────────────────────────────────────────────
 
 ## Emitted every frame when bar values change (decay or combination effect).
+## Kept as a local signal for direct per-instance subscription in unit tests;
+## also forwarded to `EventBus.bar_values_changed` via `_emit_values()` so
+## StatusBarUI and other EventBus subscribers get the update (ADR-003).
 signal bar_values_changed(values: Dictionary)
 
 ## Emitted once when the win condition is satisfied.
@@ -75,7 +78,7 @@ func configure(scene_bar_config: Dictionary) -> void:
 	_win_threshold = float(win.get("threshold", 60))
 	_win_duration  = float(win.get("duration_sec", 30))
 
-	bar_values_changed.emit(_values.duplicate())
+	_emit_values()
 
 
 ## Resets to Dormant. Call on scene transition.
@@ -109,7 +112,7 @@ func _process(delta: float) -> void:
 				changed = true
 
 	if changed:
-		bar_values_changed.emit(_values.duplicate())
+		_emit_values()
 
 	# Win condition: sustain_above
 	_check_sustain(delta)
@@ -153,4 +156,14 @@ func _on_combination_executed(recipe_id: String, _template: String,
 		changed = true
 
 	if changed:
-		bar_values_changed.emit(_values.duplicate())
+		_emit_values()
+
+
+## Broadcast current _values to both the local signal (test-facing) and the
+## EventBus (UI + SceneGoal + MUT). Duplicating once avoids aliasing across
+## handlers that might mutate the dict.
+func _emit_values() -> void:
+	var snapshot: Dictionary = _values.duplicate()
+	bar_values_changed.emit(snapshot)
+	if EventBus != null:
+		EventBus.bar_values_changed.emit(snapshot)
