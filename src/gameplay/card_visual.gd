@@ -8,6 +8,7 @@
 ##   003 — Merge tween animation (scale-to-zero + opacity-to-zero; pool reset)
 ##   004 — Error handling and fallbacks (missing art, invalid card_id, long names)
 ##   005 — Badge system (optional top-bar badge text; truncates with ellipsis)
+##   006 — Idle rabbit-jump animation (tag "rabbit_jump" → hop + random x drift in IDLE)
 
 class_name CardVisual extends Node2D
 
@@ -47,6 +48,19 @@ class_name CardVisual extends Node2D
 ## with the card's top edge. -8 = bar peeks above the card by 8px, so it
 ## reads as a "tag" pinned onto the card.
 @export var badge_y_offset: float = -8.0
+
+## Peak y offset (pixels) for the rabbit-jump arc. Negative = up.
+@export var jump_peak_px: float = -20.0
+## Time (seconds) for the upward stroke of the jump.
+@export var jump_rise_sec: float = 0.25
+## Time (seconds) for the downward stroke of the jump.
+@export var jump_fall_sec: float = 0.55
+## Minimum x drift per hop (pixels). Randomised each landing.
+@export var jump_drift_min_px: float = 40.0
+## Maximum x drift per hop (pixels).
+@export var jump_drift_max_px: float = 60.0
+## Gap on the table edge (pixels) before x direction reverses.
+@export var jump_edge_margin_px: float = 60.0
 
 # ── Layout constants ───────────────────────────────────────────────────────────
 
@@ -88,6 +102,15 @@ var _authored_z_index: int  = AUTHORED_Z_INDEX
 ## Active merge tween reference — kept so it can be killed on interruption.
 var _merge_tween: Tween     = null
 
+## Active rabbit-jump tween — one hop at a time; relaunched each landing.
+var _bounce_tween: Tween    = null
+## True when this card's CardEntry.tags contains "rabbit_jump".
+var _is_bouncy: bool        = false
+## Tracks last-known IDLE state so jump start/stop fires only on transitions.
+var _was_idle: bool         = false
+## Current horizontal drift direction (+1 right, -1 left). Flips at edges.
+var _jump_dir: float        = 1.0
+
 ## Cached SystemFont with CJK fallback chain — Godot's ThemeDB.fallback_font is
 ## Latin-only and cannot render Chinese/Japanese glyphs. Created once per
 ## CardVisual and reused for both label and badge drawing.
@@ -124,15 +147,19 @@ func _make_cjk_font() -> SystemFont:
 ## [param new_card_id] — the card_id to display. Must match a CardDatabase entry.
 func reset(new_card_id: String) -> void:
 	_cancel_merge_tween()
+	_stop_bounce()
 	# Restore visual state to clean defaults before repopulating.
 	scale      = IDLE_SCALE
 	modulate.a = 1.0
 	z_index    = _authored_z_index
 	_is_lifted = false
+	_was_idle  = false
+	_jump_dir  = 1.0
 
 	_display_name = INVALID_CARD_LABEL
 	_art_texture  = null
 	_badge        = ""
+	_is_bouncy    = false
 
 	_read_card_data(new_card_id)
 	queue_redraw()
@@ -271,6 +298,9 @@ func _read_card_data(card_id: String) -> void:
 	# means "no bar drawn" (see _draw_badge()).
 	_badge = card_data.badge
 
+	# Rabbit-jump — tag-driven; no schema change needed.
+	_is_bouncy = "rabbit_jump" in card_data.tags
+
 
 ## Applies scale, shadow, and z-order config for [param state] instantly (no tween).
 ## Unknown state values fall back to Idle config and log a warning (GDD Edge Cases).
@@ -306,6 +336,15 @@ func _apply_state_config(state: CardEngine.State) -> void:
 
 	if changed:
 		queue_redraw()
+
+	# Bounce: start when entering IDLE (if bouncy), stop when leaving IDLE.
+	var now_idle := (state == CardEngine.State.IDLE)
+	if now_idle != _was_idle:
+		_was_idle = now_idle
+		if now_idle and _is_bouncy:
+			_start_bounce()
+		else:
+			_stop_bounce()
 
 
 ## Draws the art region as a clipped circle. When art is present, the texture is
@@ -376,3 +415,70 @@ func _cancel_merge_tween() -> void:
 	if _merge_tween != null:
 		_merge_tween.kill()
 		_merge_tween = null
+
+
+## Starts one rabbit-jump hop. On landing, picks a new random x drift and
+## recurses — creating an indefinite hop sequence until _stop_bounce() kills it.
+## Uses position offset on CardVisual (child); CardNode.position is untouched.
+func _start_bounce() -> void:
+	if _bounce_tween != null:
+		return
+	position.y = 0.0
+	_do_hop()
+
+
+## Execute one hop: arc up, drift x, land, then recurse.
+func _do_hop() -> void:
+	# Randomise drift distance each hop.
+	var drift := randf_range(jump_drift_min_px, jump_drift_max_px) * _jump_dir
+
+	# Check edge: if the CardNode (parent) would drift out of the viewport margin,
+	# flip direction and mirror the drift for this hop.
+	var parent_node := get_parent()
+	if parent_node != null:
+		var vp_size   := get_viewport_rect().size
+		var next_px: float = parent_node.position.x + drift
+		if next_px < jump_edge_margin_px or next_px > vp_size.x - jump_edge_margin_px:
+			_jump_dir *= -1.0
+			drift      = randf_range(jump_drift_min_px, jump_drift_max_px) * _jump_dir
+
+	# Snapshot parent x at hop start — avoids reading mid-tween values.
+	var start_x: float = 0.0
+	var land_x: float  = 0.0
+	if parent_node != null:
+		start_x = parent_node.position.x
+		land_x  = start_x + drift
+
+	_bounce_tween = create_tween()
+	# Rise: arc upward (position:y on CardVisual child), x halfway on CardNode.
+	_bounce_tween.set_parallel(true)
+	_bounce_tween.tween_property(self, "position:y", jump_peak_px, jump_rise_sec)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if parent_node != null:
+		_bounce_tween.tween_property(parent_node, "position:x",
+			start_x + drift * 0.5, jump_rise_sec)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_bounce_tween.set_parallel(false)
+	# Fall: return to y=0 (CardVisual local), x arrives at landing spot.
+	_bounce_tween.set_parallel(true)
+	_bounce_tween.tween_property(self, "position:y", 0.0, jump_fall_sec)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	if parent_node != null:
+		_bounce_tween.tween_property(parent_node, "position:x",
+			land_x, jump_fall_sec)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_bounce_tween.set_parallel(false)
+	# On landing: clear tween ref and start next hop.
+	_bounce_tween.tween_callback(func() -> void:
+		_bounce_tween = null
+		if _is_bouncy and _was_idle:
+			_do_hop()
+	)
+
+
+## Kills the jump tween and resets offsets. Safe to call at any time.
+func _stop_bounce() -> void:
+	if _bounce_tween != null:
+		_bounce_tween.kill()
+		_bounce_tween = null
+	position.y = 0.0

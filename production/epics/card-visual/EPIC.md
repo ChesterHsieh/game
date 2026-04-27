@@ -4,7 +4,7 @@
 > **GDD**: design/gdd/card-visual.md
 > **Architecture Module**: CardVisual — per-card instance rendering
 > **Status**: Ready
-> **Stories**: 5 stories
+> **Stories**: 6 stories
 
 ## Stories
 
@@ -15,6 +15,7 @@
 | 003 | Merge tween animation | Visual/Feel | Ready | ADR-002 |
 | 004 | Error handling and fallbacks | Logic | Ready | ADR-001, ADR-002 |
 | 005 | Card badge system | Visual/Feel | Ready | ADR-001, ADR-002 |
+| 006 | Idle rabbit-jump animation | Visual/Feel | Done | ADR-002 |
 
 ## Overview
 
@@ -49,6 +50,7 @@ dependency graph.
 | TR-card-visual-009 | Long display_name clipped/truncated to label region; does not overflow art area | ADR-001 ✅ |
 | TR-card-visual-010 | Cancel active merge tween cleanly on scene transition; no partial-scale artifact | ADR-002 ✅ |
 | TR-card-visual-011 | Emits no signals; pure consumer of CardDatabase + CardEngine | ADR-003 ✅ |
+| TR-card-visual-012 | Cards with tag "rabbit_jump" hop with a vertical arc (−20 px, rise 0.25 s / fall 0.55 s) plus random x drift (40–60 px) per landing, direction-flipping at viewport edges; pauses in non-IDLE states; resets on pool acquire | ADR-002 ✅ |
 
 ## Definition of Done
 
