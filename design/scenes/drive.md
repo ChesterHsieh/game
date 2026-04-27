@@ -19,7 +19,7 @@
 | `scene_id` | `drive` |
 | `display_name` | drive the car |
 | `narrative_beat` | 表達日常拌嘴的駕駛經驗 |
-| `manifest_order` | 2 |
+| `manifest_order` | 1 |
 | `phase` |  Mid-game  |
 
 ---
