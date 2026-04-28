@@ -25,4 +25,15 @@ func _ready() -> void:
 	# Wait one frame so SceneManager's Waiting-state CONNECT_ONE_SHOT listener
 	# is guaranteed to be active before we emit (ADR-003 ordering rule).
 	await get_tree().process_frame
+	_apply_debug_start_scene()
 	EventBus.game_start_requested.emit()
+
+
+## Dev-only: if debug-config.tres declares start_scene_index >= 0, jump there.
+## File is excluded from release exports, so this is a no-op in production.
+func _apply_debug_start_scene() -> void:
+	var dbg: DebugConfig = ResourceLoader.load(
+		"res://assets/data/debug-config.tres") as DebugConfig
+	if dbg == null or dbg.start_scene_index < 0:
+		return
+	SceneManager.set_resume_index(dbg.start_scene_index)

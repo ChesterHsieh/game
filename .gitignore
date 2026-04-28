@@ -48,3 +48,7 @@ dist/
 # === Engine: Godot ===
 .godot/
 /android/
+
+# Dev-only debug overrides (excluded from release exports per ADR-005 §7)
+assets/data/debug-config.tres
+assets/data/debug-config.tres.import

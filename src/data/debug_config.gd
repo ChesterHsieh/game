@@ -22,3 +22,9 @@ class_name DebugConfig extends Resource
 ## No discovery signals are emitted during the bulk-load.
 ## This flag has no effect in release builds (file is excluded from export).
 @export var force_unlock_all: bool = false
+
+## When >= 0, GameplayRoot calls SceneManager.set_resume_index(this) before
+## emitting game_start_requested, jumping straight into the scene at this
+## index of scene-manifest.tres. Default -1 = no override (start at scene 0).
+## Has no effect in release builds (file is excluded from export).
+@export var start_scene_index: int = -1
