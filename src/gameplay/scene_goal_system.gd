@@ -26,11 +26,16 @@ var _goal_config: Dictionary = {}
 ## Shape per entry: { "bar_id": String, "value": float, "spawns": PackedStringArray }
 var _pending_milestones: Array[Dictionary] = []
 
+## Card id that triggers scene completion when spawned. Empty = no spawn-trigger.
+## Set from scene JSON's `goal.win_on_spawn` field.
+var _win_on_spawn: String = ""
+
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
 	StatusBarSystem.win_condition_met.connect(_on_win_condition_met)
+	CardSpawning.card_spawned.connect(_on_card_spawned)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -71,6 +76,8 @@ func load_scene(scene_id: String) -> void:
 		# Non-bar goals — StatusBarSystem stays Dormant
 		pass
 
+	_win_on_spawn = String(_goal_config.get("win_on_spawn", ""))
+
 	_build_pending_milestones()
 	if not EventBus.bar_values_changed.is_connected(_on_bar_values_changed):
 		EventBus.bar_values_changed.connect(_on_bar_values_changed)
@@ -92,6 +99,7 @@ func reset() -> void:
 	_scene_id    = ""
 	_goal_config = {}
 	_pending_milestones.clear()
+	_win_on_spawn = ""
 	if EventBus.bar_values_changed.is_connected(_on_bar_values_changed):
 		EventBus.bar_values_changed.disconnect(_on_bar_values_changed)
 	StatusBarSystem.reset()
@@ -106,6 +114,18 @@ func _on_win_condition_met() -> void:
 	# Local signal is kept for direct per-instance subscription (tests +
 	# SceneManager which connects directly). EventBus fan-out feeds STUI /
 	# MUT / AudioManager which all subscribe through the bus (ADR-003).
+	scene_completed.emit(_scene_id)
+	EventBus.scene_completed.emit(_scene_id)
+
+
+## Spawn-triggered win: completes the scene when a card matching
+## [member _win_on_spawn] is created. Used by goal types that don't have a bar.
+func _on_card_spawned(_instance_id: String, card_id: String, _position: Vector2) -> void:
+	if _state != GoalState.ACTIVE:
+		return
+	if _win_on_spawn == "" or card_id != _win_on_spawn:
+		return
+	_state = GoalState.COMPLETE
 	scene_completed.emit(_scene_id)
 	EventBus.scene_completed.emit(_scene_id)
 

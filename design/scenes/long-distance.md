@@ -221,7 +221,7 @@ Readable summary:
 generator : (every 5s, max 3) → spawns courage with rabbit_jump tag
 
 [告白支線 — 三段勇氣堆疊]
-brave-1     : courage + chester           → chester_brave_1   [merge, keeps: chester]
+brave-1     : courage + chester           → chester_brave_1   [merge, no keeps]
 brave-2     : courage + chester_brave_1   → chester_brave_2   [merge, keeps: —]
 confess     : courage + chester_brave_2   → confession        [merge, keeps: chester]
 
@@ -448,23 +448,22 @@ reunion     : surviving_distance + too_lonely → reunion       [merge, keeps: �
 
 | Field | Value |
 |---|---|
-| type | `reach_value` |
-| bars | `connection` |
-| max_value | 100 |
-| threshold | 80 |
-| duration_sec | 1.0 |
+| type | `spawn_trigger` |
+| win_on_spawn | `reunion` |
 
-> Reaching 80 typically requires solving through to `surviving_distance` or
-> `reunion`. The decay rate ensures dwelling on early cards alone won't win —
-> player must keep moving forward.
+> The scene completes the moment the `reunion` card is created — narratively
+> the act of finally being back together. No status bar; the player progresses
+> by working through the recipe chain, and arriving at the final card ends
+> the scene.
 
 ---
 
 ## 6. Left Panel Content (status bars visible during the scene)
 
-| id | label | initial_value | decay_rate_per_sec |
-|---|---|---|---|
-| `connection` | 連結感 | 20 | 0.5 |
+None. StatusBarUI stays Dormant for `spawn_trigger` goal type — no bar
+renders. (The `connection` bar was removed 2026-04-28 after playtest
+showed the recipe-chain progression itself was the satisfying loop;
+adding a numeric pressure on top distracted from the narrative beats.)
 
 ---
 

@@ -6,22 +6,9 @@
     { "card_id": "ju" },
     { "card_id": "chester" }
   ],
-  "spawners": [
-    {
-      "recipe_id": "courage-spawner",
-      "spawn_card": "courage",
-      "interval_sec": 5.0,
-      "max_count": 3
-    }
-  ],
   "goal": {
-    "type": "reach_value",
-    "bars": [
-      { "id": "connection", "label": "連結感", "initial_value": 20, "decay_rate_per_sec": 0.5 }
-    ],
-    "max_value": 100,
-    "threshold": 80,
-    "duration_sec": 1.0
+    "type": "spawn_trigger",
+    "win_on_spawn": "reunion"
   },
   "next_scene": "board-games",
   "ambient": {
@@ -42,12 +29,5 @@
     "fold_duration_scale": 1.0,
     "paper_tint": "default",
     "sfx_variant_id": "default"
-  },
-  "engine_trs_required": [
-    "TR-LD-1: CardEntry.draggable field (angry_daddy + silent_decade)",
-    "TR-LD-2: ChaseBehavior visual component (angry_daddy chases ju)",
-    "TR-LD-3: rabbit_jump_fast visual_tag variant (ju_running)",
-    "TR-LD-4: Cross-scene carry_forward (silent_decade → all later scenes)",
-    "TR-LD-5: Recipe with both result_card AND spawns (fathers recipe)"
-  ]
+  }
 }

@@ -246,16 +246,14 @@ template = &"merge"
 scene_id = &"drive"
 config = {"keeps": &"chester_backseat", "emote": &"heart"}
 
-# ─── long-distance scene recipes (15 entries: 1 generator + 14 merges/additives) ───
-
 [sub_resource type="Resource" id="RecipeEntry_courage_spawner"]
 script = ExtResource("2_entry")
 id = &"courage-spawner"
-card_a = &""
-card_b = &""
+card_a = &"ju"
+card_b = &"chester"
 template = &"generator"
 scene_id = &"long-distance"
-config = {"spawn_card": &"courage", "interval_sec": 5.0, "max_count": 3}
+config = {"generates": &"courage", "interval_sec": 5.0, "max_count": 3, "generator_card": &"chester"}
 
 [sub_resource type="Resource" id="RecipeEntry_brave_1"]
 script = ExtResource("2_entry")
@@ -264,7 +262,7 @@ card_a = &"courage"
 card_b = &"chester"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"chester_brave_1", "keeps": &"chester", "emote": &"heart"}
+config = {"result_card": &"chester_brave_1", "emote": &"heart"}
 
 [sub_resource type="Resource" id="RecipeEntry_brave_2"]
 script = ExtResource("2_entry")

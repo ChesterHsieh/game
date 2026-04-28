@@ -416,14 +416,6 @@ type = 1
 scene_id = &"drive"
 tags = PackedStringArray("place")
 
-# ─── long-distance scene cards (17 entries) ───
-# All use placeholder art until PNGs are generated.
-# Tags carry semantic markers for engine TRs not yet implemented:
-#   draggable_false  → card cannot be dragged (TR-LD-1)
-#   chase:<target>   → card has ChaseBehavior toward target (TR-LD-2)
-#   visual:<tag>     → custom CardVisual tag (TR-LD-3, e.g. rabbit_jump_fast)
-#   carry_forward    → persists into subsequent scenes (TR-LD-4)
-
 [sub_resource type="Resource" id="CardEntry_courage"]
 script = ExtResource("2_entry")
 id = &"courage"

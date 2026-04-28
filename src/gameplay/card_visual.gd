@@ -49,6 +49,9 @@ class_name CardVisual extends Node2D
 ## reads as a "tag" pinned onto the card.
 @export var badge_y_offset: float = -8.0
 
+## Catch radius (pixels) for chase behavior — fires on_catch when target gets closer.
+@export var chase_catch_radius_px: float = 28.0
+
 ## Peak y offset (pixels) for the rabbit-jump arc. Negative = up.
 @export var jump_peak_px: float = -20.0
 ## Time (seconds) for the upward stroke of the jump.
@@ -111,6 +114,16 @@ var _was_idle: bool         = false
 ## Current horizontal drift direction (+1 right, -1 left). Flips at edges.
 var _jump_dir: float        = 1.0
 
+## Chase behavior — populated from tags ("chase:<id>", "speed:<n>", "sway:<n>",
+## "period:<n>", "on_catch:<id>"). Empty _chase_target_id disables chase.
+var _chase_target_id: String = ""
+var _chase_speed_px: float   = 30.0
+var _chase_sway_px: float    = 10.0
+var _chase_period_sec: float = 0.6
+var _chase_on_catch: String  = ""
+var _chase_elapsed: float    = 0.0
+var _chase_consumed: bool    = false
+
 ## Cached SystemFont with CJK fallback chain — Godot's ThemeDB.fallback_font is
 ## Latin-only and cannot render Chinese/Japanese glyphs. Created once per
 ## CardVisual and reused for both label and badge drawing.
@@ -156,10 +169,14 @@ func reset(new_card_id: String) -> void:
 	_was_idle  = false
 	_jump_dir  = 1.0
 
-	_display_name = INVALID_CARD_LABEL
-	_art_texture  = null
-	_badge        = ""
-	_is_bouncy    = false
+	_display_name    = INVALID_CARD_LABEL
+	_art_texture     = null
+	_badge           = ""
+	_is_bouncy       = false
+	_chase_target_id = ""
+	_chase_on_catch  = ""
+	_chase_elapsed   = 0.0
+	_chase_consumed  = false
 
 	_read_card_data(new_card_id)
 	queue_redraw()
@@ -169,9 +186,11 @@ func reset(new_card_id: String) -> void:
 
 ## Each frame: reads the current card state from CardEngine and applies the
 ## matching visual configuration instantly (no tween between states except Merge).
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var state := CardEngine.get_card_state(_instance_id)
 	_apply_state_config(state)
+	if _chase_target_id != "" and not _chase_consumed:
+		_advance_chase(delta, state)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -300,6 +319,24 @@ func _read_card_data(card_id: String) -> void:
 
 	# Rabbit-jump — tag-driven; no schema change needed.
 	_is_bouncy = "rabbit_jump" in card_data.tags
+
+	# Chase behavior — parse "chase:<id>", "speed:<n>", "sway:<n>",
+	# "period:<n>", "on_catch:<id>" from tags. Absent → no chase.
+	_chase_target_id = ""
+	_chase_on_catch  = ""
+	_chase_elapsed   = 0.0
+	_chase_consumed  = false
+	for tag: String in card_data.tags:
+		if tag.begins_with("chase:"):
+			_chase_target_id = tag.substr(6)
+		elif tag.begins_with("speed:"):
+			_chase_speed_px = float(tag.substr(6))
+		elif tag.begins_with("sway:"):
+			_chase_sway_px = float(tag.substr(5))
+		elif tag.begins_with("period:"):
+			_chase_period_sec = float(tag.substr(7))
+		elif tag.begins_with("on_catch:"):
+			_chase_on_catch = tag.substr(9)
 
 
 ## Applies scale, shadow, and z-order config for [param state] instantly (no tween).
@@ -482,3 +519,82 @@ func _stop_bounce() -> void:
 		_bounce_tween.kill()
 		_bounce_tween = null
 	position.y = 0.0
+
+
+## Advance one frame of chase: walk parent CardNode toward the nearest live
+## instance of [member _chase_target_id] at [member _chase_speed_px], adding
+## a perpendicular sine sway. On catch (distance < radius), consume self +
+## target and spawn [member _chase_on_catch] at the midpoint.
+func _advance_chase(delta: float, state: CardEngine.State) -> void:
+	# Pause chase while the player is interacting with this card.
+	if state == CardEngine.State.DRAGGED \
+		or state == CardEngine.State.ATTRACTING \
+		or state == CardEngine.State.SNAPPING:
+		return
+
+	var parent_node := get_parent()
+	if parent_node == null:
+		return
+	var target_node := _find_target_node()
+	if target_node == null:
+		return
+
+	_chase_elapsed += delta
+
+	var from_pos: Vector2 = parent_node.position
+	var to_pos: Vector2   = target_node.position
+	var to_target: Vector2 = to_pos - from_pos
+	var dist: float = to_target.length()
+
+	if dist <= chase_catch_radius_px:
+		_perform_catch(parent_node, target_node)
+		return
+
+	var dir: Vector2 = to_target / dist
+	var step: Vector2 = dir * _chase_speed_px * delta
+
+	# Sway perpendicular to motion: sin wave, amplitude _chase_sway_px,
+	# period _chase_period_sec.
+	if _chase_sway_px > 0.0 and _chase_period_sec > 0.0:
+		var phase: float = TAU * _chase_elapsed / _chase_period_sec
+		var sway_amount: float = sin(phase) * _chase_sway_px * delta * (TAU / _chase_period_sec)
+		var perp := Vector2(-dir.y, dir.x)
+		step += perp * sway_amount
+
+	parent_node.position = from_pos + step
+
+
+## Returns the live Node2D for the closest card whose card_id matches
+## [member _chase_target_id], or null if none on the table.
+func _find_target_node() -> Node2D:
+	var parent_node := get_parent()
+	if parent_node == null:
+		return null
+	var my_pos: Vector2 = parent_node.position
+	var best_node: Node2D = null
+	var best_dist: float = INF
+	for inst_id: String in CardSpawning.get_all_instance_ids():
+		var node: Node2D = CardSpawning.get_card_node(inst_id)
+		if node == null:
+			continue
+		var node_card_id: String = node.get("card_id") as String
+		if node_card_id != _chase_target_id:
+			continue
+		var d: float = my_pos.distance_to(node.position)
+		if d < best_dist:
+			best_dist = d
+			best_node = node
+	return best_node
+
+
+## Consume self + target, spawn [member _chase_on_catch] at midpoint.
+## Marks _chase_consumed so we don't re-fire while remove_card runs.
+func _perform_catch(self_node: Node2D, target_node: Node2D) -> void:
+	_chase_consumed = true
+	var midpoint: Vector2 = (self_node.position + target_node.position) * 0.5
+	var self_id: String   = self_node.get("instance_id") as String
+	var target_id: String = target_node.get("instance_id") as String
+	CardSpawning.remove_card(self_id)
+	CardSpawning.remove_card(target_id)
+	if _chase_on_catch != "":
+		CardSpawning.spawn_card(_chase_on_catch, midpoint)
