@@ -16,7 +16,7 @@ const MANIFEST_PATH := "res://assets/data/cards.tres"
 ## defines the authoritative scene registry.
 ## Note: PackedStringArray literals are not compile-time constants in GDScript
 ## 4.3, so this is declared as a var rather than const.
-var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global", "scene-01", "coffee-intro", "drive"])
+var KNOWN_SCENE_IDS: PackedStringArray = PackedStringArray(["global", "scene-01", "coffee-intro", "drive", "long-distance"])
 
 var _entries: Array[CardEntry] = []
 var _index: Dictionary = {}   # StringName → CardEntry

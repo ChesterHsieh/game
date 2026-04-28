@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardManifest" load_steps=53 format=3]
+[gd_resource type="Resource" script_class="CardManifest" load_steps=70 format=3]
 
 [ext_resource type="Script" path="res://src/data/card_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/card_entry.gd" id="2_entry"]
@@ -416,6 +416,212 @@ type = 1
 scene_id = &"drive"
 tags = PackedStringArray("place")
 
+# ─── long-distance scene cards (17 entries) ───
+# All use placeholder art until PNGs are generated.
+# Tags carry semantic markers for engine TRs not yet implemented:
+#   draggable_false  → card cannot be dragged (TR-LD-1)
+#   chase:<target>   → card has ChaseBehavior toward target (TR-LD-2)
+#   visual:<tag>     → custom CardVisual tag (TR-LD-3, e.g. rabbit_jump_fast)
+#   carry_forward    → persists into subsequent scenes (TR-LD-4)
+
+[sub_resource type="Resource" id="CardEntry_courage"]
+script = ExtResource("2_entry")
+id = &"courage"
+display_name = "勇氣"
+badge = "勇氣"
+flavor_text = "一晃眼就跳走了。要趁它還在的時候抓住。"
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling", "visual:rabbit_jump")
+
+[sub_resource type="Resource" id="CardEntry_chester_brave_1"]
+script = ExtResource("2_entry")
+id = &"chester_brave_1"
+display_name = "❤Chester"
+badge = "❤Chester"
+flavor_text = "心跳了一下。"
+art = ExtResource("7_chester")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_chester_brave_2"]
+script = ExtResource("2_entry")
+id = &"chester_brave_2"
+display_name = "❤❤Chester"
+badge = "❤❤Chester"
+flavor_text = "還是不夠。"
+art = ExtResource("7_chester")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_confession"]
+script = ExtResource("2_entry")
+id = &"confession"
+display_name = "告白"
+badge = "告白"
+flavor_text = "在巨城廣場。十年的朋友，一句話全押上去。"
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"long-distance"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_angry_daddy"]
+script = ExtResource("2_entry")
+id = &"angry_daddy"
+display_name = "怒氣的爸爸"
+badge = "怒氣的爸爸"
+flavor_text = "「妳要去哪裡？」門開了，他追了出來。"
+art = ExtResource("3_placeholder_art")
+type = 0
+scene_id = &"long-distance"
+tags = PackedStringArray("person", "draggable_false", "chase:ju", "visual:angry_walk", "speed:30", "sway:10", "period:0.6", "on_catch:ju_running")
+
+[sub_resource type="Resource" id="CardEntry_ju_running"]
+script = ExtResource("2_entry")
+id = &"ju_running"
+display_name = "奴奴奪門而出"
+badge = "奴奴奪門而出"
+flavor_text = "「我一下就會來。」她跳上車，我膽戰心驚。"
+art = ExtResource("8_ju")
+type = 4
+scene_id = &"long-distance"
+tags = PackedStringArray("moment", "visual:rabbit_jump_fast")
+
+[sub_resource type="Resource" id="CardEntry_at_her_door"]
+script = ExtResource("2_entry")
+id = &"at_her_door"
+display_name = "門口對峙"
+badge = "門口對峙"
+flavor_text = "膽戰心驚。我壯起膽量，跟他爸好好溝通。"
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"long-distance"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_fathers_door"]
+script = ExtResource("2_entry")
+id = &"fathers_door"
+display_name = "那個晚上"
+badge = "那個晚上"
+flavor_text = "「我為什麼要聽你解釋。」那是我跟她爸最後一次說話。"
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"long-distance"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_silent_decade"]
+script = ExtResource("2_entry")
+id = &"silent_decade"
+display_name = "沉默的十年"
+badge = "沉默的十年"
+flavor_text = "「我為什麼要聽你解釋。」那天之後，他爸再也沒跟我說過一句話。"
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling", "draggable_false", "carry_forward:board-games", "carry_forward:germany", "carry_forward:save-for-italy", "carry_forward:italy", "carry_forward:tenth-anniversary")
+
+[sub_resource type="Resource" id="CardEntry_nunu_crying"]
+script = ExtResource("2_entry")
+id = &"nunu_crying"
+display_name = "奴奴哭哭"
+badge = "奴奴哭哭"
+flavor_text = "公園的長椅，泣不成聲。我只能在旁邊等她說完。"
+art = ExtResource("8_ju")
+type = 5
+scene_id = &"long-distance"
+tags = PackedStringArray("inside_joke")
+
+[sub_resource type="Resource" id="CardEntry_rearview_mirror"]
+script = ExtResource("2_entry")
+id = &"rearview_mirror"
+display_name = "後視鏡裡的她"
+badge = "後視鏡裡的她"
+flavor_text = "我不會開車。她一個人把整條路開完了。我只能坐在副駕，看著鏡子裡的她。"
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"long-distance"
+tags = PackedStringArray("moment")
+
+[sub_resource type="Resource" id="CardEntry_atlanta"]
+script = ExtResource("2_entry")
+id = &"atlanta"
+display_name = "亞特蘭大"
+badge = "亞特蘭大"
+flavor_text = "四年都在這裡。離她一萬公里。"
+art = ExtResource("3_placeholder_art")
+type = 1
+scene_id = &"long-distance"
+tags = PackedStringArray("place")
+
+[sub_resource type="Resource" id="CardEntry_video_call"]
+script = ExtResource("2_entry")
+id = &"video_call"
+display_name = "晚上十點視訊"
+badge = "晚上十點視訊"
+flavor_text = "台灣的早晨，亞特蘭大的夜。一個固定的時間，把日子綁在一起。"
+art = ExtResource("3_placeholder_art")
+type = 3
+scene_id = &"long-distance"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_obra_dinn"]
+script = ExtResource("2_entry")
+id = &"obra_dinn"
+display_name = "奧伯拉丁的回歸"
+badge = "奧伯拉丁的回歸"
+flavor_text = "跨越太平洋，兩個人一起推理死因。解謎比思念更有用。"
+art = ExtResource("3_placeholder_art")
+type = 3
+scene_id = &"long-distance"
+tags = PackedStringArray("object")
+
+[sub_resource type="Resource" id="CardEntry_lights_on"]
+script = ExtResource("2_entry")
+id = &"lights_on"
+display_name = "開著燈"
+badge = "開著燈"
+flavor_text = "一個人睡覺，客廳的燈必須開著。有她在，就可以關了。"
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_too_lonely"]
+script = ExtResource("2_entry")
+id = &"too_lonely"
+display_name = "快撐不下去"
+badge = "快撐不下去"
+flavor_text = "四年。工作、疫情、還有太孤單。"
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_surviving_distance"]
+script = ExtResource("2_entry")
+id = &"surviving_distance"
+display_name = "撐過去的力量"
+badge = "撐過去的力量"
+flavor_text = "不是不辛苦，是辛苦也沒放手。"
+art = ExtResource("3_placeholder_art")
+type = 2
+scene_id = &"long-distance"
+tags = PackedStringArray("feeling")
+
+[sub_resource type="Resource" id="CardEntry_reunion"]
+script = ExtResource("2_entry")
+id = &"reunion"
+display_name = "回台灣"
+badge = "回台灣"
+flavor_text = "2020。終於可以回來了。"
+art = ExtResource("3_placeholder_art")
+type = 4
+scene_id = &"long-distance"
+tags = PackedStringArray("moment")
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee"), SubResource("CardEntry_drive_seat_9"), SubResource("CardEntry_shotgun_10"), SubResource("CardEntry_kingdom_far_away"), SubResource("CardEntry_ju_driving"), SubResource("CardEntry_chester_backseat"), SubResource("CardEntry_nav_info"), SubResource("CardEntry_better_nav_info"), SubResource("CardEntry_restaurant_bbq"), SubResource("CardEntry_restaurant_japanese"), SubResource("CardEntry_sure_either"), SubResource("CardEntry_mcdonalds"), SubResource("CardEntry_five_more_min"), SubResource("CardEntry_scenic_view")]
+entries = [SubResource("CardEntry_chester"), SubResource("CardEntry_ju"), SubResource("CardEntry_shared_friend"), SubResource("CardEntry_our_cafe"), SubResource("CardEntry_home"), SubResource("CardEntry_that_park"), SubResource("CardEntry_safe"), SubResource("CardEntry_nervous"), SubResource("CardEntry_3am_energy"), SubResource("CardEntry_handmade_gift"), SubResource("CardEntry_our_song"), SubResource("CardEntry_that_photo"), SubResource("CardEntry_rainy_afternoon"), SubResource("CardEntry_first_call"), SubResource("CardEntry_that_argument"), SubResource("CardEntry_joke_placeholder_1"), SubResource("CardEntry_joke_placeholder_2"), SubResource("CardEntry_seed_start"), SubResource("CardEntry_seed_together"), SubResource("CardEntry_seed_memory"), SubResource("CardEntry_coffee_machine"), SubResource("CardEntry_coffee_beans"), SubResource("CardEntry_coffee"), SubResource("CardEntry_drive_seat_9"), SubResource("CardEntry_shotgun_10"), SubResource("CardEntry_kingdom_far_away"), SubResource("CardEntry_ju_driving"), SubResource("CardEntry_chester_backseat"), SubResource("CardEntry_nav_info"), SubResource("CardEntry_better_nav_info"), SubResource("CardEntry_restaurant_bbq"), SubResource("CardEntry_restaurant_japanese"), SubResource("CardEntry_sure_either"), SubResource("CardEntry_mcdonalds"), SubResource("CardEntry_five_more_min"), SubResource("CardEntry_scenic_view"), SubResource("CardEntry_courage"), SubResource("CardEntry_chester_brave_1"), SubResource("CardEntry_chester_brave_2"), SubResource("CardEntry_confession"), SubResource("CardEntry_angry_daddy"), SubResource("CardEntry_ju_running"), SubResource("CardEntry_at_her_door"), SubResource("CardEntry_fathers_door"), SubResource("CardEntry_silent_decade"), SubResource("CardEntry_nunu_crying"), SubResource("CardEntry_rearview_mirror"), SubResource("CardEntry_atlanta"), SubResource("CardEntry_video_call"), SubResource("CardEntry_obra_dinn"), SubResource("CardEntry_lights_on"), SubResource("CardEntry_too_lonely"), SubResource("CardEntry_surviving_distance"), SubResource("CardEntry_reunion")]

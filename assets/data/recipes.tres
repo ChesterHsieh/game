@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RecipeManifest" load_steps=23 format=3]
+[gd_resource type="Resource" script_class="RecipeManifest" load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://src/data/recipe_manifest.gd" id="1_manifest"]
 [ext_resource type="Script" path="res://src/data/recipe_entry.gd" id="2_entry"]
@@ -246,6 +246,152 @@ template = &"merge"
 scene_id = &"drive"
 config = {"keeps": &"chester_backseat", "emote": &"heart"}
 
+# ─── long-distance scene recipes (15 entries: 1 generator + 14 merges/additives) ───
+
+[sub_resource type="Resource" id="RecipeEntry_courage_spawner"]
+script = ExtResource("2_entry")
+id = &"courage-spawner"
+card_a = &""
+card_b = &""
+template = &"generator"
+scene_id = &"long-distance"
+config = {"spawn_card": &"courage", "interval_sec": 5.0, "max_count": 3}
+
+[sub_resource type="Resource" id="RecipeEntry_brave_1"]
+script = ExtResource("2_entry")
+id = &"brave-1"
+card_a = &"courage"
+card_b = &"chester"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"chester_brave_1", "keeps": &"chester", "emote": &"heart"}
+
+[sub_resource type="Resource" id="RecipeEntry_brave_2"]
+script = ExtResource("2_entry")
+id = &"brave-2"
+card_a = &"courage"
+card_b = &"chester_brave_1"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"chester_brave_2", "emote": &"heart"}
+
+[sub_resource type="Resource" id="RecipeEntry_confess"]
+script = ExtResource("2_entry")
+id = &"confess"
+card_a = &"courage"
+card_b = &"chester_brave_2"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"confession", "keeps": &"chester", "emote": &"spark"}
+
+[sub_resource type="Resource" id="RecipeEntry_fathers_spawn"]
+script = ExtResource("2_entry")
+id = &"fathers-spawn"
+card_a = &"ju"
+card_b = &"confession"
+template = &"additive"
+scene_id = &"long-distance"
+config = {"spawns": [&"angry_daddy"], "keeps": &"ju", "emote": &"exclaim"}
+
+[sub_resource type="Resource" id="RecipeEntry_at_door"]
+script = ExtResource("2_entry")
+id = &"at-door"
+card_a = &"ju_running"
+card_b = &"chester"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"at_her_door", "keeps": &"chester", "emote": &"sweat"}
+
+[sub_resource type="Resource" id="RecipeEntry_fathers"]
+script = ExtResource("2_entry")
+id = &"fathers"
+card_a = &"at_her_door"
+card_b = &"chester"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"fathers_door", "spawns": [&"silent_decade"], "keeps": &"chester", "emote": &"exclaim"}
+
+[sub_resource type="Resource" id="RecipeEntry_nunu"]
+script = ExtResource("2_entry")
+id = &"nunu"
+card_a = &"ju"
+card_b = &"fathers_door"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"nunu_crying", "keeps": &"ju", "emote": &"sweat"}
+
+[sub_resource type="Resource" id="RecipeEntry_australia"]
+script = ExtResource("2_entry")
+id = &"australia"
+card_a = &"nunu_crying"
+card_b = &"chester"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"rearview_mirror", "keeps": &"chester", "emote": &"heart"}
+
+[sub_resource type="Resource" id="RecipeEntry_to_atlanta"]
+script = ExtResource("2_entry")
+id = &"to-atlanta"
+card_a = &"ju"
+card_b = &"rearview_mirror"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"atlanta", "keeps": &"ju", "emote": &"sweat"}
+
+[sub_resource type="Resource" id="RecipeEntry_videocall"]
+script = ExtResource("2_entry")
+id = &"videocall"
+card_a = &"ju"
+card_b = &"atlanta"
+template = &"additive"
+scene_id = &"long-distance"
+config = {"spawns": [&"video_call"], "keeps": &"ju", "emote": &"ok"}
+
+[sub_resource type="Resource" id="RecipeEntry_obradinn"]
+script = ExtResource("2_entry")
+id = &"obradinn"
+card_a = &"video_call"
+card_b = &"chester"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"obra_dinn", "keeps": &"chester", "emote": &"question"}
+
+[sub_resource type="Resource" id="RecipeEntry_lights"]
+script = ExtResource("2_entry")
+id = &"lights"
+card_a = &"video_call"
+card_b = &"ju"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"lights_on", "keeps": &"ju", "emote": &"heart"}
+
+[sub_resource type="Resource" id="RecipeEntry_surviving"]
+script = ExtResource("2_entry")
+id = &"surviving"
+card_a = &"obra_dinn"
+card_b = &"lights_on"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"surviving_distance", "emote": &"spark"}
+
+[sub_resource type="Resource" id="RecipeEntry_lonely"]
+script = ExtResource("2_entry")
+id = &"lonely"
+card_a = &"atlanta"
+card_b = &"chester"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"too_lonely", "keeps": &"chester", "emote": &"zzz"}
+
+[sub_resource type="Resource" id="RecipeEntry_reunion"]
+script = ExtResource("2_entry")
+id = &"reunion"
+card_a = &"surviving_distance"
+card_b = &"too_lonely"
+template = &"merge"
+scene_id = &"long-distance"
+config = {"result_card": &"reunion", "emote": &"heart"}
+
 [resource]
 script = ExtResource("1_manifest")
-entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee"), SubResource("RecipeEntry_seat_ju"), SubResource("RecipeEntry_seat_chester"), SubResource("RecipeEntry_kingdom_nav"), SubResource("RecipeEntry_nav_upgrade"), SubResource("RecipeEntry_nav_reject"), SubResource("RecipeEntry_nav_advance"), SubResource("RecipeEntry_bbq_sure"), SubResource("RecipeEntry_japanese_sure"), SubResource("RecipeEntry_sure_merge"), SubResource("RecipeEntry_mcd_advance"), SubResource("RecipeEntry_five_more_scenic"), SubResource("RecipeEntry_scenic_advance_ju"), SubResource("RecipeEntry_scenic_advance_chester")]
+entries = [SubResource("RecipeEntry_chester_rainy_afternoon"), SubResource("RecipeEntry_ju_our_cafe"), SubResource("RecipeEntry_that_argument_safe"), SubResource("RecipeEntry_that_park_nervous"), SubResource("RecipeEntry_handmade_gift_ju"), SubResource("RecipeEntry_joke_placeholder_1_joke_placeholder_2"), SubResource("RecipeEntry_our_song_rainy_afternoon"), SubResource("RecipeEntry_seed_memory_that_photo"), SubResource("RecipeEntry_home_chester"), SubResource("RecipeEntry_our_cafe_that_park"), SubResource("RecipeEntry_seed_start_chester"), SubResource("RecipeEntry_seed_start_seed_together"), SubResource("RecipeEntry_brew_coffee"), SubResource("RecipeEntry_deliver_coffee"), SubResource("RecipeEntry_seat_ju"), SubResource("RecipeEntry_seat_chester"), SubResource("RecipeEntry_kingdom_nav"), SubResource("RecipeEntry_nav_upgrade"), SubResource("RecipeEntry_nav_reject"), SubResource("RecipeEntry_nav_advance"), SubResource("RecipeEntry_bbq_sure"), SubResource("RecipeEntry_japanese_sure"), SubResource("RecipeEntry_sure_merge"), SubResource("RecipeEntry_mcd_advance"), SubResource("RecipeEntry_five_more_scenic"), SubResource("RecipeEntry_scenic_advance_ju"), SubResource("RecipeEntry_scenic_advance_chester"), SubResource("RecipeEntry_courage_spawner"), SubResource("RecipeEntry_brave_1"), SubResource("RecipeEntry_brave_2"), SubResource("RecipeEntry_confess"), SubResource("RecipeEntry_fathers_spawn"), SubResource("RecipeEntry_at_door"), SubResource("RecipeEntry_fathers"), SubResource("RecipeEntry_nunu"), SubResource("RecipeEntry_australia"), SubResource("RecipeEntry_to_atlanta"), SubResource("RecipeEntry_videocall"), SubResource("RecipeEntry_obradinn"), SubResource("RecipeEntry_lights"), SubResource("RecipeEntry_surviving"), SubResource("RecipeEntry_lonely"), SubResource("RecipeEntry_reunion")]

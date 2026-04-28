@@ -6,5 +6,20 @@
   "nav-advance": { "journey_progress": 1 },
   "mcd-advance": { "journey_progress": 1 },
   "scenic-advance-ju": { "journey_progress": 1 },
-  "scenic-advance-chester": { "journey_progress": 1 }
+  "scenic-advance-chester": { "journey_progress": 1 },
+  "brave-1": { "connection": 5 },
+  "brave-2": { "connection": 10 },
+  "confess": { "connection": 25 },
+  "fathers-spawn": { "connection": 0 },
+  "at-door": { "connection": 15 },
+  "fathers": { "connection": 20 },
+  "nunu": { "connection": 25 },
+  "australia": { "connection": 20 },
+  "to-atlanta": { "connection": -5 },
+  "videocall": { "connection": 5 },
+  "obradinn": { "connection": 25 },
+  "lights": { "connection": 25 },
+  "surviving": { "connection": 30 },
+  "lonely": { "connection": -15 },
+  "reunion": { "connection": 40 }
 }
