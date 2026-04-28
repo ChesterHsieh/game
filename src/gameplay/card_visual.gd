@@ -107,8 +107,11 @@ var _merge_tween: Tween     = null
 
 ## Active rabbit-jump tween — one hop at a time; relaunched each landing.
 var _bounce_tween: Tween    = null
-## True when this card's CardEntry.tags contains "rabbit_jump".
+## True when this card's CardEntry.tags contains "rabbit_jump" or "visual:rabbit_jump_fast".
 var _is_bouncy: bool        = false
+## True when "visual:rabbit_jump_fast" — uses larger drift + shorter timings so
+## the card visibly sprints across the table.
+var _is_bouncy_fast: bool   = false
 ## Tracks last-known IDLE state so jump start/stop fires only on transitions.
 var _was_idle: bool         = false
 ## Current horizontal drift direction (+1 right, -1 left). Flips at edges.
@@ -173,6 +176,7 @@ func reset(new_card_id: String) -> void:
 	_art_texture     = null
 	_badge           = ""
 	_is_bouncy       = false
+	_is_bouncy_fast  = false
 	_chase_target_id = ""
 	_chase_on_catch  = ""
 	_chase_elapsed   = 0.0
@@ -317,8 +321,11 @@ func _read_card_data(card_id: String) -> void:
 	# means "no bar drawn" (see _draw_badge()).
 	_badge = card_data.badge
 
-	# Rabbit-jump — tag-driven; no schema change needed.
-	_is_bouncy = "rabbit_jump" in card_data.tags
+	# Rabbit-jump — tag-driven; no schema change needed. The "fast" variant
+	# also flips _is_bouncy on so the same hop pipeline runs with larger
+	# drift and shorter timings.
+	_is_bouncy_fast = "visual:rabbit_jump_fast" in card_data.tags
+	_is_bouncy      = _is_bouncy_fast or ("rabbit_jump" in card_data.tags)
 
 	# Chase behavior — parse "chase:<id>", "speed:<n>", "sway:<n>",
 	# "period:<n>", "on_catch:<id>" from tags. Absent → no chase.
@@ -465,9 +472,17 @@ func _start_bounce() -> void:
 
 
 ## Execute one hop: arc up, drift x, land, then recurse.
+## When _is_bouncy_fast is true, drift is ~2× and per-hop timings ~½ so the
+## card visibly sprints across the table (used for "ju_running").
 func _do_hop() -> void:
+	# Fast-variant overrides: larger drift, snappier rise+fall.
+	var drift_min: float = jump_drift_min_px * (2.0 if _is_bouncy_fast else 1.0)
+	var drift_max: float = jump_drift_max_px * (2.0 if _is_bouncy_fast else 1.0)
+	var rise: float      = jump_rise_sec * (0.5 if _is_bouncy_fast else 1.0)
+	var fall: float      = jump_fall_sec * (0.5 if _is_bouncy_fast else 1.0)
+
 	# Randomise drift distance each hop.
-	var drift := randf_range(jump_drift_min_px, jump_drift_max_px) * _jump_dir
+	var drift := randf_range(drift_min, drift_max) * _jump_dir
 
 	# Check edge: if the CardNode (parent) would drift out of the viewport margin,
 	# flip direction and mirror the drift for this hop.
@@ -477,7 +492,7 @@ func _do_hop() -> void:
 		var next_px: float = parent_node.position.x + drift
 		if next_px < jump_edge_margin_px or next_px > vp_size.x - jump_edge_margin_px:
 			_jump_dir *= -1.0
-			drift      = randf_range(jump_drift_min_px, jump_drift_max_px) * _jump_dir
+			drift      = randf_range(drift_min, drift_max) * _jump_dir
 
 	# Snapshot parent x at hop start — avoids reading mid-tween values.
 	var start_x: float = 0.0
@@ -489,20 +504,20 @@ func _do_hop() -> void:
 	_bounce_tween = create_tween()
 	# Rise: arc upward (position:y on CardVisual child), x halfway on CardNode.
 	_bounce_tween.set_parallel(true)
-	_bounce_tween.tween_property(self, "position:y", jump_peak_px, jump_rise_sec)\
+	_bounce_tween.tween_property(self, "position:y", jump_peak_px, rise)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if parent_node != null:
 		_bounce_tween.tween_property(parent_node, "position:x",
-			start_x + drift * 0.5, jump_rise_sec)\
+			start_x + drift * 0.5, rise)\
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_bounce_tween.set_parallel(false)
 	# Fall: return to y=0 (CardVisual local), x arrives at landing spot.
 	_bounce_tween.set_parallel(true)
-	_bounce_tween.tween_property(self, "position:y", 0.0, jump_fall_sec)\
+	_bounce_tween.tween_property(self, "position:y", 0.0, fall)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	if parent_node != null:
 		_bounce_tween.tween_property(parent_node, "position:x",
-			land_x, jump_fall_sec)\
+			land_x, fall)\
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	_bounce_tween.set_parallel(false)
 	# On landing: clear tween ref and start next hop.

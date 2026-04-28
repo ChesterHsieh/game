@@ -280,7 +280,7 @@ card_a = &"courage"
 card_b = &"chester_brave_2"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"confession", "keeps": &"chester", "emote": &"spark"}
+config = {"result_card": &"confession", "keeps": &"chester_brave_2", "emote": &"spark"}
 
 [sub_resource type="Resource" id="RecipeEntry_fathers_spawn"]
 script = ExtResource("2_entry")
