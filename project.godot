@@ -19,18 +19,6 @@ config/icon="res://icon.svg"
 
 buses/default_bus_layout="res://assets/data/default_bus_layout.tres"
 
-[display]
-
-; Logical render resolution (the coordinate space all gameplay code works in).
-; Lower than window so canvas_items stretch scales cards and UI 2x larger.
-window/size/viewport_width=720
-window/size/viewport_height=450
-; Actual window size on screen (MacBook friendly, slightly under 1470×956).
-window/size/window_width_override=1440
-window/size/window_height_override=900
-window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-
 [autoload]
 
 EventBus="*res://src/core/event_bus.gd"
@@ -46,6 +34,14 @@ SceneGoal="*res://src/gameplay/scene_goal_system.gd"
 HintSystem="*res://src/gameplay/hint_system.gd"
 SceneManager="*res://src/core/scene_manager.gd"
 MysteryUnlockTree="*res://src/core/mystery_unlock_tree.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=450
+window/size/window_width_override=1440
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
 
 [editor_plugins]
 

@@ -15,7 +15,7 @@ class_name EmoteBubble extends Node2D
 @export var pop_in_sec: float = 0.15
 @export var hold_sec: float = 1.2
 @export var fade_out_sec: float = 0.25
-@export var size_logical: Vector2 = Vector2(80.0, 80.0)
+@export var size_logical: Vector2 = Vector2(24.0, 24.0)
 
 @onready var _rect: TextureRect = $TextureRect
 

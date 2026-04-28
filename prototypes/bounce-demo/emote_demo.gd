@@ -77,23 +77,24 @@ func _show_emote(card_idx: int) -> void:
 	var tex := ImageTexture.create_from_image(img)
 
 	# 氣泡容器（跟著卡片位置）
+	# 縮小整體尺寸：bubble 36px，sprite 28px → 顆粒感降低
 	var bubble := Node2D.new()
-	bubble.position = Vector2(0, -CARD_H * 0.5 - 50)
+	bubble.position = Vector2(0, -CARD_H * 0.5 - 28)
 	bubble.scale    = Vector2.ZERO
 	card.add_child(bubble)
 
 	# 白色圓形背景
 	var bg_rect := ColorRect.new()
-	bg_rect.size     = Vector2(56, 56)
-	bg_rect.position = Vector2(-28, -28)
+	bg_rect.size     = Vector2(24, 24)
+	bg_rect.position = Vector2(-12, -12)
 	bg_rect.color    = Color(1, 1, 1, 0.92)
 	bubble.add_child(bg_rect)
 
 	# emote 圖示（pixel art，關閉濾波）
 	var sprite := TextureRect.new()
 	sprite.texture               = tex
-	sprite.size                  = Vector2(48, 48)
-	sprite.position              = Vector2(-24, -24)
+	sprite.size                  = Vector2(18, 18)
+	sprite.position              = Vector2(-9, -9)
 	sprite.texture_filter        = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.mouse_filter          = Control.MOUSE_FILTER_IGNORE
 	sprite.stretch_mode          = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

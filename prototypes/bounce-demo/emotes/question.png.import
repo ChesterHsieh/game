@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2kkh00rqpq4b"
-path="res://.godot/imported/zzz.png-a89981a166c0fe877fbaa5db9c7bf50f.ctex"
+uid="uid://chuahi6qvxnrw"
+path="res://.godot/imported/question.png-1ac79c2ce35f761fffc177f39857e156.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/emotes/zzz.png"
-dest_files=["res://.godot/imported/zzz.png-a89981a166c0fe877fbaa5db9c7bf50f.ctex"]
+source_file="res://prototypes/bounce-demo/emotes/question.png"
+dest_files=["res://.godot/imported/question.png-1ac79c2ce35f761fffc177f39857e156.ctex"]
 
 [params]
 

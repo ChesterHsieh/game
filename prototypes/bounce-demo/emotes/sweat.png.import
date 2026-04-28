@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2kkh00rqpq4b"
-path="res://.godot/imported/zzz.png-a89981a166c0fe877fbaa5db9c7bf50f.ctex"
+uid="uid://bibpi30cm0br4"
+path="res://.godot/imported/sweat.png-9d61de58896002c97a6acd15114afb43.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/emotes/zzz.png"
-dest_files=["res://.godot/imported/zzz.png-a89981a166c0fe877fbaa5db9c7bf50f.ctex"]
+source_file="res://prototypes/bounce-demo/emotes/sweat.png"
+dest_files=["res://.godot/imported/sweat.png-9d61de58896002c97a6acd15114afb43.ctex"]
 
 [params]
 
