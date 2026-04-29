@@ -295,19 +295,19 @@ config = {"spawns": [&"angry_daddy"], "keeps": &"ju", "emote": &"exclaim"}
 script = ExtResource("2_entry")
 id = &"at-door"
 card_a = &"ju_running"
-card_b = &"chester"
+card_b = &"chester_brave_2"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"at_her_door", "keeps": &"chester", "emote": &"sweat"}
+config = {"result_card": &"at_her_door", "keeps": &"chester_brave_2", "emote": &"sweat"}
 
 [sub_resource type="Resource" id="RecipeEntry_fathers"]
 script = ExtResource("2_entry")
 id = &"fathers"
 card_a = &"at_her_door"
-card_b = &"chester"
+card_b = &"chester_brave_2"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"fathers_door", "spawns": [&"silent_decade"], "keeps": &"chester", "emote": &"exclaim"}
+config = {"result_card": &"fathers_door", "spawns": [&"silent_decade"], "keeps": &"chester_brave_2", "emote": &"exclaim"}
 
 [sub_resource type="Resource" id="RecipeEntry_nunu"]
 script = ExtResource("2_entry")
@@ -322,10 +322,10 @@ config = {"result_card": &"nunu_crying", "keeps": &"ju", "emote": &"sweat"}
 script = ExtResource("2_entry")
 id = &"australia"
 card_a = &"nunu_crying"
-card_b = &"chester"
+card_b = &"chester_brave_2"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"rearview_mirror", "keeps": &"chester", "emote": &"heart"}
+config = {"result_card": &"rearview_mirror", "keeps": &"chester_brave_2", "emote": &"heart"}
 
 [sub_resource type="Resource" id="RecipeEntry_to_atlanta"]
 script = ExtResource("2_entry")
@@ -349,10 +349,10 @@ config = {"spawns": [&"video_call"], "keeps": &"ju", "emote": &"ok"}
 script = ExtResource("2_entry")
 id = &"obradinn"
 card_a = &"video_call"
-card_b = &"chester"
+card_b = &"chester_brave_2"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"obra_dinn", "keeps": &"chester", "emote": &"question"}
+config = {"result_card": &"obra_dinn", "keeps": &"chester_brave_2", "emote": &"question"}
 
 [sub_resource type="Resource" id="RecipeEntry_lights"]
 script = ExtResource("2_entry")
@@ -376,10 +376,10 @@ config = {"result_card": &"surviving_distance", "emote": &"spark"}
 script = ExtResource("2_entry")
 id = &"lonely"
 card_a = &"atlanta"
-card_b = &"chester"
+card_b = &"chester_brave_2"
 template = &"merge"
 scene_id = &"long-distance"
-config = {"result_card": &"too_lonely", "keeps": &"chester", "emote": &"zzz"}
+config = {"result_card": &"too_lonely", "keeps": &"chester_brave_2", "emote": &"zzz"}
 
 [sub_resource type="Resource" id="RecipeEntry_reunion"]
 script = ExtResource("2_entry")
